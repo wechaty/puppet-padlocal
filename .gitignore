@@ -64,3 +64,9 @@ typings/
 .DS_Store
 t/
 t.*
+
+# webstorm
+.idea
+
+# node-config
+/config/local*

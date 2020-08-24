@@ -1,7 +1,7 @@
 {
-  "name": "wechaty-puppet-mock",
-  "version": "0.27.8",
-  "description": "Puppet Mocker for Wechaty",
+  "name": "wechaty-puppet-padlocal",
+  "version": "0.1.0",
+  "description": "Puppet PadLocal for Wechaty",
   "directories": {
     "test": "tests"
   },
@@ -11,21 +11,18 @@
     "wechaty": ">=0.17.46"
   },
   "scripts": {
-    "clean": "shx rm -fr dist/*",
+    "clean": "rm -fr dist/*",
     "dist": "npm run clean && tsc",
-    "pack": "npm pack",
-    "start": "ts-node examples/ding-dong-bot.ts",
-    "lint": "npm run lint:es && npm run lint:ts && npm run lint:md",
     "lint:md": "markdownlint README.md",
-    "lint:ts": "tsc --noEmit",
-    "lint:es": "eslint \"src/**/*.ts\" \"tests/**/*.spec.ts\" --ignore-pattern tests/fixtures/",
-    "test": "npm run lint && npm run test:unit",
-    "test:pack": "bash -x scripts/npm-pack-testing.sh",
-    "test:unit": "blue-tape -r ts-node/register 'src/**/*.spec.ts' 'tests/**/*.spec.ts'"
+    "lint": "tslint --project tsconfig.json",
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "prepare": "npm run dist && bash ./scripts/generate-version.sh",
+    "serve": "tsc-watch"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wechaty/wechaty-puppet-mock.git"
+    "url": "git+https://padlocal/wechaty-puppet-padlocal.git"
   },
   "keywords": [
     "chatie",
@@ -35,42 +32,58 @@
     "wechat",
     "sdk",
     "puppet",
-    "mock"
+    "padlocal"
   ],
-  "author": "Huan LI <zixia@zixia.net>",
+  "author": "haoda",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/wechaty/wechaty-puppet-mock/issues"
+    "url": "https://github.com/padlocal/wechaty-puppet-padlocal/issues"
   },
-  "homepage": "https://github.com/wechaty/wechaty-puppet-mock#readme",
+  "homepage": "https://github.com/padlocal/wechaty-puppet-padlocal#readme",
   "devDependencies": {
     "@chatie/eslint-config": "^0.12.1",
     "@chatie/git-scripts": "^0.6.1",
     "@chatie/semver": "^0.4.7",
     "@chatie/tsconfig": "^0.11.4",
+    "@types/config": "^0.0.36",
     "@types/cuid": "^1.3.0",
     "@types/faker": "^4.1.12",
     "@types/normalize-package-data": "^2.4.0",
     "@types/quick-lru": "^3.0.0",
+    "config": "^3.3.1",
     "pkg-jq": "^0.2.4",
+    "prettier": "^2.0.5",
     "shx": "^0.3.2",
+    "ts-jest": "^26.2.0",
+    "tsc-watch": "^4.2.9",
+    "tslint-config-prettier": "^1.18.0",
     "tstest": "^0.4.10",
     "wechaty": "^0.45.2",
-    "wechaty-puppet": "^0.29.2"
+    "wechaty-puppet": "^0.30.6"
   },
   "peerDependencies": {
     "wechaty-puppet": "*"
   },
   "dependencies": {
+    "@types/fs-extra": "^9.0.1",
+    "@types/jest": "^26.0.10",
+    "@types/lru-cache": "^5.1.0",
+    "@types/xml2js": "^0.4.5",
     "brolog": "^1.8.3",
     "cuid": "^2.1.8",
     "faker": "^4.1.0",
+    "flash-store": "^0.20.4",
+    "fs-extra": "^9.0.1",
     "hot-import": "^0.2.14",
+    "jest": "^26.4.0",
+    "lru-cache": "^6.0.0",
     "normalize-package-data": "^2.5.0",
+    "padlocal-client-ts": "^0.1.9",
     "quick-lru": "^5.1.0",
     "state-switch": "^0.6.18",
     "typed-emitter": "^1.2.0",
-    "watchdog": "^0.8.17"
+    "watchdog": "^0.8.17",
+    "xml2js": "^0.4.23"
   },
   "publishConfig": {
     "access": "public",

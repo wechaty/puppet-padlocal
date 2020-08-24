@@ -1,0 +1,72 @@
+{
+  "padLocal": {
+    "host": "127.0.0.1",
+    "port": 8888,
+    "token": "PADLOCAL_TOKEN"
+  },
+
+  "test": {
+    "push": {
+      "forwardFrom": "USER_NAME",
+      "forwardTo": "CHATROOM_ID",
+      "recallUserId": "USER_NAME"
+    },
+
+    "contact": {
+      "changeNickName": "",
+      "changeSignature": "",
+      "getAvatarUserName": "USER_NAME",
+      "alias": {
+        "userName": "USER_NAME",
+        "aliasName": ""
+      }
+    },
+    "tag": {
+      "targetUserName": "USER_NAME",
+      "addDeleteTagName": ""
+    }
+  },
+
+  "friendship": {
+    "acceptId": "",
+    "add": {
+      "userName": "USER_NAME",
+      "hello": ""
+    },
+    "search": {
+      "phone": "PHONE_NUMBER",
+      "weixin": "WEIXIN_ID"
+    }
+  },
+
+  "message": {
+    "send": {
+      "chatroomId": "CHATROOM_ID"
+    }
+  },
+
+  "room": {
+    "chatroomId": "CHATROOM_ID",
+
+    "add": {
+      "memberUserName": "USER_NAME"
+    },
+
+    "create": {
+      "memberUserNameList": ["USER_NAME", "USER_NAME"],
+      "roomName": ""
+    },
+
+    "topic": {
+      "changeName": ""
+    },
+
+    "delete": {
+      "memberUserName": "USER_NAME"
+    },
+
+    "announce": {
+      "newAnnouncement": ""
+    }
+  }
+}

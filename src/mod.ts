@@ -1,11 +1,5 @@
-import { VERSION }    from './version'
-import { PuppetMock } from './puppet-mock'
+import { VERSION } from "./version";
+import { PuppetPadlocal } from "./puppet-padlocal";
 
-import * as mock from './mock/mod'
-
-export {
-  VERSION,
-  PuppetMock,
-  mock,
-}
-export default PuppetMock
+export { VERSION, PuppetPadlocal };
+export default PuppetPadlocal;

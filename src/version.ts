@@ -1,7 +1,4 @@
-
 /**
- * This file will be overwrite when we publish NPM module
- * by scripts/generate_version.ts
+ * This file was auto generated from scripts/generate-version.sh
  */
-
-export const VERSION = '0.0.0'
+export const VERSION: string = '0.1.0'
