@@ -267,8 +267,7 @@ class PuppetPadlocal extends Puppet {
 
   // @ts-ignore
   public async contactSelfSignature(signature: string): Promise<void> {
-    // TODO:
-    return;
+    await this._client.api.updateSelfSignature(signature);
   }
 
   public contactAlias(contactId: string): Promise<string>;

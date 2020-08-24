@@ -24,7 +24,6 @@ describe("contact", () => {
   });
 
   test("set self signature", async () => {
-    // TODO:
     const toSignature: string = config.get("test.contact.changeSignature");
     await puppet.contactSelfSignature(toSignature);
   });
