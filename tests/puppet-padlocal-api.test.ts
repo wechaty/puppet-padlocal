@@ -14,7 +14,6 @@ afterAll(async () => {
 
 describe("contact", () => {
   test("set self name", async () => {
-    // TODO:
     const toName: string = config.get("test.contact.changeNickName");
     await puppet.contactSelfName(toName);
   });

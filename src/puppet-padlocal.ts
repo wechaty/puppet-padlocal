@@ -255,8 +255,7 @@ class PuppetPadlocal extends Puppet {
 
   // @ts-ignore
   public async contactSelfName(name: string): Promise<void> {
-    // TODO:
-    return;
+    await this._client.api.updateSelfNickName(name);
   }
 
   public async contactSelfQRCode(): Promise<string> {
