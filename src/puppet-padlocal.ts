@@ -274,7 +274,7 @@ class PuppetPadlocal extends Puppet {
   public contactAlias(contactId: string, alias: string | null): Promise<void>;
   // @ts-ignore
   public async contactAlias(contactId: string, alias?: string | null): Promise<void | string> {
-    // TODO:
+    await this._client.api.updateContactRemark(contactId, alias || "");
   }
 
   public async contactAvatar(contactId: string): Promise<FileBox>;

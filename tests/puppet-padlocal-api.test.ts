@@ -29,11 +29,8 @@ describe("contact", () => {
   });
 
   test("set other contact alias", async () => {
-    // TODO:
     const userName: string = config.get("test.contact.alias.userName");
     const toAlias: string = config.get("test.contact.alias.aliasName");
-    await puppet.contactAlias(userName);
-
     await puppet.contactAlias(userName, toAlias);
   });
 
