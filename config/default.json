@@ -67,6 +67,10 @@
 
       "announce": {
         "newAnnouncement": ""
+      },
+
+      "quit": {
+        "id": "CHATROOM_ID"
       }
     }
   }

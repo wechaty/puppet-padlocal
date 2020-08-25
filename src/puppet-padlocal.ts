@@ -769,9 +769,8 @@ class PuppetPadlocal extends Puppet {
     return fileBox.toQRCode();
   }
 
-  // @ts-ignore
   public async roomQuit(roomId: string): Promise<void> {
-    // TODO:
+    await this._client.api.quitChatRoom(roomId);
   }
 
   public async roomTopic(roomId: string): Promise<string>;

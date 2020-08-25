@@ -187,4 +187,9 @@ describe("room", () => {
     expect(memberList).toBeTruthy();
     expect(memberList.length).toBeGreaterThan(0);
   });
+
+  test("room quit", async () => {
+    const roomId: string = config.get("test.room.quit.id");
+    await puppet.roomQuit(roomId);
+  });
 });
