@@ -6113,10 +6113,10 @@ package-json@^6.3.0:
     registry-url "^5.0.0"
     semver "^6.2.0"
 
-padlocal-client-ts@^0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/padlocal-client-ts/-/padlocal-client-ts-0.1.13.tgz#50f62c75f77125d6d847500adf996be30d71de48"
-  integrity sha512-lwbfUVtuN70lbwdbvlJoIBGPiIEmYI4SQxzW3SawRjI5oknEMQQ+qxWfkqHtrpjCRemu380g8mggkA4aUQjqdQ==
+padlocal-client-ts@^0.1.14:
+  version "0.1.14"
+  resolved "https://registry.yarnpkg.com/padlocal-client-ts/-/padlocal-client-ts-0.1.14.tgz#08721521f06639c760c856df8bb8cc53ee07c09e"
+  integrity sha512-f21+Qpg/Y8luHZD4iiSGtJSBwc+UMr3ZyGZ7Q9D8VLM9om5QUxorkgRMgl/7ZK+OuzCv7FYvyP44OP0q7QHIFQ==
   dependencies:
     "@grpc/grpc-js" "^1.1.3"
     "@types/crypto-js" "^3.1.47"

@@ -33,6 +33,7 @@ import {
   Message,
   QRCodeEvent,
   QRCodeStatus,
+  SendTextMessageResponse,
   SyncEvent,
 } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
@@ -49,6 +50,7 @@ import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/mess
 import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
 import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
+import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 
 export type PuppetPadlocalOptions = PuppetOptions & {};
 
@@ -110,7 +112,7 @@ class PuppetPadlocal extends Puppet {
       [ScanStatus.Timeout]: "Timeout",
     };
 
-    const onQrCodeEvent = (qrCodeEvent: QRCodeEvent) => {
+    const onQrCodeEvent = async (qrCodeEvent: QRCodeEvent) => {
       let scanStatus: ScanStatus = ScanStatus.Unknown;
       let qrCodeImageURL: string | undefined;
       switch (qrCodeEvent.getStatus()) {
@@ -207,6 +209,11 @@ class PuppetPadlocal extends Puppet {
 
     this._cacheMgr = new CacheManager(userId);
     await this._cacheMgr.init();
+
+    const oldContact = await this._cacheMgr!.getContact(this.id!);
+    if (!oldContact) {
+      await this._cacheMgr!.setContact(this.id!, this._client.selfContact!.toObject());
+    }
   }
 
   /**
@@ -582,11 +589,26 @@ class PuppetPadlocal extends Puppet {
   }
 
   // @ts-ignore
-  public async messageSendFile(toUserName: string, file: FileBox): Promise<void> {
+  public async messageSendFile(toUserName: string, file: FileBox): Promise<void | string> {
     // image/jpeg, image/png
     if (file.mimeType?.startsWith("image/")) {
       const imageData = await file.toBuffer();
-      await this._client.api.sendImageMessage(genIdempotentId(), toUserName, imageData);
+      const response = await this._client.api.sendImageMessage(genIdempotentId(), toUserName, imageData);
+
+      const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: [图片]` : "[图片]";
+
+      await this._onSendMessage(
+        new Message()
+          .setType(WechatMessageType.Image)
+          .setFromusername(this.id!)
+          .setTousername(toUserName)
+          .setBinarypayload(imageData)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getClientmsgid(),
+        response.getNewclientmsgid(),
+        response.getCreatetime()
+      );
     }
 
     // audio/silk
@@ -606,7 +628,7 @@ class PuppetPadlocal extends Puppet {
     }
   }
 
-  public async messageSendMiniProgram(conversationId: string, mpPayload: MiniProgramPayload): Promise<void> {
+  public async messageSendMiniProgram(toUserName: string, mpPayload: MiniProgramPayload): Promise<void> {
     const miniProgram = new AppMessageMiniProgram();
     mpPayload.appid && miniProgram.setMpappid(mpPayload.appid);
     mpPayload.description && miniProgram.setDescription(mpPayload.description);
@@ -620,11 +642,32 @@ class PuppetPadlocal extends Puppet {
       miniProgram.setThumbimage(thumb);
     }
 
-    await this._client.api.sendAppMessageMiniProgram(genIdempotentId(), conversationId, miniProgram);
+    await this._client.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
   }
 
-  public async messageSendText(conversationId: string, text: string): Promise<void> {
-    await this._client.api.sendTextMessage(genIdempotentId(), conversationId, text);
+  public async messageSendText(toUserName: string, text: string): Promise<string> {
+    const response: SendTextMessageResponse = await this._client.api.sendTextMessage(
+      genIdempotentId(),
+      toUserName,
+      text
+    );
+
+    const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: ${text}` : text;
+
+    await this._onSendMessage(
+      new Message()
+        .setType(WechatMessageType.Text)
+        .setFromusername(this.id!)
+        .setTousername(toUserName)
+        .setContent(text)
+        .setPushcontent(pushContent),
+      response.getMsgid(),
+      response.getClientmsgid(),
+      response.getNewclientmsgid(),
+      response.getCreatetime()
+    );
+
+    return response.getMsgid();
   }
 
   public async messageSendUrl(conversationId: string, linkPayload: UrlLinkPayload): Promise<void> {
@@ -643,7 +686,17 @@ class PuppetPadlocal extends Puppet {
 
   // @ts-ignore
   public async messageRecall(messageId: string): Promise<boolean> {
-    // TODO: recall message
+    const message = (await this._cacheMgr!.getMessage(messageId))!;
+
+    const messageSend = (await this._cacheMgr!.getMessageSendResult(messageId))!;
+    await this._client.api.revokeMessage(
+      messageId,
+      messageSend.clientMsgId,
+      messageSend.newClientMsgId,
+      messageSend.createTime,
+      message.fromusername,
+      message.tousername
+    );
   }
 
   public async messageForward(toUserName: string, messageId: string): Promise<void> {
@@ -900,8 +953,10 @@ class PuppetPadlocal extends Puppet {
       const roomId = contact.getUsername();
       await this._cacheMgr!.setRoom(roomId, contact.toObject());
       await this._cacheMgr!.deleteRoomMember(roomId);
+      await this.roomPayloadDirty(roomId);
     } else {
       await this._cacheMgr!.setContact(contact.getUsername(), contact.toObject());
+      await this.contactPayloadDirty(contact.getUsername());
     }
   }
 
@@ -968,6 +1023,25 @@ class PuppetPadlocal extends Puppet {
         const roomTopic: EventRoomTopicPayload = parseRet.payload;
         this.emit("room-topic", roomTopic);
     }
+  }
+
+  private async _onSendMessage(
+    partialMessage: Message,
+    messageId: string,
+    clientMsgId: string,
+    newClientMsgId: string,
+    createTime: number
+  ) {
+    partialMessage.setId(messageId);
+    partialMessage.setCreatetime(createTime);
+
+    await this._cacheMgr!.setMessage(messageId, partialMessage.toObject());
+
+    await this._cacheMgr!.setMessageSendResult(messageId, {
+      clientMsgId,
+      newClientMsgId,
+      createTime,
+    });
   }
 }
 

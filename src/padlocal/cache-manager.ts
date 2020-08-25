@@ -7,6 +7,7 @@ import { log } from "brolog";
 import FlashStoreSync from "flash-store";
 import { ChatRoomMember, Contact, Label, Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
+import { MessageSendResult } from "./schemas/model-message";
 
 const PRE = "[CacheManager]";
 
@@ -16,6 +17,7 @@ export class CacheManager {
   private readonly _userName: string;
 
   private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
+  private _messageSendResultCache?: LRU<string, MessageSendResult>;
   private _contactCache?: FlashStoreSync<Contact.AsObject>;
   private _roomCache?: FlashStoreSync<Contact.AsObject>;
   private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
@@ -49,6 +51,15 @@ export class CacheManager {
     }
 
     this._messageCache = new LRU<string, Message.AsObject>({
+      max: 1000,
+      // length: function (n) { return n * 2},
+      dispose(key: string, val: any) {
+        log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
+      },
+      maxAge: 1000 * 60 * 60,
+    });
+
+    this._messageSendResultCache = new LRU<string, MessageSendResult>({
       max: 1000,
       // length: function (n) { return n * 2},
       dispose(key: string, val: any) {
@@ -117,6 +128,14 @@ export class CacheManager {
 
   public async hasMessage(messageId: string): Promise<boolean> {
     return this._messageCache!.has(messageId);
+  }
+
+  public async getMessageSendResult(messageId: string): Promise<MessageSendResult | undefined> {
+    return this._messageSendResultCache!.get(messageId);
+  }
+
+  public async setMessageSendResult(messageId: string, messageSendResult: MessageSendResult): Promise<void> {
+    await this._messageSendResultCache!.set(messageId, messageSendResult);
   }
 
   /**

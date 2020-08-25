@@ -21,52 +21,53 @@
         "aliasName": ""
       }
     },
+
     "tag": {
       "targetUserName": "USER_NAME",
       "addDeleteTagName": ""
-    }
-  },
-
-  "friendship": {
-    "acceptId": "",
-    "add": {
-      "userName": "USER_NAME",
-      "hello": ""
-    },
-    "search": {
-      "phone": "PHONE_NUMBER",
-      "weixin": "WEIXIN_ID"
-    }
-  },
-
-  "message": {
-    "send": {
-      "chatroomId": "CHATROOM_ID"
-    }
-  },
-
-  "room": {
-    "chatroomId": "CHATROOM_ID",
-
-    "add": {
-      "memberUserName": "USER_NAME"
     },
 
-    "create": {
-      "memberUserNameList": ["USER_NAME", "USER_NAME"],
-      "roomName": ""
+    "friendship": {
+      "acceptId": "",
+      "add": {
+        "userName": "USER_NAME",
+        "hello": ""
+      },
+      "search": {
+        "phone": "PHONE_NUMBER",
+        "weixin": "WEIXIN_ID"
+      }
     },
 
-    "topic": {
-      "changeName": ""
+    "message": {
+      "send": {
+        "chatroomId": "CHATROOM_ID"
+      }
     },
 
-    "delete": {
-      "memberUserName": "USER_NAME"
-    },
+    "room": {
+      "chatroomId": "CHATROOM_ID",
 
-    "announce": {
-      "newAnnouncement": ""
+      "add": {
+        "memberUserName": "USER_NAME"
+      },
+
+      "create": {
+        "memberUserNameList": ["USER_NAME", "USER_NAME"],
+        "roomName": ""
+      },
+
+      "topic": {
+        "changeName": ""
+      },
+
+      "delete": {
+        "memberUserName": "USER_NAME"
+      },
+
+      "announce": {
+        "newAnnouncement": ""
+      }
     }
   }
 }

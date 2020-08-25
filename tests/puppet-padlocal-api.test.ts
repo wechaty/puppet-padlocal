@@ -1,4 +1,4 @@
-import { Puppet } from "wechaty-puppet";
+import { MessageType, Puppet } from "wechaty-puppet";
 import { prepareSignedOnPuppet } from "./common";
 import config from "config";
 
@@ -104,9 +104,30 @@ describe("friendship", () => {
 });
 
 describe("message", () => {
-  test("send text", async () => {
+  const sendTextMessage = async (): Promise<string> => {
     const toUserName: string = config.get("test.message.send.chatroomId");
-    await puppet.messageSendText(toUserName, "hi");
+    const messageId: string = (await puppet.messageSendText(toUserName, `hi: ${Date.now()}`)) as string;
+
+    const messagePayload = await puppet.messagePayload(messageId);
+    expect(messagePayload).toBeTruthy();
+    expect(messagePayload.id).toBeTruthy();
+    expect(messagePayload.type).toBe(MessageType.Text);
+    expect(messagePayload.fromId).toBe(puppet.selfId());
+    expect(messagePayload.toId).toBeTruthy();
+
+    return messageId;
+  };
+
+  test("send text", async () => {
+    await sendTextMessage();
+  });
+
+  test("recall message", async () => {
+    const messageId = await sendTextMessage();
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    await puppet.messageRecall(messageId);
   });
 });
 
