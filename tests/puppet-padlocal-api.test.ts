@@ -104,16 +104,21 @@ describe("friendship", () => {
 });
 
 describe("message", () => {
-  const sendTextMessage = async (): Promise<string> => {
-    const toUserName: string = config.get("test.message.send.chatroomId");
-    const messageId: string = (await puppet.messageSendText(toUserName, `hi: ${Date.now()}`)) as string;
+  const toChatRoomId: string = config.get("test.message.send.chatroomId");
 
+  const expectSendMessage = async (messageId: string) => {
     const messagePayload = await puppet.messagePayload(messageId);
     expect(messagePayload).toBeTruthy();
     expect(messagePayload.id).toBeTruthy();
     expect(messagePayload.type).toBe(MessageType.Text);
     expect(messagePayload.fromId).toBe(puppet.selfId());
     expect(messagePayload.toId).toBeTruthy();
+  };
+
+  const sendTextMessage = async (): Promise<string> => {
+    const messageId: string = (await puppet.messageSendText(toChatRoomId, `hi: ${Date.now()}`)) as string;
+
+    await expectSendMessage(messageId);
 
     return messageId;
   };
@@ -128,6 +133,15 @@ describe("message", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     await puppet.messageRecall(messageId);
+  });
+
+  test("send contact cart", async () => {
+    const contactCardId: string = config.get("test.message.send.contactCardId");
+
+    const messageId = (await puppet.messageSendContact(toChatRoomId, contactCardId)) as string;
+    expect(messageId).toBeTruthy();
+
+    await expectSendMessage(messageId);
   });
 });
 

@@ -583,9 +583,43 @@ class PuppetPadlocal extends Puppet {
    * send message
    ***************************************************************************/
 
-  // @ts-ignore
-  public async messageSendContact(toUserName: string, contactId: string): Promise<void> {
-    // TODO: send contact
+  public async messageSendContact(toUserName: string, contactId: string): Promise<string> {
+    const contactPayload = await this.contactRawPayload(contactId);
+    const contact = new Contact()
+      .setUsername(contactPayload.username)
+      .setNickname(contactPayload.nickname)
+      .setAvatar(contactPayload.avatar)
+      .setGender(contactPayload.gender)
+      .setSignature(contactPayload.signature)
+      .setAlias(contactPayload.alias)
+      .setLabel(contactPayload.label)
+      .setRemark(contactPayload.remark)
+      .setCity(contactPayload.city)
+      .setProvince(contactPayload.province)
+      .setCountry(contactPayload.country)
+      .setContactaddscene(contactPayload.contactaddscene)
+      .setStranger(contactPayload.stranger);
+    const response = await this._client.api.sendContactCardMessage(genIdempotentId(), toUserName, contact);
+
+    const pushContent =
+      (isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: ` : "") +
+      "向你推荐了" +
+      contact.getNickname();
+
+    await this._onSendMessage(
+      new Message()
+        .setType(WechatMessageType.ShareCard)
+        .setFromusername(this.id!)
+        .setTousername(toUserName)
+        .setContent("SEND CONTACT")
+        .setPushcontent(pushContent),
+      response.getMsgid(),
+      response.getClientmsgid(),
+      response.getNewclientmsgid(),
+      response.getCreatetime()
+    );
+
+    return response.getMsgid();
   }
 
   // @ts-ignore
@@ -684,7 +718,6 @@ class PuppetPadlocal extends Puppet {
     await this._client.api.sendAppMessageLink(genIdempotentId(), conversationId, appMessageLink);
   }
 
-  // @ts-ignore
   public async messageRecall(messageId: string): Promise<boolean> {
     const message = (await this._cacheMgr!.getMessage(messageId))!;
 
@@ -697,6 +730,8 @@ class PuppetPadlocal extends Puppet {
       message.fromusername,
       message.tousername
     );
+
+    return true;
   }
 
   public async messageForward(toUserName: string, messageId: string): Promise<void> {
