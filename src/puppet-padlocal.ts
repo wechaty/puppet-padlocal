@@ -827,8 +827,7 @@ class PuppetPadlocal extends Puppet {
 
   // @ts-ignore
   public async roomInvitationAccept(roomInvitationId: string): Promise<void> {
-    // const roomInvitation = await this.roomInvitationRawPayload(roomInvitationId);
-    // TODO:
+    throw new Error(`Accept room invitation is not unsupported`);
   }
 
   /****************************************************************************
