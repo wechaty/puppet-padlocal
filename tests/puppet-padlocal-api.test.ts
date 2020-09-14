@@ -1,4 +1,4 @@
-import { MessageType, Puppet } from "wechaty-puppet";
+import { FileBox, MessageType, Puppet } from "wechaty-puppet";
 import { prepareSignedOnPuppet } from "./common";
 import config from "config";
 
@@ -105,6 +105,7 @@ describe("friendship", () => {
 
 describe("message", () => {
   const toChatRoomId: string = config.get("test.message.send.chatroomId");
+  const toUserName: string = config.get("test.message.send.toUserName");
 
   const expectSendMessage = async (messageId: string) => {
     const messagePayload = await puppet.messagePayload(messageId);
@@ -135,13 +136,62 @@ describe("message", () => {
     await puppet.messageRecall(messageId);
   });
 
-  test("send contact cart", async () => {
+  test("send contact card", async () => {
     const contactCardId: string = config.get("test.message.send.contactCardId");
 
     const messageId = (await puppet.messageSendContact(toChatRoomId, contactCardId)) as string;
     expect(messageId).toBeTruthy();
 
     await expectSendMessage(messageId);
+  });
+
+  test("send image", async () => {
+    const imageFilePath: string = config.get("test.message.send.imageFilePath");
+    const fileBox = FileBox.fromFile(imageFilePath);
+    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+
+    console.log(`send image message id: ${messageId}`);
+
+    expect(messageId).toBeTruthy();
+  });
+
+  test("send voice", async () => {
+    const voiceFilePath: string = config.get("test.message.send.voiceFilePath");
+    const voiceLength: number = config.get("test.message.send.voiceLength");
+
+    const fileBox = FileBox.fromFile(voiceFilePath);
+    fileBox.mimeType = "audio/silk";
+    fileBox.metadata = {
+      voiceLength,
+    };
+
+    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+
+    console.log(`send voice message id: ${messageId}`);
+
+    expect(messageId).toBeTruthy();
+  });
+
+  test("send video", async () => {
+    const videoFilePath: string = config.get("test.message.send.videoFilePath");
+    const fileBox = FileBox.fromFile(videoFilePath);
+
+    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+
+    console.log(`send video message id: ${messageId}`);
+
+    expect(messageId).toBeTruthy();
+  });
+
+  test("send file", async () => {
+    const fileFilePath: string = config.get("test.message.send.fileFilePath");
+    const fileBox = FileBox.fromFile(fileFilePath);
+
+    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+
+    console.log(`send file message id: ${messageId}`);
+
+    expect(messageId).toBeTruthy();
   });
 });
 

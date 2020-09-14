@@ -5,9 +5,8 @@ import LRU from "lru-cache";
 
 import { log } from "brolog";
 import FlashStoreSync from "flash-store";
-import { ChatRoomMember, Contact, Label, Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { ChatRoomMember, Contact, Label, Message, MessageRevokeInfo } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
-import { MessageSendResult } from "./schemas/model-message";
 
 const PRE = "[CacheManager]";
 
@@ -17,7 +16,7 @@ export class CacheManager {
   private readonly _userName: string;
 
   private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
-  private _messageSendResultCache?: LRU<string, MessageSendResult>;
+  private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
   private _contactCache?: FlashStoreSync<Contact.AsObject>;
   private _roomCache?: FlashStoreSync<Contact.AsObject>;
   private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
@@ -59,7 +58,7 @@ export class CacheManager {
       maxAge: 1000 * 60 * 60,
     });
 
-    this._messageSendResultCache = new LRU<string, MessageSendResult>({
+    this._messageRevokeCache = new LRU<string, MessageRevokeInfo.AsObject>({
       max: 1000,
       // length: function (n) { return n * 2},
       dispose(key: string, val: any) {
@@ -130,12 +129,12 @@ export class CacheManager {
     return this._messageCache!.has(messageId);
   }
 
-  public async getMessageSendResult(messageId: string): Promise<MessageSendResult | undefined> {
-    return this._messageSendResultCache!.get(messageId);
+  public async getMessageRevokeInfo(messageId: string): Promise<MessageRevokeInfo.AsObject | undefined> {
+    return this._messageRevokeCache!.get(messageId);
   }
 
-  public async setMessageSendResult(messageId: string, messageSendResult: MessageSendResult): Promise<void> {
-    await this._messageSendResultCache!.set(messageId, messageSendResult);
+  public async setMessageRevokeInfo(messageId: string, messageSendResult: MessageRevokeInfo.AsObject): Promise<void> {
+    await this._messageRevokeCache!.set(messageId, messageSendResult);
   }
 
   /**

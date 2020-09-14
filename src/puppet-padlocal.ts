@@ -31,6 +31,7 @@ import {
   LoginPolicy,
   LoginType,
   Message,
+  MessageRevokeInfo,
   QRCodeEvent,
   QRCodeStatus,
   SendTextMessageResponse,
@@ -51,6 +52,7 @@ import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
 import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
 import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
+import * as XMLParser from "fast-xml-parser";
 
 export type PuppetPadlocalOptions = PuppetOptions & {};
 
@@ -260,7 +262,6 @@ class PuppetPadlocal extends Puppet {
    * contact
    ***************************************************************************/
 
-  // @ts-ignore
   public async contactSelfName(name: string): Promise<void> {
     await this._client.api.updateSelfNickName(name);
   }
@@ -272,14 +273,12 @@ class PuppetPadlocal extends Puppet {
     return fileBox.toQRCode();
   }
 
-  // @ts-ignore
   public async contactSelfSignature(signature: string): Promise<void> {
     await this._client.api.updateSelfSignature(signature);
   }
 
   public contactAlias(contactId: string): Promise<string>;
   public contactAlias(contactId: string, alias: string | null): Promise<void>;
-  // @ts-ignore
   public async contactAlias(contactId: string, alias?: string | null): Promise<void | string> {
     await this._client.api.updateContactRemark(contactId, alias || "");
   }
@@ -448,6 +447,11 @@ class PuppetPadlocal extends Puppet {
         }
         const audioFileBox = FileBox.fromBuffer(audioData, `message-${messageId}-audio.slk`);
         audioFileBox.mimeType = "audio/silk";
+        const msgXmlObj = XMLParser.parse(messagePayload.content);
+        const voiceLength = Math.round(parseInt(msgXmlObj.msg.voicemsg["@_voicelength"], 10) / 1000);
+        audioFileBox.metadata = {
+          voiceLength,
+        };
         return audioFileBox;
 
       case MessageType.Video:
@@ -614,19 +618,16 @@ class PuppetPadlocal extends Puppet {
         .setContent("SEND CONTACT")
         .setPushcontent(pushContent),
       response.getMsgid(),
-      response.getClientmsgid(),
-      response.getNewclientmsgid(),
-      response.getCreatetime()
+      response.getMessagerevokeinfo()!
     );
 
     return response.getMsgid();
   }
 
-  // @ts-ignore
-  public async messageSendFile(toUserName: string, file: FileBox): Promise<void | string> {
+  public async messageSendFile(toUserName: string, fileBox: FileBox): Promise<void | string> {
     // image/jpeg, image/png
-    if (file.mimeType?.startsWith("image/")) {
-      const imageData = await file.toBuffer();
+    if (fileBox.mimeType?.startsWith("image/")) {
+      const imageData = await fileBox.toBuffer();
       const response = await this._client.api.sendImageMessage(genIdempotentId(), toUserName, imageData);
 
       const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: [图片]` : "[图片]";
@@ -639,30 +640,83 @@ class PuppetPadlocal extends Puppet {
           .setBinarypayload(imageData)
           .setPushcontent(pushContent),
         response.getMsgid(),
-        response.getClientmsgid(),
-        response.getNewclientmsgid(),
-        response.getCreatetime()
+        response.getMessagerevokeinfo()!
       );
+
+      return response.getMsgid();
     }
 
     // audio/silk
-    else if (file.mimeType?.startsWith("audio/")) {
-      // TODO: send audio
+    else if (fileBox.mimeType?.startsWith("audio/")) {
+      const audioData = await fileBox.toBuffer();
+      const response = await this._client.api.sendVoiceMessage(
+        genIdempotentId(),
+        toUserName,
+        audioData,
+        fileBox.metadata.voiceLength
+      );
+
+      const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: [语音]` : "[语音]";
+
+      await this._onSendMessage(
+        new Message()
+          .setType(WechatMessageType.Image)
+          .setFromusername(this.id!)
+          .setTousername(toUserName)
+          .setBinarypayload(audioData)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getMessagerevokeinfo()!
+      );
+
+      return response.getMsgid();
     }
 
     // video/mp4
-    else if (file.mimeType?.startsWith("video/")) {
-      // TODO: send video
+    else if (fileBox.mimeType?.startsWith("video/")) {
+      const videoData = await fileBox.toBuffer();
+      const response = await this._client.api.sendVideoMessage(genIdempotentId(), toUserName, videoData);
+
+      const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: [视频]` : "[视频]";
+
+      await this._onSendMessage(
+        new Message()
+          .setType(WechatMessageType.Image)
+          .setFromusername(this.id!)
+          .setTousername(toUserName)
+          .setBinarypayload(videoData)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getMessagerevokeinfo()!
+      );
+
+      return response.getMsgid();
     }
 
-    // try to send any other type as binary file
+    // try to send any other type as binary fileBox
     // application/octet-stream
     else {
-      // TODO: send binary file
+      const fileData = await fileBox.toBuffer();
+      const response = await this._client.api.sendFileMessage(genIdempotentId(), toUserName, fileData, fileBox.name);
+
+      const pushContent = isRoomId(toUserName) ? `${this._client.selfContact!.getNickname()}: [文件]` : "[文件]";
+
+      await this._onSendMessage(
+        new Message()
+          .setType(WechatMessageType.Image)
+          .setFromusername(this.id!)
+          .setTousername(toUserName)
+          .setBinarypayload(fileData)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getMessagerevokeinfo()!
+      );
+
+      return response.getMsgid();
     }
   }
 
-  public async messageSendMiniProgram(toUserName: string, mpPayload: MiniProgramPayload): Promise<void> {
+  public async messageSendMiniProgram(toUserName: string, mpPayload: MiniProgramPayload): Promise<string> {
     const miniProgram = new AppMessageMiniProgram();
     mpPayload.appid && miniProgram.setMpappid(mpPayload.appid);
     mpPayload.description && miniProgram.setDescription(mpPayload.description);
@@ -676,7 +730,7 @@ class PuppetPadlocal extends Puppet {
       miniProgram.setThumbimage(thumb);
     }
 
-    await this._client.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    return this._client.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
   }
 
   public async messageSendText(toUserName: string, text: string): Promise<string> {
@@ -696,9 +750,7 @@ class PuppetPadlocal extends Puppet {
         .setContent(text)
         .setPushcontent(pushContent),
       response.getMsgid(),
-      response.getClientmsgid(),
-      response.getNewclientmsgid(),
-      response.getCreatetime()
+      response.getMessagerevokeinfo()!
     );
 
     return response.getMsgid();
@@ -721,14 +773,15 @@ class PuppetPadlocal extends Puppet {
   public async messageRecall(messageId: string): Promise<boolean> {
     const message = (await this._cacheMgr!.getMessage(messageId))!;
 
-    const messageSend = (await this._cacheMgr!.getMessageSendResult(messageId))!;
+    const messageRevokeInfo = (await this._cacheMgr!.getMessageRevokeInfo(messageId))!;
     await this._client.api.revokeMessage(
       messageId,
-      messageSend.clientMsgId,
-      messageSend.newClientMsgId,
-      messageSend.createTime,
       message.fromusername,
-      message.tousername
+      message.tousername,
+      new MessageRevokeInfo()
+        .setClientmsgid(messageRevokeInfo.clientmsgid)
+        .setNewclientmsgid(messageRevokeInfo.newclientmsgid)
+        .setCreatetime(messageRevokeInfo.createtime)
     );
 
     return true;
@@ -825,8 +878,7 @@ class PuppetPadlocal extends Puppet {
     return Object.values(roomMemberMap).map((m) => m.username);
   }
 
-  // @ts-ignore
-  public async roomInvitationAccept(roomInvitationId: string): Promise<void> {
+  public async roomInvitationAccept(_roomInvitationId: string): Promise<void> {
     throw new Error(`Accept room invitation is not unsupported`);
   }
 
@@ -1058,23 +1110,12 @@ class PuppetPadlocal extends Puppet {
     }
   }
 
-  private async _onSendMessage(
-    partialMessage: Message,
-    messageId: string,
-    clientMsgId: string,
-    newClientMsgId: string,
-    createTime: number
-  ) {
+  private async _onSendMessage(partialMessage: Message, messageId: string, messageRevokeInfo: MessageRevokeInfo) {
     partialMessage.setId(messageId);
-    partialMessage.setCreatetime(createTime);
+    partialMessage.setCreatetime(messageRevokeInfo.getCreatetime());
 
     await this._cacheMgr!.setMessage(messageId, partialMessage.toObject());
-
-    await this._cacheMgr!.setMessageSendResult(messageId, {
-      clientMsgId,
-      newClientMsgId,
-      createTime,
-    });
+    await this._cacheMgr!.setMessageRevokeInfo(messageId, messageRevokeInfo.toObject());
   }
 }
 
