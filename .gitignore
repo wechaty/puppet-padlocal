@@ -70,3 +70,4 @@ t.*
 
 # node-config
 /config/local*
+/config/tls/*

@@ -56,7 +56,9 @@ import * as XMLParser from "fast-xml-parser";
 import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
 import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 
-export type PuppetPadlocalOptions = PuppetOptions & {};
+export type PuppetPadlocalOptions = PuppetOptions & {
+  serverCAFilePath?: string;
+};
 
 const PRE = "[PuppetPadlocal]";
 
@@ -76,7 +78,7 @@ class PuppetPadlocal extends Puppet {
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
 
-    this._client = new PadLocalClient(options.endpoint!, options.token!);
+    this._client = new PadLocalClient(options.endpoint!, options.token!, options.serverCAFilePath);
 
     this._client.on("kickout", async (_detail: KickOutEvent) => {
       this.emit("logout", { contactId: this.id!, data: JSON.stringify(_detail) });

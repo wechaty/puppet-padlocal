@@ -6118,10 +6118,10 @@ package-json@^6.3.0:
     registry-url "^5.0.0"
     semver "^6.2.0"
 
-padlocal-client-ts@^0.1.20:
-  version "0.1.20"
-  resolved "https://registry.yarnpkg.com/padlocal-client-ts/-/padlocal-client-ts-0.1.20.tgz#766ffb4e5e5a5a53b7b5cf4e11e2e705abdde50d"
-  integrity sha512-GF7QM32IUc0acggpzvEzXLoVdS6KQa6VZEyaZlcAT0iwCEdAxFfSvdr8j8td8rO+ZaZZo/7RSn165y0CCjQGNA==
+padlocal-client-ts@^0.1.21:
+  version "0.1.21"
+  resolved "https://registry.yarnpkg.com/padlocal-client-ts/-/padlocal-client-ts-0.1.21.tgz#1231994c9bec0f6f3f2be0a8ba5fe9657afac67a"
+  integrity sha512-ehUW8lcCheE+GQK+5ZuaB1m2EreOrlkJWhy9MmAOxKgng/wAhHHvYqTNseOftC7lUSToxtleOggHWs3wX5t6mw==
   dependencies:
     "@grpc/grpc-js" "^1.1.3"
     "@types/crypto-js" "^3.1.47"

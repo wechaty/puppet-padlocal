@@ -12,10 +12,13 @@ export async function prepareSignedOnPuppet(prepareFunc?: PreparePuppetFunc, log
     const host: string = config.get("padLocal.host");
     const port: number = config.get("padLocal.port");
     const token: string = config.get("padLocal.token");
+    const tlsEnabled: boolean = config.get("padLocal.tls.enabled");
+    const serverCAFilePath: string = config.get("padLocal.tls.serverCAFilePath");
 
     const puppet = new PuppetPadlocal({
       endpoint: `${host}:${port}`,
       token,
+      serverCAFilePath: tlsEnabled ? serverCAFilePath : undefined,
     });
 
     /**
