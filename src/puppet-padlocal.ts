@@ -26,6 +26,7 @@ import {
   AppMessageMiniProgram,
   ChatRoomMember,
   Contact,
+  EncryptedFileType,
   ImageType as PadLocalImageType,
   Label,
   LoginPolicy,
@@ -50,9 +51,10 @@ import { appMessageParser } from "./padlocal/message-parser/helpers/message-appm
 import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram";
 import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
-import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
 import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import * as XMLParser from "fast-xml-parser";
+import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
+import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 
 export type PuppetPadlocalOptions = PuppetOptions & {};
 
@@ -441,14 +443,25 @@ class PuppetPadlocal extends Puppet {
       case MessageType.Audio:
         let audioData: Buffer;
         if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
-          audioData = Buffer.from(messagePayload.binarypayload);
+          // json marshalled binary into base64 string
+          if (typeof messagePayload.binarypayload === "string") {
+            audioData = Buffer.from(messagePayload.binarypayload, "base64");
+          } else {
+            audioData = Buffer.from(messagePayload.binarypayload);
+          }
         } else {
           audioData = await this._client.api.getMessageVoice(messageId, message.text!, message.toId!);
         }
         const audioFileBox = FileBox.fromBuffer(audioData, `message-${messageId}-audio.slk`);
         audioFileBox.mimeType = "audio/silk";
-        const msgXmlObj = XMLParser.parse(messagePayload.content);
-        const voiceLength = Math.round(parseInt(msgXmlObj.msg.voicemsg["@_voicelength"], 10) / 1000);
+
+        const options = {
+          attributeNamePrefix: "",
+          attrNodeName: "$",
+          ignoreAttributes: false,
+        };
+        const msgXmlObj = XMLParser.parse(messagePayload.content, options);
+        const voiceLength = parseInt(msgXmlObj.msg.voicemsg.$.voicelength, 10);
         audioFileBox.metadata = {
           voiceLength,
         };
@@ -467,6 +480,30 @@ class PuppetPadlocal extends Puppet {
         binaryFileBox.mimeType = "application/octet-stream";
         return binaryFileBox;
 
+      case MessageType.Emoticon:
+        const emotionPayload = await emotionPayloadParser(messagePayload);
+        return FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`);
+
+      case MessageType.MiniProgram:
+        const thumbData = await this._client.api.getMessageMiniProgramThumb(
+          messagePayload.content,
+          messagePayload.tousername
+        );
+        return FileBox.fromBuffer(thumbData, `message-${messageId}-miniprogram-thumb.jpg`);
+
+      case MessageType.Url:
+        const appPayload = await appMessageParser(messagePayload);
+
+        if (appPayload.thumburl) {
+          return FileBox.fromUrl(appPayload.thumburl);
+        } else {
+          const urlThumbData = await this._client.api.getMessageAttachThumb(
+            messagePayload.content,
+            messagePayload.tousername
+          );
+          return FileBox.fromBuffer(urlThumbData, `message-${messageId}-url-thumb.jpg`);
+        }
+
       default:
         throw new Error(`Can not get file for message: ${messageId}`);
     }
@@ -476,83 +513,37 @@ class PuppetPadlocal extends Puppet {
     const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
     const message: MessagePayload = await this.messageRawPayloadParser(messagePayload);
 
-    let retFileBox: FileBox;
-
-    switch (message.type) {
-      case MessageType.Image:
-        if (imageType === ImageType.Thumbnail) {
-          if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
-            const imageData = Buffer.from(messagePayload.binarypayload);
-            return FileBox.fromBuffer(imageData, `message-${messageId}-image-thumb.jpg`);
-          }
-        }
-
-        let pbImageType: PadLocalImageType;
-        if (imageType === ImageType.Thumbnail) {
-          pbImageType = PadLocalImageType.THUMB;
-        } else if (imageType === ImageType.HD) {
-          pbImageType = PadLocalImageType.HD;
-        } else {
-          pbImageType = PadLocalImageType.NORMAL;
-        }
-        const ret = await this._client.api.getMessageImage(
-          messagePayload.content,
-          messagePayload.tousername,
-          pbImageType
-        );
-
-        let imageNameSuffix: string;
-        if (ret.imageType === PadLocalImageType.THUMB) {
-          imageNameSuffix = "thumb";
-        } else if (ret.imageType === PadLocalImageType.HD) {
-          imageNameSuffix = "hd";
-        } else {
-          imageNameSuffix = "normal";
-        }
-
-        retFileBox = FileBox.fromBuffer(ret.imageData, `message-${messageId}-image-${imageNameSuffix}.jpg`);
-
-        break;
-
-      case MessageType.Emoticon:
-        const emotionPayload = await emotionPayloadParser(messagePayload);
-        retFileBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`);
-
-        break;
-
-      case MessageType.Video:
-        const videoThumbData = await this._client.api.getMessageVideoThumb(
-          messagePayload.content,
-          messagePayload.tousername
-        );
-        retFileBox = FileBox.fromBuffer(videoThumbData, `message-${messageId}-video-thumb.jpg`);
-
-        break;
-
-      case MessageType.Url:
-        const appPayload = await appMessageParser(messagePayload);
-
-        if (appPayload.thumburl) {
-          retFileBox = FileBox.fromUrl(appPayload.thumburl);
-        } else {
-          const urlThumbData = await this._client.api.getMessageAttachThumb(
-            messagePayload.content,
-            messagePayload.tousername
-          );
-          retFileBox = FileBox.fromBuffer(urlThumbData, `message-${messageId}-url-thumb.jpg`);
-        }
-
-        break;
-
-      default:
-        throw new Error(`Can not get image for message: ${messageId}`);
+    if (message.type !== MessageType.Image) {
+      throw new Error(`message ${messageId} is not image type message`);
     }
 
-    if (!retFileBox.mimeType) {
-      retFileBox.mimeType = "image/jpeg";
+    if (imageType === ImageType.Thumbnail) {
+      if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
+        const imageData = Buffer.from(messagePayload.binarypayload);
+        return FileBox.fromBuffer(imageData, `message-${messageId}-image-thumb.jpg`);
+      }
     }
 
-    return retFileBox;
+    let pbImageType: PadLocalImageType;
+    if (imageType === ImageType.Thumbnail) {
+      pbImageType = PadLocalImageType.THUMB;
+    } else if (imageType === ImageType.HD) {
+      pbImageType = PadLocalImageType.HD;
+    } else {
+      pbImageType = PadLocalImageType.NORMAL;
+    }
+    const ret = await this._client.api.getMessageImage(messagePayload.content, messagePayload.tousername, pbImageType);
+
+    let imageNameSuffix: string;
+    if (ret.imageType === PadLocalImageType.THUMB) {
+      imageNameSuffix = "thumb";
+    } else if (ret.imageType === PadLocalImageType.HD) {
+      imageNameSuffix = "hd";
+    } else {
+      imageNameSuffix = "normal";
+    }
+
+    return FileBox.fromBuffer(ret.imageData, `message-${messageId}-image-${imageNameSuffix}.jpg`);
   }
 
   public async messageMiniProgram(messageId: string): Promise<MiniProgramPayload> {
@@ -574,6 +565,7 @@ class PuppetPadlocal extends Puppet {
       throw new Error("Can not get url from non url payload");
     }
 
+    // FIXME: thumb may not in appPayload.thumburl, but in appPayload.appAttachPayload
     const appPayload = await appMessageParser(rawPayload);
     return {
       description: appPayload.des,
@@ -624,7 +616,7 @@ class PuppetPadlocal extends Puppet {
     return response.getMsgid();
   }
 
-  public async messageSendFile(toUserName: string, fileBox: FileBox): Promise<void | string> {
+  public async messageSendFile(toUserName: string, fileBox: FileBox): Promise<string> {
     // image/jpeg, image/png
     if (fileBox.mimeType?.startsWith("image/")) {
       const imageData = await fileBox.toBuffer();
@@ -725,8 +717,13 @@ class PuppetPadlocal extends Puppet {
     mpPayload.title && miniProgram.setTitle(mpPayload.title);
     mpPayload.username && miniProgram.setMpappusername(mpPayload.username);
 
-    if (mpPayload.thumbUrl) {
-      const thumb = await FileBox.fromUrl(mpPayload.thumbUrl).toBuffer();
+    if (mpPayload.thumbUrl && mpPayload.thumbKey) {
+      const thumb = await this._client.api.getEncryptedFile(
+        EncryptedFileType.IMAGE_THUMB,
+        mpPayload.thumbUrl,
+        hexStringToBytes(mpPayload.thumbKey),
+        ""
+      );
       miniProgram.setThumbimage(thumb);
     }
 
@@ -756,7 +753,7 @@ class PuppetPadlocal extends Puppet {
     return response.getMsgid();
   }
 
-  public async messageSendUrl(conversationId: string, linkPayload: UrlLinkPayload): Promise<void> {
+  public async messageSendUrl(conversationId: string, linkPayload: UrlLinkPayload): Promise<string> {
     const appMessageLink = new AppMessageLink();
 
     appMessageLink.setTitle(linkPayload.title).setUrl(linkPayload.url);
@@ -767,7 +764,7 @@ class PuppetPadlocal extends Puppet {
       appMessageLink.setThumbimage(thumb);
     }
 
-    await this._client.api.sendAppMessageLink(genIdempotentId(), conversationId, appMessageLink);
+    return this._client.api.sendAppMessageLink(genIdempotentId(), conversationId, appMessageLink);
   }
 
   public async messageRecall(messageId: string): Promise<boolean> {
@@ -787,25 +784,36 @@ class PuppetPadlocal extends Puppet {
     return true;
   }
 
-  public async messageForward(toUserName: string, messageId: string): Promise<void> {
+  public async messageForward(toUserName: string, messageId: string): Promise<string> {
     const messagePayload = await this.messageRawPayload(messageId);
     const message = await this.messageRawPayloadParser(messagePayload);
 
+    let newMessageId: string;
+
     switch (message.type) {
       case MessageType.Text:
-        await this.messageSendText(toUserName, message.text!);
+        newMessageId = await this.messageSendText(toUserName, message.text!);
         break;
 
       case MessageType.Image:
+        const imageFileBox = await this.messageImage(messageId, ImageType.HD);
+        newMessageId = await this.messageSendFile(toUserName, imageFileBox);
+        break;
+
       case MessageType.Audio:
+        const audioFileBox = await this.messageFile(messageId);
+        newMessageId = await this.messageSendFile(toUserName, audioFileBox);
+        break;
+
       case MessageType.Video:
+        const videoFileBox = await this.messageFile(messageId);
+        newMessageId = await this.messageSendFile(toUserName, videoFileBox);
+        break;
+
       case MessageType.Attachment:
-      case MessageType.Emoticon:
       case MessageType.MiniProgram:
       case MessageType.Url:
-      case MessageType.Contact:
-        // TODO: implement more message type forwarding
-        await this._client.api.forwardMessage(
+        newMessageId = await this._client.api.forwardMessage(
           genIdempotentId(),
           toUserName,
           messagePayload.content,
@@ -817,6 +825,8 @@ class PuppetPadlocal extends Puppet {
       default:
         throw new Error(`Message forwarding is unsupported for messageId:${messageId}, type:${message.type}`);
     }
+
+    return newMessageId!;
   }
 
   /****************************************************************************

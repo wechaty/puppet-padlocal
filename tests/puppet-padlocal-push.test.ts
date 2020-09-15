@@ -48,16 +48,10 @@ test(
           const videoData = await videoFile.toBuffer();
           expect(videoData.length).toBeGreaterThan(0);
 
-          const videoThumb = await puppet.messageImage(messageId, ImageType.Thumbnail);
-          expect(videoThumb).toBeTruthy();
-
-          const videoThumbData = await videoThumb.toBuffer();
-          expect(videoThumbData.length).toBeGreaterThan(0);
-
           break;
 
         case MessageType.Emoticon:
-          const emotionFile = await puppet.messageImage(messageId, ImageType.HD);
+          const emotionFile = await puppet.messageFile(messageId);
           expect(emotionFile).toBeTruthy();
 
           const emotionJSON = emotionFile.toJSON() as FileBoxJsonObjectUrl;
@@ -88,7 +82,7 @@ test(
           expect(urlPayload.title).toBeTruthy();
           expect(urlPayload.url).toBeTruthy();
 
-          const urlThumb = await puppet.messageImage(messageId, ImageType.Thumbnail);
+          const urlThumb = await puppet.messageFile(messageId);
           expect(urlThumb).toBeTruthy();
 
           const urlThumbData = await urlThumb.toBuffer();

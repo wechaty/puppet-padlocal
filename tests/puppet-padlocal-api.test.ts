@@ -165,7 +165,7 @@ describe("message", () => {
       voiceLength,
     };
 
-    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+    const messageId = await puppet.messageSendFile(toChatRoomId, fileBox);
 
     console.log(`send voice message id: ${messageId}`);
 
