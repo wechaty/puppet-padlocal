@@ -55,6 +55,7 @@ export function padLocalContactToWechaty(contact: Contact.AsObject): ContactPayl
     friend: !contact.stranger,
     province: contact.province,
     signature: contact.signature,
+    phone: [],
   };
 }
 

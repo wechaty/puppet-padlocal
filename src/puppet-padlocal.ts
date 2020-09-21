@@ -11,6 +11,7 @@ import {
   MessagePayload,
   MessageType,
   MiniProgramPayload,
+  PayloadType,
   Puppet,
   PuppetOptions,
   RoomInvitationPayload,
@@ -68,7 +69,7 @@ if (logLevel) {
   log.silly(PRE, "set level to %s", logLevel);
 } else {
   // set default log level
-  log.level("verbose");
+  log.level("info");
 }
 
 class PuppetPadlocal extends Puppet {
@@ -211,10 +212,11 @@ class PuppetPadlocal extends Puppet {
    * @protected
    */
   protected async login(userId: string): Promise<void> {
-    await super.login(userId);
-
+    // create cache manager firstly
     this._cacheMgr = new CacheManager(userId);
     await this._cacheMgr.init();
+
+    await super.login(userId);
 
     const oldContact = await this._cacheMgr!.getContact(this.id!);
     if (!oldContact) {
@@ -300,6 +302,20 @@ class PuppetPadlocal extends Puppet {
 
   public async contactList(): Promise<string[]> {
     return this._cacheMgr!.getContactIds();
+  }
+
+  contactCorporationRemark(contactId: string, corporationRemark: string | null): Promise<void> {
+    throw new Error(
+      `contactCorporationRemark(${contactId}, ${corporationRemark}) called failed: Method not supported.`
+    );
+  }
+
+  contactDescription(contactId: string, description: string | null): Promise<void> {
+    throw new Error(`contactDescription(${contactId}, ${description}) called failed: Method not supported.`);
+  }
+
+  contactPhone(contactId: string, phoneList: string[]): Promise<void> {
+    throw new Error(`contactPhone(${contactId}, ${phoneList}) called failed: Method not supported.`);
   }
 
   /****************************************************************************
@@ -1024,7 +1040,7 @@ class PuppetPadlocal extends Puppet {
 
   private async _updateContactCache(contact: Contact.AsObject) {
     await this._cacheMgr!.setContact(contact.username, contact);
-    await this.contactPayloadDirty(contact.username);
+    await this.dirtyPayload(PayloadType.Contact, contact.username);
   }
 
   private async _getRoomMemberList(roomId: string, force?: boolean): Promise<RoomMemberMap> {
@@ -1050,10 +1066,10 @@ class PuppetPadlocal extends Puppet {
       const roomId = contact.getUsername();
       await this._cacheMgr!.setRoom(roomId, contact.toObject());
       await this._cacheMgr!.deleteRoomMember(roomId);
-      await this.roomPayloadDirty(roomId);
+      await this.dirtyPayload(PayloadType.Room, roomId);
     } else {
       await this._cacheMgr!.setContact(contact.getUsername(), contact.toObject());
-      await this.contactPayloadDirty(contact.getUsername());
+      await this.dirtyPayload(PayloadType.Contact, contact.getUsername());
     }
   }
 
@@ -1065,8 +1081,8 @@ class PuppetPadlocal extends Puppet {
   private async _onPushMessage(message: Message): Promise<void> {
     const messageId = message.getId();
 
-    log.info(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
-    log.info(PRE, Buffer.from(message.serializeBinary()).toString("hex"));
+    log.verbose(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
+    log.verbose(PRE, Buffer.from(message.serializeBinary()).toString("hex"));
 
     // filter out duplicated messages
     if (await this._cacheMgr!.hasMessage(messageId)) {

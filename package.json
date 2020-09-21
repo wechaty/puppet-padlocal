@@ -53,13 +53,13 @@
     "config": "^3.3.1",
     "pkg-jq": "^0.2.4",
     "prettier": "^2.0.5",
+    "qrcode-terminal": "^0.12.0",
     "shx": "^0.3.2",
     "ts-jest": "^26.2.0",
     "tsc-watch": "^4.2.9",
     "tslint-config-prettier": "^1.18.0",
     "tstest": "^0.4.10",
-    "wechaty": "^0.45.2",
-    "wechaty-puppet": "^0.30.6"
+    "wechaty": "^0.48.10"
   },
   "peerDependencies": {
     "wechaty-puppet": "*"
@@ -84,6 +84,7 @@
     "state-switch": "^0.6.18",
     "typed-emitter": "^1.2.0",
     "watchdog": "^0.8.17",
+    "wechaty-puppet": "^0.32.3",
     "xml2js": "^0.4.23"
   },
   "publishConfig": {
