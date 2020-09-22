@@ -5,7 +5,14 @@ import LRU from "lru-cache";
 
 import { log } from "brolog";
 import FlashStoreSync from "flash-store";
-import { ChatRoomMember, Contact, Label, Message, MessageRevokeInfo } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import {
+  ChatRoomMember,
+  Contact,
+  Label,
+  Message,
+  MessageRevokeInfo,
+  SearchContactResponse,
+} from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
 
 const PRE = "[CacheManager]";
@@ -18,6 +25,7 @@ export class CacheManager {
   private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
   private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
   private _contactCache?: FlashStoreSync<Contact.AsObject>;
+  private _contactSearchCache?: LRU<string, SearchContactResponse.AsObject>;
   private _roomCache?: FlashStoreSync<Contact.AsObject>;
   private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
   private _roomInvitationCache?: FlashStoreSync<RoomInvitationPayload>;
@@ -68,6 +76,15 @@ export class CacheManager {
     });
 
     this._contactCache = new FlashStoreSync(path.join(baseDir, "contact-raw-payload"));
+    this._contactSearchCache = new LRU<string, SearchContactResponse.AsObject>({
+      max: 1000,
+      // length: function (n) { return n * 2},
+      dispose(key: string, val: any) {
+        log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
+      },
+      maxAge: 1000 * 60 * 60,
+    });
+
     this._roomCache = new FlashStoreSync(path.join(baseDir, "room-raw-payload"));
     this._roomMemberCache = new FlashStoreSync(path.join(baseDir, "room-member-raw-payload"));
     this._roomInvitationCache = new FlashStoreSync(path.join(baseDir, "room-invitation-raw-payload"));
@@ -177,6 +194,22 @@ export class CacheManager {
 
   public async getContactCount(): Promise<number> {
     return this._contactCache!.size;
+  }
+
+  /**
+   * contact search
+   */
+
+  public async getContactSearch(id: string): Promise<SearchContactResponse.AsObject | undefined> {
+    return this._contactSearchCache!.get(id);
+  }
+
+  public async setContactSearch(id: string, payload: SearchContactResponse.AsObject): Promise<void> {
+    await this._contactSearchCache!.set(id, payload);
+  }
+
+  public async hasContactSearch(id: string): Promise<boolean> {
+    return this._contactSearchCache!.has(id);
   }
 
   /**

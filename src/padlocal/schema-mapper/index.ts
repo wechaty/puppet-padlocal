@@ -7,11 +7,12 @@ import {
   RoomMemberPayload,
   RoomPayload,
 } from "wechaty-puppet";
-import { isContactOfficialId, isRoomId } from "../utils/is-type";
-import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
+import { isContactId, isContactOfficialId, isRoomId } from "../utils/is-type";
+import { MessagePayloadBase, MessagePayloadRoom, WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
 import { log } from "wechaty";
+import { MessagePayloadTo } from "wechaty-puppet/src/schemas/message";
 
 const PRE = "[SchemaMapper]";
 
@@ -19,7 +20,17 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
   const wechatMessageType = message.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
 
-  let roomId: string | undefined;
+  const payloadBase: MessagePayloadBase = {
+    id: message.id,
+    timestamp: message.createtime,
+    type,
+    text: message.content,
+  };
+
+  let fromId: undefined | string;
+  let roomId: undefined | string;
+  let toId: undefined | string;
+
   if (isRoomId(message.fromusername)) {
     roomId = message.fromusername;
   }
@@ -27,16 +38,42 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
     roomId = message.tousername;
   }
 
-  const payload: MessagePayload = {
-    id: message.id,
-    text: message.content,
-    timestamp: message.createtime,
-    type,
-    fromId: message.fromusername,
-    toId: message.tousername,
-    roomId,
-    mentionIdList: message.atList,
-  };
+  if (isContactId(message.tousername)) {
+    toId = message.tousername;
+  }
+
+  if (isContactId(message.fromusername)) {
+    fromId = message.fromusername;
+  }
+
+  let payload: MessagePayload;
+
+  // none-room message
+  if (fromId && toId) {
+    const payloadTo: MessagePayloadTo = {
+      fromId,
+      toId,
+    };
+    payload = {
+      ...payloadBase,
+      ...payloadTo,
+    };
+  }
+  // room message: roomId & (fromId | toId)
+  else if (roomId) {
+    const payloadRoom: MessagePayloadRoom = {
+      roomId,
+      fromId,
+      toId,
+      mentionIdList: message.atList,
+    };
+    payload = {
+      ...payloadBase,
+      ...payloadRoom,
+    };
+  } else {
+    throw new Error("neither toId nor roomId");
+  }
 
   await _adjustMessageTypeByAppMsg(message, payload);
 
@@ -50,7 +87,8 @@ export function padLocalContactToWechaty(contact: Contact.AsObject): ContactPayl
     type: isContactOfficialId(contact.username) ? ContactType.Official : ContactType.Unknown,
     name: contact.nickname,
     avatar: contact.avatar,
-    alias: contact.alias,
+    alias: contact.remark,
+    weixin: contact.alias,
     city: contact.city,
     friend: !contact.stranger,
     province: contact.province,
@@ -126,4 +164,11 @@ async function _adjustMessageTypeByAppMsg(message: Message.AsObject, payload: Me
   } catch (e) {
     log.warn(PRE, `Error occurred while parse message attachment: ${e.stack}`);
   }
+}
+
+export function chatRoomMemberToContact(chatRoomMember: ChatRoomMember): Contact {
+  return new Contact()
+    .setUsername(chatRoomMember.getUsername())
+    .setNickname(chatRoomMember.getNickname())
+    .setAvatar(chatRoomMember.getAvatar());
 }

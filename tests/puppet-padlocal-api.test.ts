@@ -1,5 +1,5 @@
 import { FileBox, MessageType, Puppet } from "wechaty-puppet";
-import { prepareSignedOnPuppet } from "./common";
+import { prepareSignedOnPuppet } from "./puppet-padlocal-common";
 import config from "config";
 
 let puppet: Puppet;
@@ -41,7 +41,7 @@ describe("contact", () => {
     const userName: string = config.get("test.contact.getAvatarUserName");
     const otherAvatar = await puppet.contactAvatar(userName);
     expect(otherAvatar).toBeTruthy();
-  }, 1000000);
+  });
 
   test("contact list", async () => {
     const contactList = await puppet.contactList();

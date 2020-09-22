@@ -23,6 +23,7 @@ import {
 
 import { KickOutEvent, PadLocalClient } from "padlocal-client-ts";
 import {
+  AddContactScene,
   AppMessageLink,
   AppMessageMiniProgram,
   ChatRoomMember,
@@ -43,6 +44,7 @@ import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager";
 import { isRoomId } from "./padlocal/utils/is-type";
 import {
+  chatRoomMemberToContact,
   padLocalContactToWechaty,
   padLocalMessageToWechaty,
   padLocalRoomMemberToWechaty,
@@ -56,12 +58,14 @@ import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import * as XMLParser from "fast-xml-parser";
 import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
 import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
+import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
 };
 
 const PRE = "[PuppetPadlocal]";
+const SEARCH_CONTACT_PREFIX = "$search$-";
 
 const logLevel = process.env.PADLOCAL_LOG || process.env.WECHATY_LOG;
 if (logLevel) {
@@ -69,7 +73,7 @@ if (logLevel) {
   log.silly(PRE, "set level to %s", logLevel);
 } else {
   // set default log level
-  log.level("info");
+  log.level("verbose");
 }
 
 class PuppetPadlocal extends Puppet {
@@ -220,7 +224,7 @@ class PuppetPadlocal extends Puppet {
 
     const oldContact = await this._cacheMgr!.getContact(this.id!);
     if (!oldContact) {
-      await this._cacheMgr!.setContact(this.id!, this._client.selfContact!.toObject());
+      await this._updateContactCache(this._client.selfContact!.toObject());
     }
   }
 
@@ -270,6 +274,12 @@ class PuppetPadlocal extends Puppet {
 
   public async contactSelfName(name: string): Promise<void> {
     await this._client.api.updateSelfNickName(name);
+
+    this._client.selfContact!.setNickname(name);
+
+    const contact = await this.contactRawPayload(this._client.selfContact!.getUsername());
+    contact.nickname = name;
+    await this._updateContactCache(contact);
   }
 
   public async contactSelfQRCode(): Promise<string> {
@@ -281,12 +291,27 @@ class PuppetPadlocal extends Puppet {
 
   public async contactSelfSignature(signature: string): Promise<void> {
     await this._client.api.updateSelfSignature(signature);
+
+    this._client.selfContact!.setSignature(signature);
+
+    const contact = await this.contactRawPayload(this._client.selfContact!.getUsername());
+    contact.signature = signature;
+    await this._updateContactCache(contact);
   }
 
   public contactAlias(contactId: string): Promise<string>;
   public contactAlias(contactId: string, alias: string | null): Promise<void>;
   public async contactAlias(contactId: string, alias?: string | null): Promise<void | string> {
-    await this._client.api.updateContactRemark(contactId, alias || "");
+    const contact = await this.contactRawPayload(contactId);
+
+    if (alias) {
+      await this._client.api.updateContactRemark(contactId, alias || "");
+
+      contact.remark = alias;
+      await this._updateContactCache(contact);
+    } else {
+      return contact.remark;
+    }
   }
 
   public async contactAvatar(contactId: string): Promise<FileBox>;
@@ -418,31 +443,55 @@ class PuppetPadlocal extends Puppet {
   }
 
   public async friendshipAdd(contactId: string, hello: string): Promise<void> {
-    const res = await this._client.api.searchContact(contactId);
+    let stranger: string;
+    let ticket: string;
+    let addContactScene: AddContactScene;
 
-    if (!res.getAntispamticket()) {
-      throw new Error(`contact:${contactId} is already a friend`);
+    const cachedContactSearch = await this._cacheMgr!.getContactSearch(contactId);
+    if (cachedContactSearch) {
+      stranger = cachedContactSearch.encryptusername;
+      ticket = cachedContactSearch.antispamticket;
+      addContactScene = cachedContactSearch.toaddscene;
+    } else {
+      const contactPayload = await this.contactRawPayload(contactId);
+      if (!contactPayload.alias) {
+        throw new Error(`Can not add contact while alias is empty: ${contactId}`);
+      }
+
+      const res = await this._client.api.searchContact(contactPayload.alias);
+
+      if (!res.getAntispamticket()) {
+        throw new Error(`contact:${contactId} is already a friend`);
+      }
+
+      stranger = res.getEncryptusername();
+      ticket = res.getAntispamticket();
+      addContactScene = res.getToaddscene();
     }
 
-    await this._client.api.addContact(res.getEncryptusername()!, res.getAntispamticket()!, res.getToaddscene(), hello);
+    await this._client.api.addContact(stranger, ticket, addContactScene, hello);
   }
 
   public async friendshipSearchPhone(phone: string): Promise<null | string> {
-    return this.friendshipSearchWeixin(phone);
+    return this._friendshipSearch(phone);
   }
 
   public async friendshipSearchWeixin(weixin: string): Promise<null | string> {
-    const res = await this._client.api.searchContact(weixin);
+    return this._friendshipSearch(weixin);
+  }
 
-    const contact = res.getContact()!;
-
-    const oldContact = await this._cacheMgr!.getContact(weixin);
-    if (!oldContact) {
-      contact.setUsername(weixin);
-      await this._cacheMgr!.setContact(weixin, contact.toObject());
+  private async _friendshipSearch(id: string): Promise<null | string> {
+    const cachedContactSearch = await this._cacheMgr!.getContactSearch(id);
+    if (cachedContactSearch) {
+      return id;
     }
 
-    return weixin;
+    const res = await this._client.api.searchContact(id);
+
+    const searchId = `${SEARCH_CONTACT_PREFIX}${id}`;
+    await this._cacheMgr!.setContactSearch(searchId, res.toObject());
+
+    return searchId;
   }
 
   /****************************************************************************
@@ -670,7 +719,7 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Image)
+          .setType(WechatMessageType.Voice)
           .setFromusername(this.id!)
           .setTousername(toUserName)
           .setBinarypayload(audioData)
@@ -691,7 +740,7 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Image)
+          .setType(WechatMessageType.Video)
           .setFromusername(this.id!)
           .setTousername(toUserName)
           .setBinarypayload(videoData)
@@ -713,7 +762,7 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Image)
+          .setType(WechatMessageType.File)
           .setFromusername(this.id!)
           .setTousername(toUserName)
           .setBinarypayload(fileData)
@@ -919,12 +968,25 @@ class PuppetPadlocal extends Puppet {
   }
 
   public async contactRawPayload(id: string): Promise<Contact.AsObject> {
+    if (id.startsWith(SEARCH_CONTACT_PREFIX)) {
+      const searchContact = await this._cacheMgr?.getContactSearch(id);
+      return searchContact!.contact!;
+    }
+
     let ret = await this._cacheMgr!.getContact(id);
 
     if (!ret) {
-      const contact = await this._client.api.getContact(id);
-      await this._saveContactCache(contact);
-      ret = contact.toObject();
+      ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async () => {
+        const contact = await this._client.api.getContact(id);
+
+        // may return contact with empty payload, empty username, nickname, etc.
+        if (!contact.getUsername()) {
+          contact.setUsername(id);
+        }
+
+        await this._updateContactCache(contact.toObject());
+        return contact.toObject();
+      });
     }
 
     return ret;
@@ -953,7 +1015,7 @@ class PuppetPadlocal extends Puppet {
 
     if (!ret) {
       const contact = await this._client.api.getContact(id);
-      await this._saveContactCache(contact);
+      await this._updateContactCache(contact.toObject());
       ret = contact.toObject();
     }
 
@@ -1038,44 +1100,64 @@ class PuppetPadlocal extends Puppet {
     };
   }
 
-  private async _updateContactCache(contact: Contact.AsObject) {
-    await this._cacheMgr!.setContact(contact.username, contact);
-    await this.dirtyPayload(PayloadType.Contact, contact.username);
-  }
-
   private async _getRoomMemberList(roomId: string, force?: boolean): Promise<RoomMemberMap> {
     let ret = await this._cacheMgr!.getRoomMember(roomId);
     if (!ret || force) {
       const resMembers = await this._client.api.getChatRoomMembers(roomId);
 
       const roomMemberMap: RoomMemberMap = {};
-      resMembers.forEach((m) => {
-        roomMemberMap[m.getUsername()] = m.toObject();
-      });
+
+      for (const roomMember of resMembers) {
+        const contact = chatRoomMemberToContact(roomMember);
+
+        const hasContact = await this._cacheMgr!.hasContact(contact.getUsername());
+        // save chat room member as contact, to forbid massive this._client.api.getContact(id) requests while room.ready()
+        if (!hasContact) {
+          await this._cacheMgr!.setContact(contact.getUsername(), contact.toObject());
+        }
+
+        roomMemberMap[roomMember.getUsername()] = roomMember.toObject();
+      }
 
       ret = roomMemberMap;
 
-      await this._cacheMgr!.setRoomMember(roomId, roomMemberMap);
+      await this._updateRoomMember(roomId, roomMemberMap);
     }
 
     return ret;
   }
 
-  private async _saveContactCache(contact: Contact): Promise<void> {
-    if (isRoomId(contact.getUsername())) {
-      const roomId = contact.getUsername();
-      await this._cacheMgr!.setRoom(roomId, contact.toObject());
-      await this._cacheMgr!.deleteRoomMember(roomId);
-      await this.dirtyPayload(PayloadType.Room, roomId);
-    } else {
-      await this._cacheMgr!.setContact(contact.getUsername(), contact.toObject());
-      await this.dirtyPayload(PayloadType.Contact, contact.getUsername());
+  private async _updateContactCache(contact: Contact.AsObject): Promise<void> {
+    if (!contact.username) {
+      log.warn(PRE, `username is required for contact: ${JSON.stringify(contact)}`);
+      return;
     }
+
+    if (isRoomId(contact.username)) {
+      const roomId = contact.username;
+      await this._cacheMgr!.setRoom(roomId, contact);
+      await this.dirtyPayload(PayloadType.Room, roomId);
+
+      await this._updateRoomMember(roomId);
+    } else {
+      await this._cacheMgr!.setContact(contact.username, contact);
+      await this.dirtyPayload(PayloadType.Contact, contact.username);
+    }
+  }
+
+  private async _updateRoomMember(roomId: string, roomMemberMap?: RoomMemberMap) {
+    if (roomMemberMap) {
+      await this._cacheMgr!.setRoomMember(roomId, roomMemberMap);
+    } else {
+      await this._cacheMgr!.deleteRoomMember(roomId);
+    }
+
+    await this.dirtyPayload(PayloadType.RoomMember, roomId);
   }
 
   private async _onPushContact(contact: Contact): Promise<void> {
     log.verbose(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
-    return this._saveContactCache(contact);
+    return this._updateContactCache(contact.toObject());
   }
 
   private async _onPushMessage(message: Message): Promise<void> {
@@ -1122,14 +1204,14 @@ class PuppetPadlocal extends Puppet {
         const roomJoin: EventRoomJoinPayload = parseRet.payload;
         this.emit("room-join", roomJoin);
 
-        await this._cacheMgr!.deleteRoomMember(roomJoin.roomId);
+        await this._updateRoomMember(roomJoin.roomId);
         break;
 
       case MessageCategory.RoomLeave:
         const roomLeave: EventRoomLeavePayload = parseRet.payload;
         this.emit("room-leave", roomLeave);
 
-        await this._cacheMgr!.deleteRoomMember(roomLeave.roomId);
+        await this._updateRoomMember(roomLeave.roomId);
         break;
 
       case MessageCategory.RoomTopic:

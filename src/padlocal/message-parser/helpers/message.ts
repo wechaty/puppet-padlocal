@@ -23,6 +23,7 @@ export function convertMessageType(wechatMessageType: WechatMessageType): Messag
       break;
 
     case WechatMessageType.App:
+    case WechatMessageType.File:
       type = MessageType.Attachment;
       break;
 

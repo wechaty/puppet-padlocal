@@ -79,7 +79,7 @@
     "jest": "^26.4.0",
     "lru-cache": "^6.0.0",
     "normalize-package-data": "^2.5.0",
-    "padlocal-client-ts": "^0.1.21",
+    "padlocal-client-ts": "^0.1.22",
     "quick-lru": "^5.1.0",
     "state-switch": "^0.6.18",
     "typed-emitter": "^1.2.0",

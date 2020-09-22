@@ -1,4 +1,4 @@
-import { prepareSignedOnPuppet } from "./common";
+import { prepareSignedOnPuppet } from "./puppet-padlocal-common";
 
 test("logout", async () => {
   const puppet = await prepareSignedOnPuppet();
