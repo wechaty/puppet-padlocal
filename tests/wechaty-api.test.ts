@@ -400,9 +400,12 @@ describe("room", () => {
   });
 
   test("room qr", async () => {
-    // TODO:
-    // const qrString = await puppet.roomQRCode(chatroomId);
-    // expect(qrString).toBeTruthy();
+    const room = (await bot.Room.find({ id: chatroomId }))!;
+    const qrString = await room.qrCode();
+
+    console.log(`qr: ${qrString}`);
+
+    expect(qrString).toBeTruthy();
   });
 
   test("room topic", async () => {
