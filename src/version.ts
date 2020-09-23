@@ -1,4 +1,4 @@
 /**
  * This file was auto generated from scripts/generate-version.sh
  */
-export const VERSION: string = '0.1.1'
+export const VERSION: string = '0.1.2'

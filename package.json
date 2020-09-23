@@ -1,12 +1,15 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Puppet PadLocal for Wechaty",
   "directories": {
     "test": "tests"
   },
-  "main": "dist/src/mod.js",
-  "typings": "dist/src/mod.d.ts",
+  "main": "dist/puppet-padlocal.js",
+  "typings": "dist/puppet-padlocal.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "engines": {
     "wechaty": ">=0.17.46"
   },
@@ -32,7 +35,10 @@
     "wechat",
     "sdk",
     "puppet",
-    "padlocal"
+    "padlocal",
+    "wechaty-puppet",
+    "wechaty-puppet-padlocal",
+    "weixin"
   ],
   "author": "haoda",
   "license": "Apache-2.0",
@@ -86,9 +92,5 @@
     "watchdog": "^0.8.17",
     "wechaty-puppet": "^0.32.3",
     "xml2js": "^0.4.23"
-  },
-  "publishConfig": {
-    "access": "public",
-    "tag": "next"
   }
 }
