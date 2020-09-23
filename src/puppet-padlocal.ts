@@ -73,7 +73,7 @@ if (logLevel) {
   log.silly(PRE, "set level to %s", logLevel);
 } else {
   // set default log level
-  log.level("verbose");
+  log.level("info");
 }
 
 class PuppetPadlocal extends Puppet {
