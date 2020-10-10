@@ -30,9 +30,9 @@ Also, we provided a simple [ demo project](https://github.com/padlocal/wechaty-p
 If you want to explore PadLocal step by step, following instructions may be helpful.
 
 ### Step by step instructions
-#### 1. Check your Node version  first
+#### 1. Check your Node version first, >= v12
 ```
-node --version // v10.16.0
+node --version // >= v12.0.0
 ``` 
 #### 2. Create and init your bot project
 ```

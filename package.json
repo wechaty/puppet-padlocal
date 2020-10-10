@@ -11,7 +11,7 @@
     "dist/**/*"
   ],
   "engines": {
-    "wechaty": ">=0.17.46"
+    "wechaty": ">=0.48.0"
   },
   "scripts": {
     "clean": "rm -fr dist/*",
