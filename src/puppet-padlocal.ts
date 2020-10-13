@@ -106,7 +106,7 @@ class PuppetPadlocal extends Puppet {
 
     log.info(`
       ============================================================
-       Welcome to Wechaty PadLocal puppet !
+       Welcome to Wechaty PadLocal puppet!
 
        - wechaty-puppet-padlocal version: ${this.version()}
        - padlocal-ts-client version: ${this._client.version}
@@ -189,15 +189,15 @@ class PuppetPadlocal extends Puppet {
         },
 
         // Will sync message and contact after login success, since last time login.
-        onSync: (syncEvent: SyncEvent) => {
+        onSync: async (syncEvent: SyncEvent) => {
           log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
           for (const contact of syncEvent.getContactList()) {
-            this._onPushContact(contact);
+            await this._onPushContact(contact);
           }
 
           for (const message of syncEvent.getMessageList()) {
-            this._onPushMessage(message);
+            await this._onPushMessage(message);
           }
         },
       })
@@ -210,12 +210,12 @@ class PuppetPadlocal extends Puppet {
 
         this.state.on(true);
       })
-      .catch((e) => {
+      .catch(async (e) => {
         log.error(PRE, "login failed", e);
 
         this.emit("error", { data: e.toString() });
 
-        this.stop();
+        await this.stop();
       });
   }
 
@@ -231,7 +231,7 @@ class PuppetPadlocal extends Puppet {
 
     await super.login(userId);
 
-    const oldContact = await this._cacheMgr!.getContact(this.id!);
+    const oldContact = await this._cacheMgr.getContact(this.id!);
     if (!oldContact) {
       await this._updateContactCache(this._client.selfContact!.toObject());
     }
@@ -902,7 +902,7 @@ class PuppetPadlocal extends Puppet {
         throw new Error(`Message forwarding is unsupported for messageId:${messageId}, type:${message.type}`);
     }
 
-    return newMessageId!;
+    return newMessageId;
   }
 
   /****************************************************************************

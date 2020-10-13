@@ -42,12 +42,12 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
   }
 
   let changerId = matches[1];
-  let topic = matches[2] as string;
+  let topic = matches[2];
 
   if ((matchesForYou && changerId === "你") || changerId === "You") {
     changerId = (await puppet.roomMemberSearch(roomId, YOU))[0];
   } else {
-    changerId = getUserName(linkList, changerId as string);
+    changerId = getUserName(linkList, changerId);
     topic = getNickName(linkList, topic);
   }
 

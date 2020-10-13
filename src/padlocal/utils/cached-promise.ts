@@ -7,9 +7,7 @@ export async function CachedPromise<T>(key: string, promise: Promise<T>): Promis
   }
 
   PromiseCache.set(key, promise);
-  promise.finally(() => PromiseCache.delete(key));
-
-  return promise;
+  return promise.finally(() => PromiseCache.delete(key));
 }
 
 type PromiseFunc<T> = () => Promise<T>;
@@ -23,7 +21,5 @@ export async function CachedPromiseFunc<T>(key: string, promiseFunc: PromiseFunc
   const promise = promiseFunc();
 
   PromiseCache.set(key, promise);
-  promise.finally(() => PromiseCache.delete(key));
-
-  return promise;
+  return promise.finally(() => PromiseCache.delete(key));
 }
