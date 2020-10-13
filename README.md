@@ -1,10 +1,12 @@
 # PUPPET-PADLOCAL
 
-[![NPM Version](https://badge.fury.io/js/wechaty-puppet-padlocal.svg)](https://badge.fury.io/js/wechaty-puppet-padlocal)
+[![NPM Version](https://badge.fury.io/js/wechaty-puppet-padlocal.svg)](https://www.npmjs.com/package/wechaty-puppet-padlocal)
 [![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-brightgreen.svg)](https://github.com/wechaty/wechaty)
+[![Powered by padlocal-client-ts](https://img.shields.io/badge/Powered%20By-padlocal--client--ts-brightgreen)](https://github.com/padlocal/padlocal-client-ts)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+![Stage](https://img.shields.io/badge/Stage-beta-yellow)
 
-*NOTICE: our dev machines are all Macs, may not adapt other platforms perfectly at this moment. If you have any problems during using this puppet, issues are welcome to [open](https://github.com/padlocal/wechaty-puppet-padlocal/issues/new).*   
+*NOTICE: our dev machines are all Macs, may not adapt other platforms perfectly at the moment. If you have any problems during using this puppet, issues are welcome to [open](https://github.com/padlocal/wechaty-puppet-padlocal/issues/new).*   
 
 ## HOW TO USE
 
@@ -25,7 +27,7 @@ const bot = new Wechaty({
 ```
 
 ### wechaty-puppet-padlocal-demo
-Also, we provided a simple [ demo project](https://github.com/padlocal/wechaty-puppet-padlocal-demo) to show how to use padlocal puppet. You can checkout this repo to see how it works.
+Also, we provided a simple [demo project](https://github.com/padlocal/wechaty-puppet-padlocal-demo) to show how to use padlocal puppet. You can checkout this repo to see how it works.
 
 If you want to explore PadLocal step by step, following instructions may be helpful.
 
@@ -58,7 +60,7 @@ import {Contact, Message, ScanStatus, Wechaty} from "wechaty";
 const host: string = ""             // padlocal server host
 const port: number = 0              // padlocal server port
 const token: string = ""            // padlocal token
-const serverCAFilePath: string = "" // padlcoal server ca file path
+const serverCAFilePath: string = "" // padlocal server ca file path
 
 const puppet = new PuppetPadlocal({
   endpoint: `${host}:${port}`,

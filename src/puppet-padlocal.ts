@@ -83,7 +83,7 @@ class PuppetPadlocal extends Puppet {
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
 
-    this._client = new PadLocalClient(options.endpoint!, options.token!, options.serverCAFilePath);
+    this._client = new PadLocalClient(options.endpoint!, options.token!, options.serverCAFilePath, true);
 
     this._client.on("kickout", async (_detail: KickOutEvent) => {
       this.emit("logout", { contactId: this.id!, data: JSON.stringify(_detail) });
@@ -103,6 +103,15 @@ class PuppetPadlocal extends Puppet {
         await this._onPushContact(contact);
       }
     });
+
+    log.info(`
+      ============================================================
+       Welcome to Wechaty PadLocal puppet !
+
+       - wechaty-puppet-padlocal version: ${this.version()}
+       - padlocal-ts-client version: ${this._client.version}
+      ============================================================
+    `);
   }
 
   public async start(): Promise<void> {

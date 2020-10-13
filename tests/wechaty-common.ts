@@ -29,8 +29,8 @@ export async function prepareSingedOnBot(prepareBotFunc?: PrepareBotFunc): Promi
     log.info("TestBot", "%s login", user);
   });
 
-  bot.on("logout", (user: Contact) => {
-    log.info("TestBot", "%s logout", user);
+  bot.on("logout", (user: Contact, reason: string) => {
+    log.info("TestBot", "%s logout, reason:%s", user, reason);
   });
 
   await bot.start();
