@@ -7,12 +7,11 @@ import {
   RoomMemberPayload,
   RoomPayload,
 } from "wechaty-puppet";
-import { isContactId, isContactOfficialId, isRoomId } from "../utils/is-type";
-import { MessagePayloadBase, MessagePayloadRoom, WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
+import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
+import { MessagePayloadBase, WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
 import { log } from "wechaty";
-import { MessagePayloadTo } from "wechaty-puppet/src/schemas/message";
 
 const PRE = "[SchemaMapper]";
 
@@ -24,58 +23,128 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
     id: message.id,
     timestamp: message.createtime,
     type,
-    text: message.content,
   };
 
   let fromId: undefined | string;
   let roomId: undefined | string;
   let toId: undefined | string;
 
+  let text: undefined | string;
+  let mentionIdList: string[] = [];
+
+  /**
+   * 1. Set Room Id
+   */
   if (isRoomId(message.fromusername)) {
     roomId = message.fromusername;
-  }
-  if (isRoomId(message.tousername)) {
+  } else if (isRoomId(message.tousername)) {
     roomId = message.tousername;
+  } else if (isIMRoomId(message.fromusername)) {
+    roomId = message.fromusername;
+  } else if (isIMRoomId(message.tousername)) {
+    roomId = message.tousername;
+  } else {
+    roomId = undefined;
   }
 
+  /**
+   * 2. Set To Contact Id
+   */
   if (isContactId(message.tousername)) {
     toId = message.tousername;
+  } else {
+    // TODO: if the message @someone, the toId should set to the mentioned contact id(?)
+
+    toId = undefined;
   }
 
+  /**
+   * 3. Set From Contact Id
+   */
   if (isContactId(message.fromusername)) {
     fromId = message.fromusername;
+  } else {
+    const parts = message.content.split(":\n");
+    if (parts && parts.length > 1) {
+      if (isContactId(parts[0])) {
+        fromId = parts[0];
+      } else if (isIMContactId(parts[0])) {
+        fromId = parts[0];
+      }
+    } else {
+      fromId = undefined;
+    }
   }
+
+  /**
+   *
+   * 4. Set Text
+   */
+  if (roomId) {
+    const startIndex = message.content.indexOf(":\n");
+
+    text = message.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
+  } else if (isContactId(message.fromusername)) {
+    text = message.content;
+  }
+
+  /**
+   * 5.1 Validate Room & From ID
+   */
+  if (!roomId && !fromId) {
+    throw Error("empty roomId and empty fromId!");
+  }
+  /**
+   * 5.1 Validate Room & To ID
+   */
+  if (!roomId && !toId) {
+    throw Error("empty roomId and empty toId!");
+  }
+
+  /**
+   * 6. Set mention list, only for room messages
+   */
+  if (roomId) {
+    mentionIdList = message.atList;
+  }
+
+  /**
+   * 7. Set text for quote message
+   */
+  // TODO:
+  /*
+  if (rawPayload.appMsgType === WechatAppMessageType.QuoteMessage) {
+    text = await quotePayloadParser(rawPayload);
+  }
+   */
 
   let payload: MessagePayload;
 
-  // none-room message
+  // Two branch is the same code.
+  // Only for making TypeScript happy
   if (fromId && toId) {
-    const payloadTo: MessagePayloadTo = {
-      fromId,
-      toId,
-    };
     payload = {
       ...payloadBase,
-      ...payloadTo,
-    };
-  }
-  // room message: roomId & (fromId | toId)
-  else if (roomId) {
-    const payloadRoom: MessagePayloadRoom = {
+      fromId,
+      mentionIdList,
       roomId,
-      fromId,
+      text,
       toId,
-      mentionIdList: message.atList,
     };
+  } else if (roomId) {
     payload = {
       ...payloadBase,
-      ...payloadRoom,
+      fromId,
+      mentionIdList,
+      roomId,
+      text,
+      toId,
     };
   } else {
     throw new Error("neither toId nor roomId");
   }
 
-  await _adjustMessageTypeByAppMsg(message, payload);
+  await _adjustMessageByAppMsg(message, payload);
 
   return payload;
 }
@@ -118,7 +187,7 @@ export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObj
   };
 }
 
-async function _adjustMessageTypeByAppMsg(message: Message.AsObject, payload: MessagePayload) {
+async function _adjustMessageByAppMsg(message: Message.AsObject, payload: MessagePayload) {
   if (payload.type !== MessageType.Attachment) {
     return;
   }
