@@ -8,7 +8,7 @@ import config from "config";
 test(
   "push",
   async () => {
-    const forwardFrom = config.get("test.push.forwardFrom");
+    const forwardFrom: string = config.get("test.push.forwardFrom");
     const forwardTo: string = config.get("test.push.forwardTo");
     const recallUserId: string = config.get("test.push.recallUserId");
 
@@ -112,8 +112,15 @@ test(
         const message = await puppet.messagePayload(messageId);
 
         if (message.fromId === forwardFrom && message.toId === forwardFrom) {
+          log.info(LOGPRE, `forward message: ${JSON.stringify(message)}`);
+
           await forwardMessage(puppet, message);
           return;
+        } else if (message.fromId === forwardFrom && message.roomId === forwardTo) {
+          if (message.type === MessageType.MiniProgram) {
+            const miniProgramPayload = await puppet.messageMiniProgram(messageId);
+            await puppet.messageSendMiniProgram(forwardFrom, miniProgramPayload);
+          }
         }
 
         log.info(LOGPRE, `on message: ${JSON.stringify(message)}`);
@@ -147,5 +154,5 @@ test(
     // tslint:disable-next-line:no-empty
     return new Promise(() => {});
   },
-  Math.pow(2, 20)
+  Math.pow(2, 30)
 );

@@ -797,8 +797,7 @@ class PuppetPadlocal extends Puppet {
       const thumb = await this._client.api.getEncryptedFile(
         EncryptedFileType.IMAGE_THUMB,
         mpPayload.thumbUrl,
-        hexStringToBytes(mpPayload.thumbKey),
-        ""
+        hexStringToBytes(mpPayload.thumbKey)
       );
       miniProgram.setThumbimage(thumb);
     }
