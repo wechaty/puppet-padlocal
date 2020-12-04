@@ -18,11 +18,7 @@ All you need to do is to provide PadLocal as Wechaty puppet:
 ```
 const bot = new Wechaty({
     name: "PadLocalBot",
-    new PuppetPadlocal({
-    	endpoint: `${padLocalHost}:${padLocalPort}`,
-    	token: padLocalToken,
-    	serverCAFilePath: padLocalServerCAFilePath
-    })
+    new PuppetPadlocal({ token: padLocalToken })
 })
 ```
 
@@ -57,16 +53,8 @@ npm install wechaty-puppet-padlocal@latest --registry=https://r.npm.taobao.org
 import {PuppetPadlocal} from "wechaty-puppet-padlocal";
 import {Contact, Message, ScanStatus, Wechaty} from "wechaty";
 
-const host: string = ""             // padlocal server host
-const port: number = 0              // padlocal server port
 const token: string = ""            // padlocal token
-const serverCAFilePath: string = "" // padlocal server ca file path
-
-const puppet = new PuppetPadlocal({
-  endpoint: `${host}:${port}`,
-  token,
-  serverCAFilePath
-})
+const puppet = new PuppetPadlocal({ token })
 
 const bot = new Wechaty({
     name: "TestBot",
