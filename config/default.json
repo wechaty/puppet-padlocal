@@ -45,7 +45,26 @@
 
     "message": {
       "send": {
-        "chatroomId": "CHATROOM_ID"
+        "chatroomId": "",
+        "chatroomAtUserList": [""],
+        "toUserName": "",
+        "contactCardId": "",
+        "imageFilePath": "",
+        "voiceFilePath": "",
+        "voiceLength": 0,
+        "videoFilePath": "",
+        "fileFilePath": "",
+        "miniProgram": {
+          "appid"       : "",
+          "description" : "",
+          "pagePath"    : "",
+          "iconUrl"     : "",
+          "shareId"     : "",
+          "thumbUrl"    : "",
+          "title"       : "",
+          "username"    : "",
+          "thumbKey"    : ""
+        }
       }
     },
 

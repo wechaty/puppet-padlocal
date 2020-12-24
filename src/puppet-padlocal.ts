@@ -29,6 +29,7 @@ import {
   ChatRoomMember,
   Contact,
   EncryptedFileType,
+  ForwardMessageResponse,
   ImageType as PadLocalImageType,
   Label,
   LoginPolicy,
@@ -807,7 +808,23 @@ class PuppetPadlocal extends Puppet {
       miniProgram.setThumbimage(thumb);
     }
 
-    return this._client!.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    const response = await this._client!.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    const pushContent = isRoomId(toUserName)
+      ? `${this._client!.selfContact!.getNickname()}: [链接] ${mpPayload.title}`
+      : `[链接] ${mpPayload.title}`;
+
+    await this._onSendMessage(
+      new Message()
+        .setType(WechatMessageType.App)
+        .setFromusername(this.id!)
+        .setTousername(toUserName)
+        .setContent(response.getMsgcontent())
+        .setPushcontent(pushContent),
+      response.getMsgid(),
+      response.getMessagerevokeinfo()!
+    );
+
+    return response.getMsgid();
   }
 
   public async messageSendText(toUserName: string, text: string): Promise<string> {
@@ -833,7 +850,7 @@ class PuppetPadlocal extends Puppet {
     return response.getMsgid();
   }
 
-  public async messageSendUrl(conversationId: string, linkPayload: UrlLinkPayload): Promise<string> {
+  public async messageSendUrl(toUserName: string, linkPayload: UrlLinkPayload): Promise<string> {
     const appMessageLink = new AppMessageLink();
 
     appMessageLink.setTitle(linkPayload.title).setUrl(linkPayload.url);
@@ -844,7 +861,23 @@ class PuppetPadlocal extends Puppet {
       appMessageLink.setThumbimage(thumb);
     }
 
-    return this._client!.api.sendAppMessageLink(genIdempotentId(), conversationId, appMessageLink);
+    const response = await this._client!.api.sendAppMessageLink(genIdempotentId(), toUserName, appMessageLink);
+    const pushContent = isRoomId(toUserName)
+      ? `${this._client!.selfContact!.getNickname()}: [小程序] ${linkPayload.title}`
+      : `[小程序] ${linkPayload.title}`;
+
+    await this._onSendMessage(
+      new Message()
+        .setType(WechatMessageType.App)
+        .setFromusername(this.id!)
+        .setTousername(toUserName)
+        .setContent(response.getMsgcontent())
+        .setPushcontent(pushContent),
+      response.getMsgid(),
+      response.getMessagerevokeinfo()!
+    );
+
+    return response.getMsgid();
   }
 
   public async messageRecall(messageId: string): Promise<boolean> {
@@ -893,13 +926,14 @@ class PuppetPadlocal extends Puppet {
       case MessageType.Attachment:
       case MessageType.MiniProgram:
       case MessageType.Url:
-        newMessageId = await this._client!.api.forwardMessage(
+        const response: ForwardMessageResponse = await this._client!.api.forwardMessage(
           genIdempotentId(),
           toUserName,
           messagePayload.content,
           messagePayload.type,
           messagePayload.tousername
         );
+        newMessageId = response.getMsgid();
         break;
 
       default:

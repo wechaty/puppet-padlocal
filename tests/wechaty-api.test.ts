@@ -1,7 +1,7 @@
 import config from "config";
-import { Contact, FileBox, Message, Wechaty } from "wechaty";
+import { Contact, FileBox, Message, MiniProgram, UrlLink, Wechaty } from "wechaty";
 import { prepareSingedOnBot } from "./wechaty-common";
-import { MessageType } from "wechaty-puppet";
+import { MessageType, MiniProgramPayload } from "wechaty-puppet";
 
 let bot: Wechaty;
 
@@ -152,6 +152,14 @@ describe("message", () => {
     expect(message.date()).toBeTruthy();
   };
 
+  const recallMessages = async (messageList: Message[]) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await messageList[0].recall();
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await messageList[1].recall();
+  };
+
   const sendToContact = async (payload: any, messageType: MessageType): Promise<Message> => {
     const toContact = (await bot.Contact.find({ id: toUserName }))!;
     const message = (await toContact.say(payload)) as Message;
@@ -197,12 +205,7 @@ describe("message", () => {
 
   test("recall text message", async () => {
     const messageList = await sendMessage(`hi: ${Date.now()}`, MessageType.Text);
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   });
 
   const sendContactCardMessage = async (): Promise<Message[]> => {
@@ -219,11 +222,7 @@ describe("message", () => {
   test("recall contact card message", async () => {
     const messageList = await sendContactCardMessage();
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   });
 
   const sendImageMessage = async (): Promise<Message[]> => {
@@ -240,11 +239,7 @@ describe("message", () => {
   test("recall image message", async () => {
     const messageList = await sendImageMessage();
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   });
 
   const sendVoiceMessage = async (): Promise<Message[]> => {
@@ -267,11 +262,7 @@ describe("message", () => {
   test("recall voice message", async () => {
     const messageList = await sendVoiceMessage();
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   }, 20000);
 
   const sendVideoMessage = async (): Promise<Message[]> => {
@@ -288,11 +279,7 @@ describe("message", () => {
   test("recall video message", async () => {
     const messageList = await sendVideoMessage();
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   }, 20000);
 
   const sendFileMessage = async (): Promise<Message[]> => {
@@ -308,13 +295,43 @@ describe("message", () => {
 
   test("recall file message", async () => {
     const messageList = await sendFileMessage();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await recallMessages(messageList);
   }, 20000);
+
+  const sendLinkMessage = async (): Promise<Message[]> => {
+    const url = new UrlLink({
+      description: "this is description",
+      thumbnailUrl: "https://placekitten.com/g/200/300",
+      title: "this is title",
+      url: "https://www.baidu.com/",
+    });
+
+    return sendMessage(url, MessageType.Url);
+  };
+
+  test("send link message", async () => {
+    await sendLinkMessage();
+  });
+
+  test("recall link message", async () => {
+    const messageList = await sendLinkMessage();
+    await recallMessages(messageList);
+  }, 10000);
+
+  const sendMiniProgramMessage = async (): Promise<Message[]> => {
+    const miniProgramPayload: MiniProgramPayload = config.get("test.message.send.miniProgram");
+    const miniProgram = new MiniProgram(miniProgramPayload);
+    return sendMessage(miniProgram, MessageType.MiniProgram);
+  };
+
+  test("send miniprogram message", async () => {
+    await sendMiniProgramMessage();
+  });
+
+  test("recall miniprogram message", async () => {
+    const messageList = await sendMiniProgramMessage();
+    await recallMessages(messageList);
+  });
 });
 
 describe("room", () => {
