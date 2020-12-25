@@ -1,6 +1,6 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "0.2.5",
+  "version": "0.2.8",
   "description": "Puppet PadLocal for Wechaty",
   "directories": {
     "test": "tests"
@@ -92,11 +92,6 @@
     "watchdog": "^0.8.17",
     "wechaty-puppet": "^0.33.3",
     "xml2js": "^0.4.23"
-  },
-  "git": {
-    "scripts": {
-      "pre-push": "npx git-scripts-pre-push"
-    }
   },
   "jest": {
     "testTimeout": 15000
