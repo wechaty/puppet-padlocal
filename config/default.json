@@ -64,6 +64,13 @@
           "title"       : "",
           "username"    : "",
           "thumbKey"    : ""
+        },
+        "emoji": {
+          "cdnurl": "",
+          "md5": "",
+          "len": 0,
+          "type": 0,
+          "gameext": ""
         }
       }
     },
@@ -94,6 +101,10 @@
 
       "quit": {
         "id": "CHATROOM_ID"
+      },
+
+      "qr": {
+        "saveFilePath":""
       }
     }
   }

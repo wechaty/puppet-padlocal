@@ -47,6 +47,9 @@ test(
 
           const dataBuffer = await attachFile.toBuffer();
           expect(dataBuffer.length).toBeGreaterThan(0);
+
+          // fs.writeFileSync("/Users/haoda/Downloads/voice.slk", dataBuffer);
+
           break;
 
         case MessageType.Video:

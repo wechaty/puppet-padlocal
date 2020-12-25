@@ -57,9 +57,14 @@ import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
 import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import * as XMLParser from "fast-xml-parser";
-import { emotionPayloadParser } from "./padlocal/message-parser/helpers/message-emotion";
+import {
+  EmojiMessagePayload,
+  emotionPayloadGenerator,
+  emotionPayloadParser,
+} from "./padlocal/message-parser/helpers/message-emotion";
 import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
+import { FileBoxJsonObject } from "file-box/src/file-box.type";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -564,7 +569,13 @@ class PuppetPadlocal extends Puppet {
 
       case MessageType.Emoticon:
         const emotionPayload = await emotionPayloadParser(messagePayload);
-        return FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`);
+        const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`, {
+          ...emotionPayload,
+        });
+
+        emoticonBox.mimeType = "emoticon";
+
+        return emoticonBox;
 
       case MessageType.MiniProgram:
         const thumbData = await this._client!.api.getMessageMiniProgramThumb(
@@ -767,6 +778,41 @@ class PuppetPadlocal extends Puppet {
       return response.getMsgid();
     }
 
+    // emotion
+    else if (fileBox.mimeType === "emoticon") {
+      const emotionBoxJson: FileBoxJsonObject = fileBox.toJSON();
+      // @ts-ignore
+      const emotionPayload: EmojiMessagePayload = emotionBoxJson.headers;
+
+      const response = await this._client!.api.sendMessageEmoji(
+        genIdempotentId(),
+        toUserName,
+        emotionPayload.md5,
+        emotionPayload.len,
+        emotionPayload.type,
+        emotionPayload.gameext
+      );
+
+      const pushContent = isRoomId(toUserName)
+        ? `${this._client!.selfContact!.getNickname()}: [动画表情]`
+        : "[动画表情]";
+
+      const content = emotionPayloadGenerator(emotionPayload);
+
+      await this._onSendMessage(
+        new Message()
+          .setType(WechatMessageType.Emoticon)
+          .setFromusername(this.id!)
+          .setTousername(toUserName)
+          .setBinarypayload(content)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getMessagerevokeinfo()!
+      );
+
+      return response.getMsgid();
+    }
+
     // try to send any other type as binary fileBox
     // application/octet-stream
     else {
@@ -808,7 +854,7 @@ class PuppetPadlocal extends Puppet {
       miniProgram.setThumbimage(thumb);
     }
 
-    const response = await this._client!.api.sendAppMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    const response = await this._client!.api.sendMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
     const pushContent = isRoomId(toUserName)
       ? `${this._client!.selfContact!.getNickname()}: [链接] ${mpPayload.title}`
       : `[链接] ${mpPayload.title}`;
@@ -861,7 +907,7 @@ class PuppetPadlocal extends Puppet {
       appMessageLink.setThumbimage(thumb);
     }
 
-    const response = await this._client!.api.sendAppMessageLink(genIdempotentId(), toUserName, appMessageLink);
+    const response = await this._client!.api.sendMessageLink(genIdempotentId(), toUserName, appMessageLink);
     const pushContent = isRoomId(toUserName)
       ? `${this._client!.selfContact!.getNickname()}: [小程序] ${linkPayload.title}`
       : `[小程序] ${linkPayload.title}`;
@@ -936,6 +982,11 @@ class PuppetPadlocal extends Puppet {
         newMessageId = response.getMsgid();
         break;
 
+      case MessageType.Emoticon:
+        const emotionBox = await this.messageFile(messageId);
+        newMessageId = await this.messageSendFile(toUserName, emotionBox);
+        break;
+
       default:
         throw new Error(`Message forwarding is unsupported for messageId:${messageId}, type:${message.type}`);
     }
@@ -994,7 +1045,11 @@ class PuppetPadlocal extends Puppet {
   public async roomAnnounce(roomId: string): Promise<string>;
   public async roomAnnounce(roomId: string, text: string): Promise<void>;
   public async roomAnnounce(roomId: string, text?: string): Promise<void | string> {
-    await this._client!.api.setChatRoomAnnouncement(roomId, text || "");
+    if (text === undefined) {
+      return this._client!.api.getChatRoomAnnouncement(roomId);
+    } else {
+      await this._client!.api.setChatRoomAnnouncement(roomId, text!);
+    }
   }
 
   public async roomMemberList(roomId: string): Promise<string[]> {

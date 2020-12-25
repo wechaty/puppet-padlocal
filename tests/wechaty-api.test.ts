@@ -2,6 +2,7 @@ import config from "config";
 import { Contact, FileBox, Message, MiniProgram, UrlLink, Wechaty } from "wechaty";
 import { prepareSingedOnBot } from "./wechaty-common";
 import { MessageType, MiniProgramPayload } from "wechaty-puppet";
+import { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion";
 
 let bot: Wechaty;
 
@@ -139,17 +140,49 @@ describe("friendship", () => {
   });
 });
 
-describe("message", () => {
-  const toChatRoomId: string = config.get("test.message.send.chatroomId");
-  const toUserName: string = config.get("test.message.send.toUserName");
+const toChatRoomId: string = config.get("test.message.send.chatroomId");
+const toUserName: string = config.get("test.message.send.toUserName");
 
-  const expectSendMessage = async (message: Message, messageType: MessageType) => {
-    const selfContact = bot.userSelf();
-    expect(message).toBeTruthy();
-    expect(message.from()!.id).toEqual(selfContact.id);
-    expect(message.to() || message.room()).toBeTruthy();
-    expect(message.type()).toBe(messageType);
-    expect(message.date()).toBeTruthy();
+const expectSendMessage = async (message: Message, messageType: MessageType) => {
+  const selfContact = bot.userSelf();
+  expect(message).toBeTruthy();
+  expect(message.from()!.id).toEqual(selfContact.id);
+  expect(message.to() || message.room()).toBeTruthy();
+  expect(message.type()).toBe(messageType);
+  expect(message.date()).toBeTruthy();
+};
+
+const sendToContact = async (payload: any, messageType: MessageType, toUser?: string): Promise<Message> => {
+  const to = toUser || toUserName;
+  const toContact = (await bot.Contact.find({ id: to }))!;
+  const message = (await toContact.say(payload)) as Message;
+
+  await expectSendMessage(message, messageType);
+
+  return message;
+};
+
+const sendToRoom = async (
+  payload: any,
+  messageType: MessageType,
+  toRoomId?: string,
+  ...mentionList: Contact[]
+): Promise<Message> => {
+  const to = toRoomId || toChatRoomId;
+  const toRoom = (await bot.Room.find({ id: to }))!;
+  const message = (await toRoom.say(payload, ...mentionList)) as Message;
+
+  await expectSendMessage(message, messageType);
+
+  return message;
+};
+
+describe("message", () => {
+  const sendMessage = async (payload: any, messageType: MessageType): Promise<Message[]> => {
+    const message1 = await sendToContact(payload, messageType);
+    const message2 = await sendToRoom(payload, messageType);
+
+    return [message1, message2];
   };
 
   const recallMessages = async (messageList: Message[]) => {
@@ -158,31 +191,6 @@ describe("message", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await messageList[1].recall();
-  };
-
-  const sendToContact = async (payload: any, messageType: MessageType): Promise<Message> => {
-    const toContact = (await bot.Contact.find({ id: toUserName }))!;
-    const message = (await toContact.say(payload)) as Message;
-
-    await expectSendMessage(message, messageType);
-
-    return message;
-  };
-
-  const sendToRoom = async (payload: any, messageType: MessageType, ...mentionList: Contact[]): Promise<Message> => {
-    const toRoom = (await bot.Room.find({ id: toChatRoomId }))!;
-    const message = (await toRoom.say(payload, ...mentionList)) as Message;
-
-    await expectSendMessage(message, messageType);
-
-    return message;
-  };
-
-  const sendMessage = async (payload: any, messageType: MessageType): Promise<Message[]> => {
-    const message1 = await sendToContact(payload, messageType);
-    const message2 = await sendToRoom(payload, messageType);
-
-    return [message1, message2];
   };
 
   test("send text message", async () => {
@@ -200,7 +208,7 @@ describe("message", () => {
       const contact = await bot.Contact.find({ id: contactId });
       contactList.push(contact!);
     }
-    await sendToRoom(text, MessageType.Text, ...contactList);
+    await sendToRoom(text, MessageType.Text, undefined, ...contactList);
   });
 
   test("recall text message", async () => {
@@ -332,6 +340,26 @@ describe("message", () => {
     const messageList = await sendMiniProgramMessage();
     await recallMessages(messageList);
   });
+
+  const sendEmojiMessage = async (): Promise<Message[]> => {
+    const emotionPayload: EmojiMessagePayload = config.get("test.message.send.emoji");
+    const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-test-emotion.jpg`, {
+      ...emotionPayload,
+    });
+
+    emoticonBox.mimeType = "emoticon";
+
+    return sendMessage(emoticonBox, MessageType.Emoticon);
+  };
+
+  test("send emoticon message", async () => {
+    await sendEmojiMessage();
+  });
+
+  test("recall emoticon message", async () => {
+    const messageList = await sendEmojiMessage();
+    await recallMessages(messageList);
+  });
 });
 
 describe("room", () => {
@@ -359,6 +387,8 @@ describe("room", () => {
 
     const newRoomMemberList = await newRoom.memberAll();
     expect(newRoomMemberList.length).toEqual(3);
+
+    await sendToRoom("hello", MessageType.Text, newRoom.id);
   });
 
   test("room member list", async () => {
@@ -440,10 +470,11 @@ describe("room", () => {
   test("room announce", async () => {
     const room = (await bot.Room.find({ id: chatroomId }))!;
 
-    await room.announce();
-
     const newAnnouncement: string = config.get("test.room.announce.newAnnouncement");
     await room.announce(newAnnouncement);
+
+    const announcement = await room.announce();
+    expect(announcement).toEqual(newAnnouncement);
   });
 
   test("room quit", async () => {
