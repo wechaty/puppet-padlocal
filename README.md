@@ -145,4 +145,4 @@ ts-node bot.ts
  依赖协议|iPad|iPad|Mac|iPad
  
  ## HOW TO GET TOKEN
- Padlocal is in **beta testing** stage, granting tokens to limited partners. If you want to apply, please [contact admin](mailto:oxddoxdd@gmail.com) for further information.
+[TOKEN 申请方法](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/TOKEN-%E7%94%B3%E8%AF%B7%E6%96%B9%E6%B3%95)
