@@ -181,51 +181,60 @@ class PuppetPadlocal extends Puppet {
       [LoginType.ONECLICKLOGIN]: "OneClickLogin",
     };
 
-    this._client!.api.login(LoginPolicy.DEFAULT, {
-      onLoginStart: (loginType: LoginType) => {
-        log.verbose(PRE, `start login with type: ${LoginTypeName[loginType]}`);
-      },
+    const login = async () => {
+      this._client!.api.login(LoginPolicy.DEFAULT, {
+        onLoginStart: (loginType: LoginType) => {
+          log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
+        },
 
-      onOneClickEvent: onQrCodeEvent,
+        onOneClickEvent: onQrCodeEvent,
 
-      onQrCodeEvent,
+        onQrCodeEvent,
 
-      onLoginSuccess: async (_) => {
-        const userName = this._client!.selfContact!.getUsername();
-        log.verbose(PRE, `login success: ${userName}`);
+        onLoginSuccess: async (_) => {
+          const userName = this._client!.selfContact!.getUsername();
+          log.verbose(PRE, `login success: ${userName}`);
 
-        await this.login(this._client!.selfContact!.getUsername());
-      },
+          await this.login(this._client!.selfContact!.getUsername());
+        },
 
-      // Will sync message and contact after login success, since last time login.
-      onSync: async (syncEvent: SyncEvent) => {
-        log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
+        // Will sync message and contact after login success, since last time login.
+        onSync: async (syncEvent: SyncEvent) => {
+          log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
-        for (const contact of syncEvent.getContactList()) {
-          await this._onPushContact(contact);
-        }
+          for (const contact of syncEvent.getContactList()) {
+            await this._onPushContact(contact);
+          }
 
-        for (const message of syncEvent.getMessageList()) {
-          await this._onPushMessage(message);
-        }
-      },
-    })
-      .then(() => {
-        log.verbose(PRE, `on ready`);
-
-        this.emit("ready", {
-          data: "ready",
-        });
-
-        this.state.on(true);
+          for (const message of syncEvent.getMessageList()) {
+            await this._onPushMessage(message);
+          }
+        },
       })
-      .catch(async (e) => {
-        log.error(PRE, "login failed", e);
+        .then(() => {
+          log.verbose(PRE, `on ready`);
 
-        this.emit("error", { data: e.toString() });
+          this.emit("ready", {
+            data: "ready",
+          });
 
-        await this.stop();
-      });
+          this.state.on(true);
+        })
+        .catch(async (e) => {
+          if (e.toString().indexOf("check qr code timeout") !== -1) {
+            // login again
+            await login();
+          } else {
+            log.error(PRE, "login failed", e);
+
+            this.emit("error", { data: e.toString() });
+
+            await this.stop();
+          }
+        });
+    };
+
+    await login();
   }
 
   /**
