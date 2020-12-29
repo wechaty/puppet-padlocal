@@ -1,6 +1,6 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Puppet PadLocal for Wechaty",
   "directories": {
     "test": "tests"

@@ -1377,6 +1377,7 @@ class PuppetPadlocal extends Puppet {
   }
 
   private _destroyClient() {
+    this._client?.removeAllListeners();
     this._client = undefined;
   }
 }
