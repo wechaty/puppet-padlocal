@@ -1348,7 +1348,7 @@ class PuppetPadlocal extends Puppet {
     this._client = await PadLocalClient.create(this.options.token!, true);
 
     this._client.on("kickout", async (_detail: KickOutEvent) => {
-      this.emit("logout", { contactId: this.id!, data: JSON.stringify(_detail) });
+      this.emit("logout", { contactId: this.id!, data: _detail.errorMessage });
 
       await this.stop();
     });
