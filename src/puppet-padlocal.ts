@@ -999,7 +999,12 @@ class PuppetPadlocal extends Puppet {
    ***************************************************************************/
 
   public async roomAdd(roomId: string, contactId: string): Promise<void> {
-    await this._client!.api.addChatRoomMember(roomId, contactId);
+    const roomMemberList = await this.roomMemberList(roomId);
+    if (roomMemberList.length > 50) {
+      await this._client!.api.inviteChatRoomMember(roomId, contactId);
+    } else {
+      await this._client!.api.addChatRoomMember(roomId, contactId);
+    }
   }
 
   public async roomAvatar(roomId: string): Promise<FileBox> {
