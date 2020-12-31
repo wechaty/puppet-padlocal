@@ -885,11 +885,12 @@ class PuppetPadlocal extends Puppet {
     return response.getMsgid();
   }
 
-  public async messageSendText(toUserName: string, text: string): Promise<string> {
+  public async messageSendText(toUserName: string, text: string, mentionIdList?: string[]): Promise<string> {
     const response: SendTextMessageResponse = await this._client!.api.sendTextMessage(
       genIdempotentId(),
       toUserName,
-      text
+      text,
+      mentionIdList
     );
 
     const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: ${text}` : text;
