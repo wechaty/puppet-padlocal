@@ -549,7 +549,7 @@ class PuppetPadlocal extends Puppet {
             audioData = Buffer.from(messagePayload.binarypayload);
           }
         } else {
-          audioData = await this._client!.api.getMessageVoice(messageId, message.text!, message.toId!);
+          audioData = await this._client!.api.getMessageVoice(messageId, message.text!, messagePayload.tousername);
         }
         const audioFileBox = FileBox.fromBuffer(audioData, `message-${messageId}-audio.slk`);
         audioFileBox.mimeType = "audio/silk";
@@ -567,14 +567,14 @@ class PuppetPadlocal extends Puppet {
         return audioFileBox;
 
       case MessageType.Video:
-        const videoData = await this._client!.api.getMessageVideo(message.text!, message.toId!);
+        const videoData = await this._client!.api.getMessageVideo(message.text!, messagePayload.tousername);
         const videoFileBox = FileBox.fromBuffer(videoData, `message-${messageId}-video.mp4`);
         videoFileBox.mimeType = "video/mp4";
         return videoFileBox;
 
       case MessageType.Attachment:
         const appMsg = await appMessageParser(messagePayload);
-        const fileData = await this._client!.api.getMessageAttach(message.text!, message.toId!);
+        const fileData = await this._client!.api.getMessageAttach(message.text!, messagePayload.tousername);
         const binaryFileBox = FileBox.fromBuffer(fileData, appMsg.title);
         binaryFileBox.mimeType = "application/octet-stream";
         return binaryFileBox;
