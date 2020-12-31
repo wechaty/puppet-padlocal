@@ -221,7 +221,10 @@ class PuppetPadlocal extends Puppet {
           this.state.on(true);
         })
         .catch(async (e) => {
-          if (e.toString().indexOf("check qr code timeout") !== -1) {
+          const qrCodeTimeout = e.toString().indexOf("check qr code timeout") !== -1;
+          const oneClickCancelled = e.toString().indexOf("user cancelled login") !== -1;
+          const shouldContinueLogin = qrCodeTimeout || oneClickCancelled;
+          if (shouldContinueLogin) {
             // login again
             await login();
           } else {
