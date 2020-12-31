@@ -25,6 +25,10 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
     type,
   };
 
+  /**
+   * fromId: is mandatory
+   * roomId or toId: is mandatory
+   */
   let fromId: undefined | string;
   let roomId: undefined | string;
   let toId: undefined | string;
@@ -32,54 +36,33 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
   let text: undefined | string;
   let mentionIdList: string[] = [];
 
-  /**
-   * 1. Set Room Id
-   */
-  if (isRoomId(message.fromusername)) {
+  // enterprise wechat
+  if (isRoomId(message.fromusername) || isIMRoomId(message.fromusername)) {
     roomId = message.fromusername;
-  } else if (isRoomId(message.tousername)) {
-    roomId = message.tousername;
-  } else if (isIMRoomId(message.fromusername)) {
-    roomId = message.fromusername;
-  } else if (isIMRoomId(message.tousername)) {
-    roomId = message.tousername;
-  } else {
-    roomId = undefined;
-  }
 
-  /**
-   * 2. Set To Contact Id
-   */
-  if (isContactId(message.tousername)) {
-    toId = message.tousername;
-  } else {
-    // TODO: if the message @someone, the toId should set to the mentioned contact id(?)
-
-    toId = undefined;
-  }
-
-  /**
-   * 3. Set From Contact Id
-   */
-  if (isContactId(message.fromusername)) {
-    fromId = message.fromusername;
-  } else {
     const parts = message.content.split(":\n");
     if (parts && parts.length > 1) {
-      if (isContactId(parts[0])) {
-        fromId = parts[0];
-      } else if (isIMContactId(parts[0])) {
+      if (isContactId(parts[0]) || isIMContactId(parts[0])) {
         fromId = parts[0];
       }
-    } else {
-      fromId = undefined;
     }
+  } else if (isRoomId(message.tousername) || isIMRoomId(message.tousername)) {
+    roomId = message.tousername;
+    fromId = message.fromusername;
+  } else {
+    fromId = message.fromusername;
+    toId = message.tousername;
   }
 
-  /**
-   *
-   * 4. Set Text
-   */
+  if (!fromId) {
+    throw Error("empty fromId!");
+  }
+
+  if (!roomId && !toId) {
+    throw Error("empty roomId and toId!");
+  }
+
+  // set text
   if (roomId) {
     const startIndex = message.content.indexOf(":\n");
 
@@ -88,22 +71,7 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
     text = message.content;
   }
 
-  /**
-   * 5.1 Validate Room & From ID
-   */
-  if (!roomId && !fromId) {
-    throw Error("empty roomId and empty fromId!");
-  }
-  /**
-   * 5.1 Validate Room & To ID
-   */
-  if (!roomId && !toId) {
-    throw Error("empty roomId and empty toId!");
-  }
-
-  /**
-   * 6. Set mention list, only for room messages
-   */
+  // set mention list
   if (roomId) {
     mentionIdList = message.atList;
   }
