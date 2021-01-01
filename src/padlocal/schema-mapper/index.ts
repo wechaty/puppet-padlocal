@@ -54,14 +54,6 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
     toId = message.tousername;
   }
 
-  if (!fromId) {
-    throw Error("empty fromId!");
-  }
-
-  if (!roomId && !toId) {
-    throw Error("empty roomId and toId!");
-  }
-
   // set text
   if (roomId) {
     const startIndex = message.content.indexOf(":\n");
