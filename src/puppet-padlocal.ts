@@ -65,6 +65,7 @@ import {
 import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 import { FileBoxJsonObject } from "file-box/src/file-box.type";
+import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -85,6 +86,7 @@ if (logLevel) {
 class PuppetPadlocal extends Puppet {
   private _client?: PadLocalClient;
   private _cacheMgr?: CacheManager;
+  private _onPushSerialExecutor: SerialExecutor = new SerialExecutor();
 
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
@@ -1359,16 +1361,20 @@ class PuppetPadlocal extends Puppet {
     });
 
     this._client.on("message", async (messageList: Message[]) => {
-      for (const message of messageList) {
-        // handle message one by one
-        await this._onPushMessage(message);
-      }
+      await this._onPushSerialExecutor.execute(async () => {
+        for (const message of messageList) {
+          // handle message one by one
+          await this._onPushMessage(message);
+        }
+      });
     });
 
     this._client.on("contact", async (contactList: Contact[]) => {
-      for (const contact of contactList) {
-        await this._onPushContact(contact);
-      }
+      await this._onPushSerialExecutor.execute(async () => {
+        for (const contact of contactList) {
+          await this._onPushContact(contact);
+        }
+      });
     });
 
     log.info(`

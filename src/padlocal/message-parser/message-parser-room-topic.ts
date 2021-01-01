@@ -51,11 +51,14 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     topic = getNickName(linkList, topic);
   }
 
+  const room = await puppet.roomPayload(roomId);
+  const oldTopic = room.topic;
+
   return {
     changerId,
     roomId,
     timestamp: message.createtime,
-    oldTopic: "",
+    oldTopic,
     newTopic: topic,
   } as EventRoomTopicPayload;
 };
