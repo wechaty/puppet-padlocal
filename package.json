@@ -85,7 +85,7 @@
     "hot-import": "^0.2.14",
     "lru-cache": "^6.0.0",
     "normalize-package-data": "^2.5.0",
-    "padlocal-client-ts": "^0.2.9",
+    "padlocal-client-ts": "^0.2.10",
     "quick-lru": "^5.1.0",
     "state-switch": "^0.6.18",
     "typed-emitter": "^1.2.0",
