@@ -851,10 +851,11 @@ class PuppetPadlocal extends Puppet {
   public async messageSendMiniProgram(toUserName: string, mpPayload: MiniProgramPayload): Promise<string> {
     const miniProgram = new AppMessageMiniProgram();
     mpPayload.appid && miniProgram.setMpappid(mpPayload.appid);
-    mpPayload.description && miniProgram.setDescription(mpPayload.description);
+    mpPayload.description && miniProgram.setTitle(mpPayload.description);
     mpPayload.pagePath && miniProgram.setMpapppath(mpPayload.pagePath);
     mpPayload.iconUrl && miniProgram.setMpappiconurl(mpPayload.iconUrl);
-    mpPayload.title && miniProgram.setTitle(mpPayload.title);
+    mpPayload.title && miniProgram.setDescription(mpPayload.title);
+    mpPayload.title && miniProgram.setMpappname(mpPayload.title);
     mpPayload.username && miniProgram.setMpappusername(mpPayload.username);
 
     if (mpPayload.thumbUrl && mpPayload.thumbKey) {
