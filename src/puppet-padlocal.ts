@@ -66,6 +66,7 @@ import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 import { FileBoxJsonObject } from "file-box/src/file-box.type";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
+import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -1257,10 +1258,32 @@ class PuppetPadlocal extends Puppet {
     }
 
     if (isRoomId(contact.username)) {
+      const oldRoomPayload = await this.roomRawPayload(contact.username);
       // some contact push may not contain avatar, e.g. modify room announcement
       if (!contact.avatar) {
-        const oldRoomPayload = await this.roomRawPayload(contact.username);
         contact.avatar = oldRoomPayload.avatar;
+      }
+
+      // If case you are not the chatroom owner, room leave message will not be sent.
+      // Calc the room member diffs, then send room leave event instead.
+      if (contact.chatroommemberList.length < oldRoomPayload.chatroommemberList.length) {
+        const newMemberIdSet = new Set(contact.chatroommemberList.map((m) => m.username));
+        const removedMemberIdList = oldRoomPayload.chatroommemberList
+          .filter((m) => !newMemberIdSet.has(m.username))
+          .map((m) => m.username)
+          .filter((removeeId) => !isRoomLeaveDebouncing(contact.username, removeeId));
+
+        if (removedMemberIdList.length) {
+          removedMemberIdList.forEach((removeeId) => {
+            const roomLeave: EventRoomLeavePayload = {
+              removeeIdList: [removeeId],
+              removerId: removeeId,
+              roomId: contact.username,
+              timestamp: Math.floor(Date.now() / 1000),
+            };
+            this.emit("room-leave", roomLeave);
+          });
+        }
       }
 
       const roomId = contact.username;

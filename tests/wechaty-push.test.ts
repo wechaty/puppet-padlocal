@@ -140,14 +140,18 @@ test(
       bot.on("room-join", async (room: Room, inviteeList: Contact[], inviter: Contact, date) => {
         log.info(
           LOGPRE,
-          `on room join: ${room.toString()}, ${inviteeList.map((i) => i.toString())}, ${inviter.toString()}, ${date}`
+          `on room join: ${room.toString()}, inviteeList: ${inviteeList.map((i) => i.id)}, inviter: ${
+            inviter.id
+          }, ${date}`
         );
       });
 
       bot.on("room-leave", async (room: Room, leaverList: Contact[], remover?: Contact, date?: Date) => {
         log.info(
           LOGPRE,
-          `on room leave: ${room.toString()}, ${leaverList.map((l) => l.toString())}, ${remover?.toString()} ${date}`
+          `on room leave: ${room.toString()}, leaverList: ${leaverList.map((l) => l.id)}, remover: ${
+            remover?.id
+          } ${date}`
         );
       });
 
