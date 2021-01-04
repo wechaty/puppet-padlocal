@@ -9,10 +9,11 @@ import {
   RoomPayload,
 } from "wechaty-puppet";
 import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
-import { MessagePayloadBase, WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
+import { MessagePayloadBase } from "wechaty-puppet/dist/src/schemas/message";
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
 import { log } from "wechaty";
+import { WechatMessageType } from "../message-parser/WechatMessageType";
 
 const PRE = "[SchemaMapper]";
 
@@ -61,6 +62,8 @@ export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.
 
     text = message.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
   } else if (isContactId(message.fromusername)) {
+    text = message.content;
+  } else if (isIMContactId(message.fromusername)) {
     text = message.content;
   }
 

@@ -1,5 +1,4 @@
 import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import {
   Puppet,
   FriendshipPayloadConfirm,
@@ -8,9 +7,10 @@ import {
   FriendshipType,
 } from "wechaty-puppet";
 import { FriendshipPayloadReceive } from "wechaty-puppet/src/schemas/friendship";
-import { isContactId } from "../utils/is-type";
+import { isContactId, isIMContactId } from "../utils/is-type";
 import { xmlToJson } from "../utils/xml-to-json";
 import { MessageParserRetType } from "./message-parser";
+import { WechatMessageType } from "./WechatMessageType";
 
 const FRIENDSHIP_CONFIRM_REGEX_LIST = [
   /^You have added (.+) as your WeChat contact. Start chatting!$/,
@@ -65,7 +65,7 @@ const isNeedVerify = (message: Message.AsObject): boolean => {
 };
 
 const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | null> => {
-  if (message.type !== WechatMessageType.VerifyMsg) {
+  if (message.type !== WechatMessageType.VerifyMsg && message.type !== WechatMessageType.VerifyMsgEnterprise) {
     return null;
   }
 
@@ -73,6 +73,8 @@ const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | 
     const verifyXml: ReceiveXmlSchema = await xmlToJson(message.content);
     const contactId = verifyXml.msg.$.fromusername;
     if (isContactId(contactId) && verifyXml.msg.$.encryptusername) {
+      return verifyXml;
+    } else if (isIMContactId(contactId)) {
       return verifyXml;
     }
   } catch (e) {

@@ -1,6 +1,6 @@
-import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import { MessageType } from "wechaty-puppet";
 import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { WechatMessageType } from "../WechatMessageType";
 
 export function convertMessageType(wechatMessageType: WechatMessageType): MessageType {
   let type: MessageType;

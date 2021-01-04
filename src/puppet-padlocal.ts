@@ -43,7 +43,7 @@ import {
 } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager";
-import { isRoomId } from "./padlocal/utils/is-type";
+import { isIMContactId, isRoomId } from "./padlocal/utils/is-type";
 import {
   chatRoomMemberToContact,
   padLocalContactToWechaty,
@@ -55,7 +55,6 @@ import { appMessageParser } from "./padlocal/message-parser/helpers/message-appm
 import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram";
 import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
-import { WechatMessageType } from "wechaty-puppet/dist/src/schemas/message";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
@@ -67,6 +66,7 @@ import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 import { FileBoxJsonObject } from "file-box/src/file-box.type";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
+import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -474,7 +474,17 @@ class PuppetPadlocal extends Puppet {
     const friendship: FriendshipPayloadReceive = (await this.friendshipRawPayload(
       friendshipId
     )) as FriendshipPayloadReceive;
-    await this._client!.api.acceptUser(friendship.stranger!, friendship.ticket);
+    const userName = friendship.contactId;
+
+    // FIXME: workaround to make accept enterprise account work. can be done in a better way
+    if (isIMContactId(userName)) {
+      const contact = await this._client!.api.getContact(userName, friendship.ticket);
+      await this._updateContactCache(contact.toObject());
+    }
+
+    await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger);
+
+    // after adding friend, new version of contact will pushed
   }
 
   public async friendshipAdd(contactId: string, hello: string): Promise<void> {
@@ -1258,31 +1268,33 @@ class PuppetPadlocal extends Puppet {
     }
 
     if (isRoomId(contact.username)) {
-      const oldRoomPayload = await this.roomRawPayload(contact.username);
-      // some contact push may not contain avatar, e.g. modify room announcement
-      if (!contact.avatar) {
-        contact.avatar = oldRoomPayload.avatar;
-      }
+      const oldRoomPayload = await this._cacheMgr!.getRoom(contact.username);
+      if (oldRoomPayload) {
+        // some contact push may not contain avatar, e.g. modify room announcement
+        if (!contact.avatar) {
+          contact.avatar = oldRoomPayload.avatar;
+        }
 
-      // If case you are not the chatroom owner, room leave message will not be sent.
-      // Calc the room member diffs, then send room leave event instead.
-      if (contact.chatroommemberList.length < oldRoomPayload.chatroommemberList.length) {
-        const newMemberIdSet = new Set(contact.chatroommemberList.map((m) => m.username));
-        const removedMemberIdList = oldRoomPayload.chatroommemberList
-          .filter((m) => !newMemberIdSet.has(m.username))
-          .map((m) => m.username)
-          .filter((removeeId) => !isRoomLeaveDebouncing(contact.username, removeeId));
+        // If case you are not the chatroom owner, room leave message will not be sent.
+        // Calc the room member diffs, then send room leave event instead.
+        if (contact.chatroommemberList.length < oldRoomPayload.chatroommemberList.length) {
+          const newMemberIdSet = new Set(contact.chatroommemberList.map((m) => m.username));
+          const removedMemberIdList = oldRoomPayload.chatroommemberList
+            .filter((m) => !newMemberIdSet.has(m.username))
+            .map((m) => m.username)
+            .filter((removeeId) => !isRoomLeaveDebouncing(contact.username, removeeId));
 
-        if (removedMemberIdList.length) {
-          removedMemberIdList.forEach((removeeId) => {
-            const roomLeave: EventRoomLeavePayload = {
-              removeeIdList: [removeeId],
-              removerId: removeeId,
-              roomId: contact.username,
-              timestamp: Math.floor(Date.now() / 1000),
-            };
-            this.emit("room-leave", roomLeave);
-          });
+          if (removedMemberIdList.length) {
+            removedMemberIdList.forEach((removeeId) => {
+              const roomLeave: EventRoomLeavePayload = {
+                removeeIdList: [removeeId],
+                removerId: removeeId,
+                roomId: contact.username,
+                timestamp: Math.floor(Date.now() / 1000),
+              };
+              this.emit("room-leave", roomLeave);
+            });
+          }
         }
       }
 
