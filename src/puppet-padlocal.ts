@@ -1257,6 +1257,12 @@ class PuppetPadlocal extends Puppet {
     }
 
     if (isRoomId(contact.username)) {
+      // some contact push may not contain avatar, e.g. modify room announcement
+      if (!contact.avatar) {
+        const oldRoomPayload = await this.roomRawPayload(contact.username);
+        contact.avatar = oldRoomPayload.avatar;
+      }
+
       const roomId = contact.username;
       await this._cacheMgr!.setRoom(roomId, contact);
       await this.dirtyPayload(PayloadType.Room, roomId);
