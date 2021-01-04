@@ -4,6 +4,7 @@ import {
   ContactType,
   MessagePayload,
   MessageType,
+  Puppet,
   RoomMemberPayload,
   RoomPayload,
 } from "wechaty-puppet";
@@ -15,7 +16,7 @@ import { log } from "wechaty";
 
 const PRE = "[SchemaMapper]";
 
-export async function padLocalMessageToWechaty(message: Message.AsObject): Promise<MessagePayload> {
+export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.AsObject): Promise<MessagePayload> {
   const wechatMessageType = message.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
 
@@ -65,7 +66,12 @@ export async function padLocalMessageToWechaty(message: Message.AsObject): Promi
 
   // set mention list
   if (roomId) {
-    mentionIdList = message.atList;
+    if (message.atList.length === 1 && message.atList[0] === "announcement@all") {
+      const roomPayload = await puppet.roomPayload(roomId);
+      mentionIdList = roomPayload.memberIdList;
+    } else {
+      mentionIdList = message.atList;
+    }
   }
 
   /**

@@ -1117,7 +1117,7 @@ class PuppetPadlocal extends Puppet {
   }
 
   public async messageRawPayloadParser(payload: Message.AsObject): Promise<MessagePayload> {
-    return padLocalMessageToWechaty(payload);
+    return padLocalMessageToWechaty(this, payload);
   }
 
   public async messageRawPayload(id: string): Promise<Message.AsObject> {
