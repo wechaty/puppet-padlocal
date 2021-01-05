@@ -67,6 +67,7 @@ import { FileBoxJsonObject } from "file-box/src/file-box.type";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
+import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -88,6 +89,8 @@ class PuppetPadlocal extends Puppet {
   private _client?: PadLocalClient;
   private _cacheMgr?: CacheManager;
   private _onPushSerialExecutor: SerialExecutor = new SerialExecutor();
+  private _printVersion: boolean = true;
+  private _restartStrategy = RetryStrategy.getStrategy(RetryStrategyRule.FAST, Number.MAX_SAFE_INTEGER);
 
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
@@ -126,6 +129,10 @@ class PuppetPadlocal extends Puppet {
   }
 
   public async start(): Promise<void> {
+    await this._start(LoginPolicy.DEFAULT);
+  }
+
+  private async _start(loginPolicy: LoginPolicy): Promise<void> {
     if (this.state.on()) {
       log.warn(PRE, "start() is called on a ON puppet. await ready(on) and return.");
       await this.state.ready("on");
@@ -184,63 +191,49 @@ class PuppetPadlocal extends Puppet {
       [LoginType.ONECLICKLOGIN]: "OneClickLogin",
     };
 
-    const login = async () => {
-      this._client!.api.login(LoginPolicy.DEFAULT, {
-        onLoginStart: (loginType: LoginType) => {
-          log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
-        },
+    this._client!.api.login(loginPolicy, {
+      onLoginStart: (loginType: LoginType) => {
+        log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
+      },
 
-        onOneClickEvent: onQrCodeEvent,
+      onOneClickEvent: onQrCodeEvent,
 
-        onQrCodeEvent,
+      onQrCodeEvent,
 
-        onLoginSuccess: async (_) => {
-          const userName = this._client!.selfContact!.getUsername();
-          log.verbose(PRE, `login success: ${userName}`);
+      onLoginSuccess: async (_) => {
+        const userName = this._client!.selfContact!.getUsername();
+        log.verbose(PRE, `login success: ${userName}`);
 
-          await this.login(this._client!.selfContact!.getUsername());
-        },
+        await this.login(this._client!.selfContact!.getUsername());
+      },
 
-        // Will sync message and contact after login success, since last time login.
-        onSync: async (syncEvent: SyncEvent) => {
-          log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
+      // Will sync message and contact after login success, since last time login.
+      onSync: async (syncEvent: SyncEvent) => {
+        log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
-          for (const contact of syncEvent.getContactList()) {
-            await this._onPushContact(contact);
-          }
+        for (const contact of syncEvent.getContactList()) {
+          await this._onPushContact(contact);
+        }
 
-          for (const message of syncEvent.getMessageList()) {
-            await this._onPushMessage(message);
-          }
-        },
-      })
-        .then(() => {
-          log.verbose(PRE, `on ready`);
+        for (const message of syncEvent.getMessageList()) {
+          await this._onPushMessage(message);
+        }
+      },
+    })
+      .then(() => {
+        log.verbose(PRE, `on ready`);
 
-          this.emit("ready", {
-            data: "ready",
-          });
-
-          this.state.on(true);
-        })
-        .catch(async (e) => {
-          const qrCodeTimeout = e.toString().indexOf("check qr code timeout") !== -1;
-          const oneClickCancelled = e.toString().indexOf("user cancelled login") !== -1;
-          const shouldContinueLogin = qrCodeTimeout || oneClickCancelled;
-          if (shouldContinueLogin) {
-            // login again
-            await login();
-          } else {
-            log.error(PRE, "login failed", e);
-
-            this.emit("error", { data: e.toString() });
-
-            await this.stop();
-          }
+        this.emit("ready", {
+          data: "ready",
         });
-    };
 
-    await login();
+        this.state.on(true);
+      })
+      .catch(async (e) => {
+        log.error(PRE, `login failed: ${e.stack}`, e);
+
+        await this._stop(true);
+      });
   }
 
   /**
@@ -249,6 +242,8 @@ class PuppetPadlocal extends Puppet {
    * @protected
    */
   protected async login(userId: string): Promise<void> {
+    this._restartStrategy.reset();
+
     // create cache manager firstly
     this._cacheMgr = new CacheManager(userId);
     await this._cacheMgr.init();
@@ -265,6 +260,10 @@ class PuppetPadlocal extends Puppet {
    * stop the bot, with account signed on, will try auto login next time bot start.
    */
   public async stop(): Promise<void> {
+    await this._stop(false);
+  }
+
+  private async _stop(restart: boolean): Promise<void> {
     if (this.state.off()) {
       log.warn(PRE, "stop() is called on a OFF puppet. await ready(off) and return.");
       await this.state.ready("off");
@@ -273,17 +272,26 @@ class PuppetPadlocal extends Puppet {
 
     this.state.off("pending");
 
+    this._client!.removeAllListeners();
     this._client!.shutdown();
+    this._client = undefined;
+
     this.id = undefined;
 
-    await this._cacheMgr!.close();
-    this._cacheMgr = undefined;
-
-    this._destroyClient();
+    if (this._cacheMgr) {
+      await this._cacheMgr!.close();
+      this._cacheMgr = undefined;
+    }
 
     this.state.off(true);
-  }
 
+    if (restart && this._restartStrategy.canRetry()) {
+      setTimeout(async () => {
+        // one-click login after failure is strange, so skip it.
+        await this._start(LoginPolicy.SKIP_ONE_CLICK);
+      }, this._restartStrategy.nextRetryDelay());
+    }
+  }
   /**
    * logout account and stop the bot
    */
@@ -296,7 +304,7 @@ class PuppetPadlocal extends Puppet {
 
     this.emit("logout", { contactId: this.id, data: "logout by self" });
 
-    await this.stop();
+    await this._stop(false);
   }
 
   ding(_data?: string): void {
@@ -1398,7 +1406,7 @@ class PuppetPadlocal extends Puppet {
     this._client.on("kickout", async (_detail: KickOutEvent) => {
       this.emit("logout", { contactId: this.id!, data: _detail.errorMessage });
 
-      await this.stop();
+      await this._stop(true);
     });
 
     this._client.on("message", async (messageList: Message[]) => {
@@ -1418,7 +1426,11 @@ class PuppetPadlocal extends Puppet {
       });
     });
 
-    log.info(`
+    if (this._printVersion) {
+      // only print once
+      this._printVersion = false;
+
+      log.info(`
       ============================================================
        Welcome to Wechaty PadLocal puppet!
 
@@ -1426,11 +1438,7 @@ class PuppetPadlocal extends Puppet {
        - padlocal-ts-client version: ${this._client.version}
       ============================================================
     `);
-  }
-
-  private _destroyClient() {
-    this._client?.removeAllListeners();
-    this._client = undefined;
+    }
   }
 }
 

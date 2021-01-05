@@ -6223,10 +6223,10 @@ package-json@^6.3.0:
     registry-url "^5.0.0"
     semver "^6.2.0"
 
-padlocal-client-ts@^0.2.12:
-  version "0.2.12"
-  resolved "https://registry.npm.taobao.org/padlocal-client-ts/download/padlocal-client-ts-0.2.12.tgz#2e9f74209ba12cb593b932ec68d80f3b110d2f5d"
-  integrity sha1-Lp90IJuhLLWTuTLsaNgPOxENL10=
+padlocal-client-ts@^0.2.13:
+  version "0.2.13"
+  resolved "https://registry.npm.taobao.org/padlocal-client-ts/download/padlocal-client-ts-0.2.13.tgz#e42d1a2c2a1d52f1287385daf67e4c4fc03f6a60"
+  integrity sha1-5C0aLCodUvEoc4Xa9n5MT8A/amA=
   dependencies:
     "@grpc/grpc-js" "^1.1.3"
     "@types/crypto-js" "^3.1.47"
