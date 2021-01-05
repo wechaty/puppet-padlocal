@@ -66,6 +66,10 @@ test(
 
           const emotionJSON = emotionFile.toJSON() as FileBoxJsonObjectUrl;
           expect(emotionJSON.remoteUrl.length).toBeGreaterThan(0);
+
+          const emotionBuffer: Buffer = await emotionFile.toBuffer();
+          expect(emotionBuffer.length).toBeTruthy();
+
           break;
 
         case MessageType.Image:

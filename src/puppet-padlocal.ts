@@ -63,7 +63,6 @@ import {
 } from "./padlocal/message-parser/helpers/message-emotion";
 import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
-import { FileBoxJsonObject } from "file-box/src/file-box.type";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
@@ -602,10 +601,9 @@ class PuppetPadlocal extends Puppet {
 
       case MessageType.Emoticon:
         const emotionPayload = await emotionPayloadParser(messagePayload);
-        const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`, {
-          ...emotionPayload,
-        });
+        const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-${messageId}-emotion.jpg`);
 
+        emoticonBox.metadata = emotionPayload;
         emoticonBox.mimeType = "emoticon";
 
         return emoticonBox;
@@ -813,9 +811,7 @@ class PuppetPadlocal extends Puppet {
 
     // emotion
     else if (fileBox.mimeType === "emoticon") {
-      const emotionBoxJson: FileBoxJsonObject = fileBox.toJSON();
-      // @ts-ignore
-      const emotionPayload: EmojiMessagePayload = emotionBoxJson.headers;
+      const emotionPayload: EmojiMessagePayload = fileBox.metadata! as EmojiMessagePayload;
 
       const response = await this._client!.api.sendMessageEmoji(
         genIdempotentId(),
