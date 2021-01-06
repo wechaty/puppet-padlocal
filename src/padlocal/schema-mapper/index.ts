@@ -200,7 +200,7 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: Messag
         break;
     }
   } catch (e) {
-    log.warn(PRE, `Error occurred while parse message attachment: ${e.stack}`);
+    log.warn(PRE, `Error occurred while parse message attachment: ${JSON.stringify(message)} , ${e.stack}`);
   }
 }
 

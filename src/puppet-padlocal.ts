@@ -728,10 +728,10 @@ class PuppetPadlocal extends Puppet {
 
     await this._onSendMessage(
       new Message()
-        .setType(WechatMessageType.ShareCard)
+        .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Contact message, use text instead.
         .setFromusername(this.id!)
         .setTousername(toUserName)
-        .setContent("SEND CONTACT")
+        .setContent(pushContent)
         .setPushcontent(pushContent),
       response.getMsgid(),
       response.getMessagerevokeinfo()!
@@ -750,10 +750,10 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Image)
+          .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Image message, use text instead.
           .setFromusername(this.id!)
           .setTousername(toUserName)
-          .setBinarypayload(imageData)
+          .setContent(pushContent)
           .setPushcontent(pushContent),
         response.getMsgid(),
         response.getMessagerevokeinfo()!
@@ -763,7 +763,7 @@ class PuppetPadlocal extends Puppet {
     }
 
     // audio/silk
-    else if (fileBox.mimeType?.startsWith("audio/")) {
+    else if (fileBox.mimeType === "audio/silk") {
       const audioData = await fileBox.toBuffer();
       const response = await this._client!.api.sendVoiceMessage(
         genIdempotentId(),
@@ -776,10 +776,10 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Voice)
+          .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Voice message, use text instead.
           .setFromusername(this.id!)
           .setTousername(toUserName)
-          .setBinarypayload(audioData)
+          .setContent(pushContent)
           .setPushcontent(pushContent),
         response.getMsgid(),
         response.getMessagerevokeinfo()!
@@ -797,10 +797,10 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.Video)
+          .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Video message, use text instead.
           .setFromusername(this.id!)
           .setTousername(toUserName)
-          .setBinarypayload(videoData)
+          .setContent(pushContent)
           .setPushcontent(pushContent),
         response.getMsgid(),
         response.getMessagerevokeinfo()!
@@ -833,7 +833,7 @@ class PuppetPadlocal extends Puppet {
           .setType(WechatMessageType.Emoticon)
           .setFromusername(this.id!)
           .setTousername(toUserName)
-          .setBinarypayload(content)
+          .setContent(content)
           .setPushcontent(pushContent),
         response.getMsgid(),
         response.getMessagerevokeinfo()!
@@ -852,10 +852,10 @@ class PuppetPadlocal extends Puppet {
 
       await this._onSendMessage(
         new Message()
-          .setType(WechatMessageType.File)
+          .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal File message, use text instead.
           .setFromusername(this.id!)
           .setTousername(toUserName)
-          .setBinarypayload(fileData)
+          .setContent(pushContent)
           .setPushcontent(pushContent),
         response.getMsgid(),
         response.getMessagerevokeinfo()!
@@ -886,8 +886,8 @@ class PuppetPadlocal extends Puppet {
 
     const response = await this._client!.api.sendMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
     const pushContent = isRoomId(toUserName)
-      ? `${this._client!.selfContact!.getNickname()}: [链接] ${mpPayload.title}`
-      : `[链接] ${mpPayload.title}`;
+      ? `${this._client!.selfContact!.getNickname()}: [小程序] ${mpPayload.title}`
+      : `[小程序] ${mpPayload.title}`;
 
     await this._onSendMessage(
       new Message()
@@ -940,8 +940,8 @@ class PuppetPadlocal extends Puppet {
 
     const response = await this._client!.api.sendMessageLink(genIdempotentId(), toUserName, appMessageLink);
     const pushContent = isRoomId(toUserName)
-      ? `${this._client!.selfContact!.getNickname()}: [小程序] ${linkPayload.title}`
-      : `[小程序] ${linkPayload.title}`;
+      ? `${this._client!.selfContact!.getNickname()}: [链接] ${linkPayload.title}`
+      : `[链接] ${linkPayload.title}`;
 
     await this._onSendMessage(
       new Message()

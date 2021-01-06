@@ -143,28 +143,28 @@ describe("friendship", () => {
 const toChatRoomId: string = config.get("test.message.send.chatroomId");
 const toUserName: string = config.get("test.message.send.toUserName");
 
-const expectSendMessage = async (message: Message, messageType: MessageType) => {
+const expectSendMessage = async (message: Message, expectedMessageType: MessageType) => {
   const selfContact = bot.userSelf();
   expect(message).toBeTruthy();
   expect(message.from()!.id).toEqual(selfContact.id);
   expect(message.to() || message.room()).toBeTruthy();
-  expect(message.type()).toBe(messageType);
+  expect(message.type()).toBe(expectedMessageType);
   expect(message.date()).toBeTruthy();
 };
 
-const sendToContact = async (payload: any, messageType: MessageType, toUser?: string): Promise<Message> => {
+const sendToContact = async (payload: any, expectedMessageType: MessageType, toUser?: string): Promise<Message> => {
   const to = toUser || toUserName;
   const toContact = (await bot.Contact.find({ id: to }))!;
   const message = (await toContact.say(payload)) as Message;
 
-  await expectSendMessage(message, messageType);
+  await expectSendMessage(message, expectedMessageType);
 
   return message;
 };
 
 const sendToRoom = async (
   payload: any,
-  messageType: MessageType,
+  expectedMessageType: MessageType,
   toRoomId?: string,
   ...mentionList: Contact[]
 ): Promise<Message> => {
@@ -172,15 +172,15 @@ const sendToRoom = async (
   const toRoom = (await bot.Room.find({ id: to }))!;
   const message = (await toRoom.say(payload, ...mentionList)) as Message;
 
-  await expectSendMessage(message, messageType);
+  await expectSendMessage(message, expectedMessageType);
 
   return message;
 };
 
 describe("message", () => {
-  const sendMessage = async (payload: any, messageType: MessageType): Promise<Message[]> => {
-    const message1 = await sendToContact(payload, messageType);
-    const message2 = await sendToRoom(payload, messageType);
+  const sendMessage = async (payload: any, expectedMessageType: MessageType): Promise<Message[]> => {
+    const message1 = await sendToContact(payload, expectedMessageType);
+    const message2 = await sendToRoom(payload, expectedMessageType);
 
     return [message1, message2];
   };
@@ -220,7 +220,7 @@ describe("message", () => {
     const contactCardId: string = config.get("test.message.send.contactCardId");
     const contact = (await bot.Contact.find({ id: contactCardId }))!;
 
-    return sendMessage(contact, MessageType.Contact);
+    return sendMessage(contact, MessageType.Text);
   };
 
   test("send contact card message", async () => {
@@ -237,7 +237,7 @@ describe("message", () => {
     const imageFilePath: string = config.get("test.message.send.imageFilePath");
     const fileBox = FileBox.fromFile(imageFilePath);
 
-    return sendMessage(fileBox, MessageType.Image);
+    return sendMessage(fileBox, MessageType.Text);
   };
 
   test("send image message", async () => {
@@ -260,7 +260,7 @@ describe("message", () => {
       voiceLength,
     };
 
-    return sendMessage(fileBox, MessageType.Audio);
+    return sendMessage(fileBox, MessageType.Text);
   };
 
   test("send voice message", async () => {
@@ -277,7 +277,7 @@ describe("message", () => {
     const videoFilePath: string = config.get("test.message.send.videoFilePath");
     const fileBox = FileBox.fromFile(videoFilePath);
 
-    return sendMessage(fileBox, MessageType.Video);
+    return sendMessage(fileBox, MessageType.Text);
   };
 
   test("send video message", async () => {
@@ -294,12 +294,12 @@ describe("message", () => {
     const fileFilePath: string = config.get("test.message.send.fileFilePath");
     const fileBox = FileBox.fromFile(fileFilePath);
 
-    return sendMessage(fileBox, MessageType.Attachment);
+    return sendMessage(fileBox, MessageType.Text);
   };
 
   test("send file message", async () => {
     await sendFileMessage();
-  }, 20000);
+  }, 60000);
 
   test("recall file message", async () => {
     const messageList = await sendFileMessage();
