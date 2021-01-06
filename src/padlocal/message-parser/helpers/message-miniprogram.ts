@@ -41,8 +41,8 @@ export async function miniProgramMessageParser(rawPayload: Message.AsObject): Pr
   return {
     appid: weappinfo.appid,
     username: weappinfo.username,
-    title: appmsg.sourcedisplayname,
-    description: appmsg.title,
+    title: appmsg.title,
+    description: appmsg.sourcedisplayname,
     pagePath: weappinfo.pagepath,
     iconUrl: weappinfo.weappiconurl,
     shareId: weappinfo.shareId,
