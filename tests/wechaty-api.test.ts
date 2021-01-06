@@ -299,7 +299,7 @@ describe("message", () => {
 
   test("send file message", async () => {
     await sendFileMessage();
-  }, 60000);
+  }, 300000);
 
   test("recall file message", async () => {
     const messageList = await sendFileMessage();

@@ -27,10 +27,10 @@ Also, we provided a simple [demo project](https://github.com/padlocal/wechaty-pu
 
 If you want to explore PadLocal step by step, following instructions may be helpful.
 
-### Step by step instructions
-#### 1. Check your Node version first, >= v12
+### Step-by-step instructions
+#### 1. Check your Node version first, the most recent version is recommended. ```Node 14.15.4 LTS``` has been well tested. Or you may encounter bugs issued by Node, e.g. [#13](https://github.com/padlocal/wechaty-puppet-padlocal/issues/13) .  
 ```
-node --version // >= v12.0.0
+node --version // >= 14.15.4
 ``` 
 #### 2. Create and init your bot project
 ```
