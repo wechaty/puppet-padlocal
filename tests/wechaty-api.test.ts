@@ -154,7 +154,7 @@ const expectSendMessage = async (message: Message, expectedMessageType: MessageT
 
 const sendToContact = async (payload: any, expectedMessageType: MessageType, toUser?: string): Promise<Message> => {
   const to = toUser || toUserName;
-  const toContact = (await bot.Contact.find({ id: to }))!;
+  const toContact = await bot.Contact.load(to);
   const message = (await toContact.say(payload)) as Message;
 
   await expectSendMessage(message, expectedMessageType);
@@ -169,7 +169,7 @@ const sendToRoom = async (
   ...mentionList: Contact[]
 ): Promise<Message> => {
   const to = toRoomId || toChatRoomId;
-  const toRoom = (await bot.Room.find({ id: to }))!;
+  const toRoom = await bot.Room.load(to);
   const message = (await toRoom.say(payload, ...mentionList)) as Message;
 
   await expectSendMessage(message, expectedMessageType);

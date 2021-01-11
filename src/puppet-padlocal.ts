@@ -127,8 +127,12 @@ class PuppetPadlocal extends Puppet {
     }
   }
 
-  public async start(): Promise<void> {
-    await this._start(LoginPolicy.DEFAULT);
+  public async start(policy?: LoginPolicy): Promise<void> {
+    if (policy === undefined) {
+      policy = LoginPolicy.DEFAULT;
+    }
+
+    await this._start(policy);
   }
 
   private async _start(loginPolicy: LoginPolicy): Promise<void> {
