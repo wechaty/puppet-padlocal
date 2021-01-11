@@ -70,6 +70,7 @@ import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
+  defaultLoginPolicy?: LoginPolicy;
 };
 
 const PRE = "[PuppetPadlocal]";
@@ -127,12 +128,8 @@ class PuppetPadlocal extends Puppet {
     }
   }
 
-  public async start(policy?: LoginPolicy): Promise<void> {
-    if (policy === undefined) {
-      policy = LoginPolicy.DEFAULT;
-    }
-
-    await this._start(policy);
+  public async start(): Promise<void> {
+    await this._start(LoginPolicy.DEFAULT);
   }
 
   private async _start(loginPolicy: LoginPolicy): Promise<void> {
@@ -193,6 +190,10 @@ class PuppetPadlocal extends Puppet {
       [LoginType.AUTOLOGIN]: "AutoLogin",
       [LoginType.ONECLICKLOGIN]: "OneClickLogin",
     };
+
+    if (loginPolicy === LoginPolicy.DEFAULT && this.options.defaultLoginPolicy !== undefined) {
+      loginPolicy = this.options.defaultLoginPolicy;
+    }
 
     this._client!.api.login(loginPolicy, {
       onLoginStart: (loginType: LoginType) => {
