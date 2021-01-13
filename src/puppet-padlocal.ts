@@ -937,10 +937,8 @@ class PuppetPadlocal extends Puppet {
 
     appMessageLink.setTitle(linkPayload.title).setUrl(linkPayload.url);
     linkPayload.description && appMessageLink.setDescription(linkPayload.description);
-
     if (linkPayload.thumbnailUrl) {
-      const thumb = await FileBox.fromUrl(linkPayload.thumbnailUrl).toBuffer();
-      appMessageLink.setThumbimage(thumb);
+      appMessageLink.setThumburl(linkPayload.thumbnailUrl);
     }
 
     const response = await this._client!.api.sendMessageLink(genIdempotentId(), toUserName, appMessageLink);

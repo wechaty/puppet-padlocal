@@ -71,6 +71,12 @@
           "len": 0,
           "type": 0,
           "gameext": ""
+        },
+        "link": {
+          "title": "",
+          "description": "",
+          "url": "",
+          "thumbImageUrl": ""
         }
       }
     },

@@ -307,14 +307,19 @@ describe("message", () => {
   }, 20000);
 
   const sendLinkMessage = async (): Promise<Message[]> => {
-    const url = new UrlLink({
-      description: "this is description",
-      thumbnailUrl: "https://placekitten.com/g/200/300",
-      title: "this is title",
-      url: "https://www.baidu.com/",
+    const title: string = config.get("test.message.send.link.title");
+    const description: string = config.get("test.message.send.link.description");
+    const url: string = config.get("test.message.send.link.url");
+    const thumbImageUrl: string = config.get("test.message.send.link.thumbImageUrl");
+
+    const urlLink = new UrlLink({
+      title,
+      description,
+      thumbnailUrl: thumbImageUrl,
+      url,
     });
 
-    return sendMessage(url, MessageType.Url);
+    return sendMessage(urlLink, MessageType.Url);
   };
 
   test("send link message", async () => {
