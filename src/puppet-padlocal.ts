@@ -129,10 +129,10 @@ class PuppetPadlocal extends Puppet {
   }
 
   public async start(): Promise<void> {
-    await this._start(LoginPolicy.DEFAULT);
+    await this._startClient(LoginPolicy.DEFAULT);
   }
 
-  private async _start(loginPolicy: LoginPolicy): Promise<void> {
+  private async _startClient(loginPolicy: LoginPolicy): Promise<void> {
     if (this.state.on()) {
       log.warn(PRE, "start() is called on a ON puppet. await ready(on) and return.");
       await this.state.ready("on");
@@ -195,6 +195,8 @@ class PuppetPadlocal extends Puppet {
       loginPolicy = this.options.defaultLoginPolicy;
     }
 
+    log.warn("loginPolicy: " + loginPolicy);
+
     this._client!.api.login(loginPolicy, {
       onLoginStart: (loginType: LoginType) => {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
@@ -236,7 +238,7 @@ class PuppetPadlocal extends Puppet {
       .catch(async (e) => {
         log.error(PRE, `login failed: ${e.stack}`, e);
 
-        await this._stop(true);
+        await this._stopClient(true);
       });
   }
 
@@ -264,10 +266,10 @@ class PuppetPadlocal extends Puppet {
    * stop the bot, with account signed on, will try auto login next time bot start.
    */
   public async stop(): Promise<void> {
-    await this._stop(false);
+    await this._stopClient(false);
   }
 
-  private async _stop(restart: boolean): Promise<void> {
+  private async _stopClient(restart: boolean): Promise<void> {
     if (this.state.off()) {
       log.warn(PRE, "stop() is called on a OFF puppet. await ready(off) and return.");
       await this.state.ready("off");
@@ -292,7 +294,7 @@ class PuppetPadlocal extends Puppet {
     if (restart && this._restartStrategy.canRetry()) {
       setTimeout(async () => {
         // one-click login after failure is strange, so skip it.
-        await this._start(LoginPolicy.SKIP_ONE_CLICK);
+        await this._startClient(LoginPolicy.SKIP_ONE_CLICK);
       }, this._restartStrategy.nextRetryDelay());
     }
   }
@@ -308,7 +310,7 @@ class PuppetPadlocal extends Puppet {
 
     this.emit("logout", { contactId: this.id, data: "logout by self" });
 
-    await this._stop(false);
+    await this._stopClient(true);
   }
 
   ding(_data?: string): void {
@@ -1405,7 +1407,7 @@ class PuppetPadlocal extends Puppet {
     this._client.on("kickout", async (_detail: KickOutEvent) => {
       this.emit("logout", { contactId: this.id!, data: _detail.errorMessage });
 
-      await this._stop(true);
+      await this._stopClient(true);
     });
 
     this._client.on("message", async (messageList: Message[]) => {
