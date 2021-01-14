@@ -1033,8 +1033,8 @@ class PuppetPadlocal extends Puppet {
    ***************************************************************************/
 
   public async roomAdd(roomId: string, contactId: string): Promise<void> {
-    const roomMemberList = await this.roomMemberList(roomId);
-    if (roomMemberList.length > 50) {
+    const room = await this.roomPayload(roomId);
+    if (room.memberIdList.length > 50) {
       await this._client!.api.inviteChatRoomMember(roomId, contactId);
     } else {
       await this._client!.api.addChatRoomMember(roomId, contactId);
