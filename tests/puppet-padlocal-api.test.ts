@@ -172,16 +172,20 @@ describe("message", () => {
     expect(messageId).toBeTruthy();
   });
 
-  test("send video", async () => {
-    const videoFilePath: string = config.get("test.message.send.videoFilePath");
-    const fileBox = FileBox.fromFile(videoFilePath);
+  test(
+    "send video",
+    async () => {
+      const videoFilePath: string = config.get("test.message.send.videoFilePath");
+      const fileBox = FileBox.fromFile(videoFilePath);
 
-    const messageId = await puppet.messageSendFile(toUserName, fileBox);
+      const messageId = await puppet.messageSendFile(toUserName, fileBox);
 
-    console.log(`send video message id: ${messageId}`);
+      console.log(`send video message id: ${messageId}`);
 
-    expect(messageId).toBeTruthy();
-  });
+      expect(messageId).toBeTruthy();
+    },
+    300 * 1000
+  );
 
   test("send file", async () => {
     const fileFilePath: string = config.get("test.message.send.fileFilePath");
