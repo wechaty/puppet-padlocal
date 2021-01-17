@@ -139,6 +139,8 @@ test(
 
       bot.on("room-invite", async (roomInvite: RoomInvitation) => {
         log.info(LOGPRE, `on room invite: ${await roomInvite.toJSON()}`);
+
+        await roomInvite.accept();
       });
 
       bot.on("room-join", async (room: Room, inviteeList: Contact[], inviter: Contact, date) => {

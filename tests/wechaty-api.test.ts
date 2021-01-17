@@ -488,4 +488,10 @@ describe("room", () => {
     const room = (await bot.Room.find({ id: roomId }))!;
     await room.quit();
   });
+
+  test("accept room invitation", async () => {
+    const roomInvitationId: string = config.get("test.room.invitation.id");
+    const roomInvitation = bot.RoomInvitation.load(roomInvitationId);
+    await roomInvitation.accept();
+  });
 });

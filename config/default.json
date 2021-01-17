@@ -1,12 +1,6 @@
 {
   "padLocal": {
-    "host": "127.0.0.1",
-    "port": 8888,
-    "token": "PADLOCAL_TOKEN",
-    "tls": {
-      "enabled": false,
-      "serverCAFilePath": ""
-    }
+    "token": "PADLOCAL_TOKEN"
   },
 
   "test": {
@@ -111,6 +105,10 @@
 
       "qr": {
         "saveFilePath":""
+      },
+
+      "invitation": {
+        "id": ""
       }
     }
   }
