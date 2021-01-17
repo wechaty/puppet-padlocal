@@ -195,8 +195,6 @@ class PuppetPadlocal extends Puppet {
       loginPolicy = this.options.defaultLoginPolicy;
     }
 
-    log.warn("loginPolicy: " + loginPolicy);
-
     this._client!.api.login(loginPolicy, {
       onLoginStart: (loginType: LoginType) => {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
@@ -1098,8 +1096,9 @@ class PuppetPadlocal extends Puppet {
     return Object.values(roomMemberMap).map((m) => m.username);
   }
 
-  public async roomInvitationAccept(_roomInvitationId: string): Promise<void> {
-    throw new Error(`Accept room invitation is not unsupported`);
+  public async roomInvitationAccept(roomInvitationId: string): Promise<void> {
+    const roomInvitation = await this.roomInvitationRawPayload(roomInvitationId);
+    await this._client!.api.acceptChatRoomInvitation(roomInvitation.inviterId, roomInvitation.invitation);
   }
 
   /****************************************************************************
