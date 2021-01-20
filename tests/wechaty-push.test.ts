@@ -3,7 +3,7 @@ import { Contact, Friendship, log, Message, Room, RoomInvitation, Wechaty } from
 import { prepareSingedOnBot } from "./wechaty-common";
 import { isContactId } from "../src/padlocal/utils/is-type";
 import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
-import { MessageType } from "wechaty-puppet";
+import { FriendshipType, MessageType } from "wechaty-puppet";
 
 const LOGPRE = "TestBot";
 
@@ -81,15 +81,21 @@ test(
           const thumbImageData = await thumbImage.toBuffer();
           expect(thumbImageData && thumbImageData.length).toBeTruthy();
 
+          log.info(LOGPRE, `get message image, thumb: ${thumbImageData.length}`);
+
           const artworkImage = await messageImage.artwork();
           expect(artworkImage).toBeTruthy();
           const artworkImageData = await artworkImage.toBuffer();
           expect(artworkImageData && artworkImageData.length).toBeTruthy();
 
+          log.info(LOGPRE, `get message image, artwork: ${artworkImageData.length}`);
+
           const hdImage = await messageImage.hd();
           expect(hdImage).toBeTruthy();
           const hdImageData = await hdImage.toBuffer();
           expect(hdImageData && hdImageData.length).toBeTruthy();
+
+          log.info(LOGPRE, `get message image, hd: ${hdImageData.length}`);
 
           break;
 
@@ -135,6 +141,16 @@ test(
 
       bot.on("friendship", async (friendship: Friendship) => {
         log.info(LOGPRE, `on friendship: ${friendship.toJSON()}`);
+
+        if (friendship.type() === FriendshipType.Receive) {
+          try {
+            await friendship.accept();
+
+            log.info(LOGPRE, "accept success");
+          } catch (e) {
+            log.error(LOGPRE, `accept failed: ${e.stack}`);
+          }
+        }
       });
 
       bot.on("room-invite", async (roomInvite: RoomInvitation) => {
