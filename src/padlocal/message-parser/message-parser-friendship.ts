@@ -1,11 +1,5 @@
 import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import {
-  Puppet,
-  FriendshipPayloadConfirm,
-  FriendshipPayloadVerify,
-  FriendshipSceneType,
-  FriendshipType,
-} from "wechaty-puppet";
+import { Puppet, FriendshipPayloadConfirm, FriendshipPayloadVerify, FriendshipType } from "wechaty-puppet";
 import { FriendshipPayloadReceive } from "wechaty-puppet/src/schemas/friendship";
 import { isContactId, isIMContactId } from "../utils/is-type";
 import { xmlToJson } from "../utils/xml-to-json";
@@ -25,20 +19,6 @@ const FRIENDSHIP_VERIFY_REGEX_LIST = [
   /^(.+) has enabled Friend Confirmation/,
   /^(.+)开启了朋友验证，你还不是他（她）朋友。请先发送朋友验证请求，对方验证通过后，才能聊天。/,
 ];
-
-const friendshipTypeMap: { [scene: string]: FriendshipSceneType } = {
-  "1": FriendshipSceneType.QQ,
-  "2": FriendshipSceneType.Email,
-  "3": FriendshipSceneType.Weixin,
-  "12": FriendshipSceneType.QQtbd,
-  "14": FriendshipSceneType.Room,
-  "15": FriendshipSceneType.Phone,
-  "17": FriendshipSceneType.Card,
-  "18": FriendshipSceneType.Location,
-  "25": FriendshipSceneType.Bottle,
-  "29": FriendshipSceneType.Shaking,
-  "30": FriendshipSceneType.QRCode,
-};
 
 interface ReceiveXmlSchema {
   msg: {
@@ -106,7 +86,7 @@ export default async (_puppet: Puppet, message: Message.AsObject): Promise<Messa
         contactId: verifyXml.msg.$.fromusername,
         hello: verifyXml.msg.$.content,
         id: message.id,
-        scene: friendshipTypeMap[verifyXml.msg.$.scene] || FriendshipSceneType.Unknown,
+        scene: parseInt(verifyXml.msg.$.scene, 10),
         stranger: verifyXml.msg.$.encryptusername,
         ticket: verifyXml.msg.$.ticket,
         timestamp: message.createtime,

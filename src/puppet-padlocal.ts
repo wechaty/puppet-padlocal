@@ -494,9 +494,9 @@ class PuppetPadlocal extends Puppet {
       await this._updateContactCache(contact.toObject());
     }
 
-    await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger);
+    await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger!, friendship.scene!);
 
-    // after adding friend, new version of contact will pushed
+    // after adding friend, new version of contact will be pushed
   }
 
   public async friendshipAdd(contactId: string, hello: string): Promise<void> {
