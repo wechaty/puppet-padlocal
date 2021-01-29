@@ -69,10 +69,10 @@
     "tslint-config-prettier": "^1.18.0",
     "tstest": "^0.4.10",
     "wechaty": "^0.50.7",
-    "wechaty-puppet": "^0.33.3"
+    "wechaty-puppet": "^0.34.1"
   },
   "peerDependencies": {
-    "wechaty-puppet": ">=0.33.3"
+    "wechaty-puppet": ">=0.34.1"
   },
   "dependencies": {
     "@types/fs-extra": "^9.0.1",
