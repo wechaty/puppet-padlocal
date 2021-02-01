@@ -283,7 +283,7 @@ class PuppetPadlocal extends Puppet {
     this.id = undefined;
 
     if (this._cacheMgr) {
-      await this._cacheMgr!.close();
+      await this._cacheMgr.close();
       this._cacheMgr = undefined;
     }
 
@@ -816,7 +816,7 @@ class PuppetPadlocal extends Puppet {
 
     // emotion
     else if (fileBox.mimeType === "emoticon") {
-      const emotionPayload: EmojiMessagePayload = fileBox.metadata! as EmojiMessagePayload;
+      const emotionPayload: EmojiMessagePayload = fileBox.metadata as EmojiMessagePayload;
 
       const response = await this._client!.api.sendMessageEmoji(
         genIdempotentId(),
@@ -1087,7 +1087,7 @@ class PuppetPadlocal extends Puppet {
     if (text === undefined) {
       return this._client!.api.getChatRoomAnnouncement(roomId);
     } else {
-      await this._client!.api.setChatRoomAnnouncement(roomId, text!);
+      await this._client!.api.setChatRoomAnnouncement(roomId, text);
     }
   }
 
