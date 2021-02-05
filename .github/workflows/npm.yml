@@ -1,6 +1,11 @@
 name: NPM
 
-on: [push, pull_request]
+# disable actions temporarily
+# on: [push, pull_request]
+on:
+  push:
+    branches:
+      - NONE
 
 jobs:
   build:
