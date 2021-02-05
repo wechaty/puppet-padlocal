@@ -43,7 +43,7 @@ export class SerialExecutor {
 
     this._executing = true;
 
-    job
+    return job
       .func()
       .then((res) => {
         job.promiseCallback.resolve(res);
