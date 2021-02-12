@@ -511,11 +511,22 @@ class PuppetPadlocal extends Puppet {
       addContactScene = cachedContactSearch.toaddscene;
     } else {
       const contactPayload = await this.contactRawPayload(contactId);
-      if (!contactPayload.alias) {
-        throw new Error(`Can not add contact while alias is empty: ${contactId}`);
+      let contactAlias = contactPayload.alias;
+      if (!contactAlias) {
+        // add contact from room,
+        const roomIds = await this._findRoomIdForUserName(contactId);
+        if (!roomIds.length) {
+          throw new Error(`Can not find room for contact while adding friendship: ${contactId}`);
+        }
+
+        const roomId = roomIds[0];
+        const contact = await this._client!.api.getChatRoomMember(roomId, contactId);
+        await this._updateContactCache(contact.toObject());
+
+        contactAlias = contact.getAlias();
       }
 
-      const res = await this._client!.api.searchContact(contactPayload.alias);
+      const res = await this._client!.api.searchContact(contactAlias);
 
       if (!res.getAntispamticket()) {
         throw new Error(`contact:${contactId} is already a friend`);
@@ -549,6 +560,25 @@ class PuppetPadlocal extends Puppet {
     await this._cacheMgr!.setContactSearch(searchId, res.toObject());
 
     return searchId;
+  }
+
+  private async _findRoomIdForUserName(userName: string): Promise<string[]> {
+    const ret = [];
+
+    const roomIds = (await this._cacheMgr?.getRoomIds()) || [];
+    for (const roomId of roomIds) {
+      const roomMember = await this._cacheMgr?.getRoomMember(roomId);
+      if (!roomMember) {
+        continue;
+      }
+
+      const roomMemberIds = Object.keys(roomMember);
+      if (roomMemberIds.indexOf(userName) !== -1) {
+        ret.push(roomId);
+      }
+    }
+
+    return ret;
   }
 
   /****************************************************************************
