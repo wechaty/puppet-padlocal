@@ -24,7 +24,7 @@ const bot = new Wechaty({
 
 ### Have a quick run
 
-Apply a token with the steps described below, then put the token into config file.
+Apply a token with the steps at the end of the introduction, then put the token into config file.
 
 ```
 npm run demo
