@@ -22,6 +22,15 @@ const bot = new Wechaty({
 })
 ```
 
+### Have a quick run
+
+Apply a token with the steps described below, then put the token into config file.
+
+```
+npm run demo
+
+```
+
 ### wechaty-puppet-padlocal-demo
 Also, we provided a simple [demo project](https://github.com/padlocal/wechaty-puppet-padlocal-demo) to show how to use padlocal puppet. You can checkout this repo to see how it works.
 
