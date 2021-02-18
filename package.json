@@ -22,7 +22,7 @@
     "coverage": "jest --coverage",
     "prepare": "npm run dist && bash ./scripts/generate-version.sh",
     "serve": "tsc-watch",
-    "demo": "./node_modules/.bin/ts-node exmaples/demo.ts"
+    "demo": "./node_modules/.bin/ts-node examples/demo.ts"
   },
   "repository": {
     "type": "git",
