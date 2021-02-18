@@ -1,6 +1,5 @@
 import { LOGPRE, prepareSignedOnPuppet } from "./puppet-padlocal-common";
-import { log } from "wechaty";
-import { FriendshipPayload, ImageType, MessageType, Puppet, RoomInvitationPayload } from "wechaty-puppet";
+import { FriendshipPayload, ImageType, MessageType, Puppet, RoomInvitationPayload, log } from "wechaty-puppet";
 import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
 import { MessagePayload } from "wechaty-puppet/src/schemas/message";
 import config from "config";

@@ -1,6 +1,5 @@
 import PuppetPadlocal from "../src/puppet-padlocal";
-import { Puppet, EventLoginPayload, EventLogoutPayload, EventScanPayload } from "wechaty-puppet";
-import { log } from "wechaty";
+import { Puppet, EventLoginPayload, EventLogoutPayload, EventScanPayload, log } from "wechaty-puppet";
 import config from "config";
 
 export const LOGPRE = "[test]";
