@@ -1,10 +1,9 @@
 // read config from local-test.json
 process.env.NODE_CONFIG_ENV = "test";
 
-import { Contact, Message, ScanStatus, Wechaty } from "wechaty";
+import { Contact, Message, ScanStatus, Wechaty, log } from "wechaty";
 import PuppetPadlocal from "../src/puppet-padlocal";
 import config from "config";
-import { log } from "brolog";
 
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });

@@ -7,12 +7,12 @@ import {
   Puppet,
   RoomMemberPayload,
   RoomPayload,
+  log,
 } from "wechaty-puppet";
 import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
 import { MessagePayloadBase } from "wechaty-puppet/dist/src/schemas/message";
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
-import { log } from "wechaty";
 import { WechatMessageType } from "../message-parser/WechatMessageType";
 
 const PRE = "[SchemaMapper]";

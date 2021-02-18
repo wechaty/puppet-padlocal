@@ -1,7 +1,6 @@
 import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { MessageCategory, ParsedMessage, ParsedMessagePayloadSpec } from "./message-parser-type";
-import { Puppet } from "wechaty-puppet";
-import { log } from "brolog";
+import { Puppet, log } from "wechaty-puppet";
 
 const PRE = "[MessageParser]";
 

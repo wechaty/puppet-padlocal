@@ -3,7 +3,7 @@ import os from "os";
 import path from "path";
 import LRU from "lru-cache";
 
-import { log } from "brolog";
+import { log } from "wechaty-puppet";
 import FlashStoreSync from "flash-store";
 import {
   ChatRoomMember,
