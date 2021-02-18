@@ -403,7 +403,8 @@ class PuppetPadlocal extends Puppet {
       .filter((l) => l)
       .map((l) => parseInt(l, 10));
     if (contactLabelIds.indexOf(label.getId()) !== -1) {
-      throw new Error(`contact: ${contactId} has already assigned tag: ${tagName}`);
+      log.warn(`contact: ${contactId} has already assigned tag: ${tagName}`);
+      return;
     }
 
     contactLabelIds.push(label.getId());
