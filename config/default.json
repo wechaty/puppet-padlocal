@@ -17,7 +17,8 @@
       "alias": {
         "userName": "USER_NAME",
         "aliasName": ""
-      }
+      },
+      "deleteUserName": ""
     },
 
     "tag": {

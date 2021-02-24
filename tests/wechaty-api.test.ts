@@ -3,6 +3,7 @@ import { Contact, FileBox, Message, MiniProgram, UrlLink, Wechaty } from "wechat
 import { prepareSingedOnBot } from "./wechaty-common";
 import { MessageType, MiniProgramPayload } from "wechaty-puppet";
 import { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion";
+import PuppetPadlocal from "../src/puppet-padlocal";
 
 let bot: Wechaty;
 
@@ -74,6 +75,16 @@ describe("contact", () => {
   test("contact list", async () => {
     const contactList = await bot.Contact.findAll();
     expect(contactList.length).toBeGreaterThan(0);
+  });
+
+  test("delete contact", async () => {
+    const deleteUserName: string = config.get("test.contact.deleteUserName");
+
+    const puppet: PuppetPadlocal = bot.puppet as PuppetPadlocal;
+    await puppet.contactDelete(deleteUserName);
+
+    const contact = await bot.Contact.find({ id: deleteUserName });
+    expect(contact!.friend()).toBeFalsy();
   });
 });
 

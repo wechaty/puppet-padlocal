@@ -390,6 +390,18 @@ class PuppetPadlocal extends Puppet {
     throw new Error(`contactPhone(${contactId}, ${phoneList}) called failed: Method not supported.`);
   }
 
+  public async contactDelete(contactId: string): Promise<void> {
+    const contact = await this._refreshContact(contactId);
+    if (contact.getStranger()) {
+      log.warn(`can not delete contact which is not a friend:: ${contactId}`);
+      return;
+    }
+
+    await this._client!.api.deleteContact(contactId);
+
+    await this._refreshContact(contactId);
+  }
+
   /****************************************************************************
    * tag
    ***************************************************************************/
@@ -491,8 +503,7 @@ class PuppetPadlocal extends Puppet {
 
     // FIXME: workaround to make accept enterprise account work. can be done in a better way
     if (isIMContactId(userName)) {
-      const contact = await this._client!.api.getContact(userName, friendship.ticket);
-      await this._updateContactCache(contact.toObject());
+      await this._refreshContact(userName, friendship.ticket);
     }
 
     await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger!, friendship.scene!);
@@ -1145,14 +1156,7 @@ class PuppetPadlocal extends Puppet {
 
     if (!ret) {
       ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async () => {
-        const contact = await this._client!.api.getContact(id);
-
-        // may return contact with empty payload, empty username, nickname, etc.
-        if (!contact.getUsername()) {
-          contact.setUsername(id);
-        }
-
-        await this._updateContactCache(contact.toObject());
+        const contact = await this._refreshContact(id);
         return contact.toObject();
       });
     }
@@ -1182,8 +1186,7 @@ class PuppetPadlocal extends Puppet {
     let ret = await this._cacheMgr!.getRoom(id);
 
     if (!ret) {
-      const contact = await this._client!.api.getContact(id);
-      await this._updateContactCache(contact.toObject());
+      const contact = await this._refreshContact(id);
       ret = contact.toObject();
     }
 
@@ -1465,6 +1468,19 @@ class PuppetPadlocal extends Puppet {
       ============================================================
     `);
     }
+  }
+
+  private async _refreshContact(userName: string, ticket?: string): Promise<Contact> {
+    const contact = await this._client!.api.getContact(userName, ticket);
+
+    // may return contact with empty payload, empty username, nickname, etc.
+    if (!contact.getUsername()) {
+      contact.setUsername(userName);
+    }
+
+    await this._updateContactCache(contact.toObject());
+
+    return contact;
   }
 }
 
