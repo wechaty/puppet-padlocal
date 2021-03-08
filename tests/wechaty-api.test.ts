@@ -342,18 +342,33 @@ describe("message", () => {
     await recallMessages(messageList);
   }, 10000);
 
-  const sendMiniProgramMessage = async (): Promise<Message[]> => {
+  const sendMiniProgramMessageThumbCdn = async (): Promise<Message[]> => {
     const miniProgramPayload: MiniProgramPayload = config.get("test.message.send.miniProgram");
     const miniProgram = new MiniProgram(miniProgramPayload);
     return sendMessage(miniProgram, MessageType.MiniProgram);
   };
 
-  test("send miniprogram message", async () => {
-    await sendMiniProgramMessage();
-  });
+  const sendMiniProgramMessageThumbHttp = async (): Promise<Message[]> => {
+    const miniProgramPayload: MiniProgramPayload = Object.assign({}, config.get("test.message.send.miniProgram"));
+
+    miniProgramPayload.thumbUrl = config.get("test.message.send.miniProgramThumbURLHttp");
+    miniProgramPayload.thumbKey = undefined;
+
+    const miniProgram = new MiniProgram(miniProgramPayload);
+    return sendMessage(miniProgram, MessageType.MiniProgram);
+  };
+
+  test(
+    "send miniprogram message",
+    async () => {
+      await sendMiniProgramMessageThumbCdn();
+      await sendMiniProgramMessageThumbHttp();
+    },
+    30 * 1000
+  );
 
   test("recall miniprogram message", async () => {
-    const messageList = await sendMiniProgramMessage();
+    const messageList = await sendMiniProgramMessageThumbCdn();
     await recallMessages(messageList);
   });
 

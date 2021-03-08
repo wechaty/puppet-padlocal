@@ -48,8 +48,6 @@ test(
           const dataBuffer = await attachFile.toBuffer();
           expect(dataBuffer.length).toBeGreaterThan(0);
 
-          // fs.writeFileSync("/Users/haoda/Downloads/voice.slk", dataBuffer);
-
           break;
 
         case MessageType.Video:
@@ -113,6 +111,9 @@ test(
 
         case MessageType.MiniProgram:
           const miniProgram = await message.toMiniProgram();
+
+          log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
+
           expect(miniProgram).toBeTruthy();
 
           expect(miniProgram.appid()?.length).toBeGreaterThan(0);

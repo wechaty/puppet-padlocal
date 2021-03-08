@@ -55,11 +55,12 @@
           "pagePath"    : "",
           "iconUrl"     : "",
           "shareId"     : "",
-          "thumbUrl"    : "",
           "title"       : "",
           "username"    : "",
-          "thumbKey"    : ""
+          "thumbUrl"    : "3051020100044a304802010002046296fxxx4010800030201000400",
+          "thumbKey"    : "84db921169xxxb8795ca685c6"
         },
+        "miniProgramThumbURLHttp": "http://xxx.jpg",
         "emoji": {
           "cdnurl": "",
           "md5": "",

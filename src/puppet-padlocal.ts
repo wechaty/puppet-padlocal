@@ -61,12 +61,13 @@ import {
   emotionPayloadGenerator,
   emotionPayloadParser,
 } from "./padlocal/message-parser/helpers/message-emotion";
-import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
+import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
+import nodeUrl from "url";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -922,16 +923,37 @@ class PuppetPadlocal extends Puppet {
     mpPayload.description && miniProgram.setMpappname(mpPayload.description);
     mpPayload.username && miniProgram.setMpappusername(mpPayload.username);
 
+    let thumbImageData: Bytes | null = null;
+
+    // 1. cdn url and key
     if (mpPayload.thumbUrl && mpPayload.thumbKey) {
-      const thumb = await this._client!.api.getEncryptedFile(
+      thumbImageData = await this._client!.api.getEncryptedFile(
         EncryptedFileType.IMAGE_THUMB,
         mpPayload.thumbUrl,
         hexStringToBytes(mpPayload.thumbKey)
       );
-      miniProgram.setThumbimage(thumb);
     }
 
-    const response = await this._client!.api.sendMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    // 2. http url
+    else if (mpPayload.thumbUrl) {
+      const parsedUrl = new nodeUrl.URL(mpPayload.thumbUrl);
+      if (parsedUrl.protocol.startsWith("http")) {
+        // download the image data
+        const imageBox = FileBox.fromUrl(mpPayload.thumbUrl);
+        thumbImageData = await imageBox.toBuffer();
+      }
+    }
+
+    if (!thumbImageData) {
+      log.warn(PRE, "no thumb image found while sending mimi program");
+    }
+
+    const response = await this._client!.api.sendMessageMiniProgram(
+      genIdempotentId(),
+      toUserName,
+      miniProgram,
+      thumbImageData
+    );
     const pushContent = isRoomId(toUserName)
       ? `${this._client!.selfContact!.getNickname()}: [小程序] ${mpPayload.title}`
       : `[小程序] ${mpPayload.title}`;
