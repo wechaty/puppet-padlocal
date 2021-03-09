@@ -3,7 +3,7 @@ import { ScanStatus } from "wechaty-puppet";
 import config from "config";
 import PuppetPadlocal from "../src/puppet-padlocal";
 
-log.level("silly");
+// log.level("silly");
 
 export function createBot(): Wechaty {
   const token: string = config.get("padLocal.token");

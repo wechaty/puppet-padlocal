@@ -48,6 +48,8 @@ test(
           const dataBuffer = await attachFile.toBuffer();
           expect(dataBuffer.length).toBeGreaterThan(0);
 
+          log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
+
           break;
 
         case MessageType.Video:
@@ -56,6 +58,9 @@ test(
 
           const videoData = await videoFile.toBuffer();
           expect(videoData.length).toBeGreaterThan(0);
+
+          log.info(LOGPRE, `get message video: ${videoData.length}`);
+
           break;
 
         case MessageType.Emoticon:
@@ -67,6 +72,8 @@ test(
 
           const emotionBuffer: Buffer = await emotionFile.toBuffer();
           expect(emotionBuffer.length).toBeTruthy();
+
+          log.info(LOGPRE, `get message emotion: ${emotionBuffer.length}`);
 
           break;
 
@@ -107,6 +114,9 @@ test(
           expect(urlThumbImage).toBeTruthy();
           const urlThumbImageData = await urlThumbImage.toBuffer();
           expect(urlThumbImageData && urlThumbImageData.length).toBeTruthy();
+
+          log.info(LOGPRE, `get message url thumb: ${urlThumbImageData.length}`);
+
           break;
 
         case MessageType.MiniProgram:
