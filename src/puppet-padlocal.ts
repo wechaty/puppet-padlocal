@@ -92,6 +92,7 @@ class PuppetPadlocal extends Puppet {
   private _onPushSerialExecutor: SerialExecutor = new SerialExecutor();
   private _printVersion: boolean = true;
   private _restartStrategy = RetryStrategy.getStrategy(RetryStrategyRule.FAST, Number.MAX_SAFE_INTEGER);
+  private _heartBeatTimer?: NodeJS.Timeout;
 
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
@@ -139,6 +140,8 @@ class PuppetPadlocal extends Puppet {
       await this.state.ready("on");
       return;
     }
+
+    this._startPuppetHeart();
 
     this.state.on("pending");
 
@@ -289,6 +292,8 @@ class PuppetPadlocal extends Puppet {
     }
 
     this.state.off(true);
+
+    this._stopPuppetHeart();
 
     if (restart && this._restartStrategy.canRetry()) {
       setTimeout(async () => {
@@ -1503,6 +1508,27 @@ class PuppetPadlocal extends Puppet {
     await this._updateContactCache(contact.toObject());
 
     return contact;
+  }
+
+  private _startPuppetHeart(firstTime: boolean = true) {
+    if (firstTime && this._heartBeatTimer) {
+      return;
+    }
+
+    this.emit("heartbeat", { data: "heartbeat@padlocal" });
+
+    this._heartBeatTimer = setTimeout(() => {
+      this._startPuppetHeart(false);
+    }, 15 * 1000); // 15s
+  }
+
+  private _stopPuppetHeart() {
+    if (!this._heartBeatTimer) {
+      return;
+    }
+
+    clearTimeout(this._heartBeatTimer);
+    this._heartBeatTimer = undefined;
   }
 }
 
