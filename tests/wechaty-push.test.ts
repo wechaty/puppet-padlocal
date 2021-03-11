@@ -155,7 +155,7 @@ test(
 
         if (friendship.type() === FriendshipType.Receive) {
           try {
-            await friendship.accept();
+            log.info(LOGPRE, `receive friendship: ${friendship.toJSON()}`);
 
             log.info(LOGPRE, "accept success");
           } catch (e) {

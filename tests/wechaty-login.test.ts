@@ -12,14 +12,18 @@ test("login", async () => {
   expect(bot.logonoff()).toBeFalsy();
 }, 300000); // 5 min
 
-test("logout", async () => {
-  const bot = await prepareSingedOnBot();
+test(
+  "logout",
+  async () => {
+    const bot = await prepareSingedOnBot();
 
-  expect(bot.logonoff()).toBeTruthy();
+    expect(bot.logonoff()).toBeTruthy();
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  await bot.logout();
+    await bot.logout();
 
-  expect(bot.logonoff()).toBeFalsy();
-});
+    expect(bot.logonoff()).toBeFalsy();
+  },
+  60 * 1000
+);
