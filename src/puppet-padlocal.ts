@@ -61,12 +61,13 @@ import {
   emotionPayloadGenerator,
   emotionPayloadParser,
 } from "./padlocal/message-parser/helpers/message-emotion";
-import { hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
+import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
+import nodeUrl from "url";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -91,6 +92,7 @@ class PuppetPadlocal extends Puppet {
   private _onPushSerialExecutor: SerialExecutor = new SerialExecutor();
   private _printVersion: boolean = true;
   private _restartStrategy = RetryStrategy.getStrategy(RetryStrategyRule.FAST, Number.MAX_SAFE_INTEGER);
+  private _heartBeatTimer?: NodeJS.Timeout;
 
   constructor(public options: PuppetPadlocalOptions = {}) {
     super(options);
@@ -138,6 +140,8 @@ class PuppetPadlocal extends Puppet {
       await this.state.ready("on");
       return;
     }
+
+    this._startPuppetHeart();
 
     this.state.on("pending");
 
@@ -283,11 +287,13 @@ class PuppetPadlocal extends Puppet {
     this.id = undefined;
 
     if (this._cacheMgr) {
-      await this._cacheMgr!.close();
+      await this._cacheMgr.close();
       this._cacheMgr = undefined;
     }
 
     this.state.off(true);
+
+    this._stopPuppetHeart();
 
     if (restart && this._restartStrategy.canRetry()) {
       setTimeout(async () => {
@@ -390,6 +396,18 @@ class PuppetPadlocal extends Puppet {
     throw new Error(`contactPhone(${contactId}, ${phoneList}) called failed: Method not supported.`);
   }
 
+  public async contactDelete(contactId: string): Promise<void> {
+    const contact = await this._refreshContact(contactId);
+    if (contact.getStranger()) {
+      log.warn(`can not delete contact which is not a friend:: ${contactId}`);
+      return;
+    }
+
+    await this._client!.api.deleteContact(contactId);
+
+    await this._refreshContact(contactId);
+  }
+
   /****************************************************************************
    * tag
    ***************************************************************************/
@@ -403,7 +421,8 @@ class PuppetPadlocal extends Puppet {
       .filter((l) => l)
       .map((l) => parseInt(l, 10));
     if (contactLabelIds.indexOf(label.getId()) !== -1) {
-      throw new Error(`contact: ${contactId} has already assigned tag: ${tagName}`);
+      log.warn(`contact: ${contactId} has already assigned tag: ${tagName}`);
+      return;
     }
 
     contactLabelIds.push(label.getId());
@@ -490,13 +509,12 @@ class PuppetPadlocal extends Puppet {
 
     // FIXME: workaround to make accept enterprise account work. can be done in a better way
     if (isIMContactId(userName)) {
-      const contact = await this._client!.api.getContact(userName, friendship.ticket);
-      await this._updateContactCache(contact.toObject());
+      await this._refreshContact(userName, friendship.ticket);
     }
 
-    await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger);
+    await this._client!.api.acceptUser(userName, friendship.ticket, friendship.stranger!, friendship.scene!);
 
-    // after adding friend, new version of contact will pushed
+    // after adding friend, new version of contact will be pushed
   }
 
   public async friendshipAdd(contactId: string, hello: string): Promise<void> {
@@ -511,11 +529,22 @@ class PuppetPadlocal extends Puppet {
       addContactScene = cachedContactSearch.toaddscene;
     } else {
       const contactPayload = await this.contactRawPayload(contactId);
-      if (!contactPayload.alias) {
-        throw new Error(`Can not add contact while alias is empty: ${contactId}`);
+      let contactAlias = contactPayload.alias;
+      if (!contactAlias) {
+        // add contact from room,
+        const roomIds = await this._findRoomIdForUserName(contactId);
+        if (!roomIds.length) {
+          throw new Error(`Can not find room for contact while adding friendship: ${contactId}`);
+        }
+
+        const roomId = roomIds[0];
+        const contact = await this._client!.api.getChatRoomMember(roomId, contactId);
+        await this._updateContactCache(contact.toObject());
+
+        contactAlias = contact.getAlias();
       }
 
-      const res = await this._client!.api.searchContact(contactPayload.alias);
+      const res = await this._client!.api.searchContact(contactAlias);
 
       if (!res.getAntispamticket()) {
         throw new Error(`contact:${contactId} is already a friend`);
@@ -549,6 +578,25 @@ class PuppetPadlocal extends Puppet {
     await this._cacheMgr!.setContactSearch(searchId, res.toObject());
 
     return searchId;
+  }
+
+  private async _findRoomIdForUserName(userName: string): Promise<string[]> {
+    const ret = [];
+
+    const roomIds = (await this._cacheMgr?.getRoomIds()) || [];
+    for (const roomId of roomIds) {
+      const roomMember = await this._cacheMgr?.getRoomMember(roomId);
+      if (!roomMember) {
+        continue;
+      }
+
+      const roomMemberIds = Object.keys(roomMember);
+      if (roomMemberIds.indexOf(userName) !== -1) {
+        ret.push(roomId);
+      }
+    }
+
+    return ret;
   }
 
   /****************************************************************************
@@ -816,7 +864,7 @@ class PuppetPadlocal extends Puppet {
 
     // emotion
     else if (fileBox.mimeType === "emoticon") {
-      const emotionPayload: EmojiMessagePayload = fileBox.metadata! as EmojiMessagePayload;
+      const emotionPayload: EmojiMessagePayload = fileBox.metadata as EmojiMessagePayload;
 
       const response = await this._client!.api.sendMessageEmoji(
         genIdempotentId(),
@@ -880,16 +928,37 @@ class PuppetPadlocal extends Puppet {
     mpPayload.description && miniProgram.setMpappname(mpPayload.description);
     mpPayload.username && miniProgram.setMpappusername(mpPayload.username);
 
+    let thumbImageData: Bytes | null = null;
+
+    // 1. cdn url and key
     if (mpPayload.thumbUrl && mpPayload.thumbKey) {
-      const thumb = await this._client!.api.getEncryptedFile(
+      thumbImageData = await this._client!.api.getEncryptedFile(
         EncryptedFileType.IMAGE_THUMB,
         mpPayload.thumbUrl,
         hexStringToBytes(mpPayload.thumbKey)
       );
-      miniProgram.setThumbimage(thumb);
     }
 
-    const response = await this._client!.api.sendMessageMiniProgram(genIdempotentId(), toUserName, miniProgram);
+    // 2. http url
+    else if (mpPayload.thumbUrl) {
+      const parsedUrl = new nodeUrl.URL(mpPayload.thumbUrl);
+      if (parsedUrl.protocol.startsWith("http")) {
+        // download the image data
+        const imageBox = FileBox.fromUrl(mpPayload.thumbUrl);
+        thumbImageData = await imageBox.toBuffer();
+      }
+    }
+
+    if (!thumbImageData) {
+      log.warn(PRE, "no thumb image found while sending mimi program");
+    }
+
+    const response = await this._client!.api.sendMessageMiniProgram(
+      genIdempotentId(),
+      toUserName,
+      miniProgram,
+      thumbImageData
+    );
     const pushContent = isRoomId(toUserName)
       ? `${this._client!.selfContact!.getNickname()}: [小程序] ${mpPayload.title}`
       : `[小程序] ${mpPayload.title}`;
@@ -1033,12 +1102,7 @@ class PuppetPadlocal extends Puppet {
    ***************************************************************************/
 
   public async roomAdd(roomId: string, contactId: string): Promise<void> {
-    const room = await this.roomPayload(roomId);
-    if (room.memberIdList.length > 50) {
-      await this._client!.api.inviteChatRoomMember(roomId, contactId);
-    } else {
-      await this._client!.api.addChatRoomMember(roomId, contactId);
-    }
+    await this._client!.api.addChatRoomMember(roomId, contactId);
   }
 
   public async roomAvatar(roomId: string): Promise<FileBox> {
@@ -1087,7 +1151,7 @@ class PuppetPadlocal extends Puppet {
     if (text === undefined) {
       return this._client!.api.getChatRoomAnnouncement(roomId);
     } else {
-      await this._client!.api.setChatRoomAnnouncement(roomId, text!);
+      await this._client!.api.setChatRoomAnnouncement(roomId, text);
     }
   }
 
@@ -1119,14 +1183,7 @@ class PuppetPadlocal extends Puppet {
 
     if (!ret) {
       ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async () => {
-        const contact = await this._client!.api.getContact(id);
-
-        // may return contact with empty payload, empty username, nickname, etc.
-        if (!contact.getUsername()) {
-          contact.setUsername(id);
-        }
-
-        await this._updateContactCache(contact.toObject());
+        const contact = await this._refreshContact(id);
         return contact.toObject();
       });
     }
@@ -1156,8 +1213,7 @@ class PuppetPadlocal extends Puppet {
     let ret = await this._cacheMgr!.getRoom(id);
 
     if (!ret) {
-      const contact = await this._client!.api.getContact(id);
-      await this._updateContactCache(contact.toObject());
+      const contact = await this._refreshContact(id);
       ret = contact.toObject();
     }
 
@@ -1439,6 +1495,40 @@ class PuppetPadlocal extends Puppet {
       ============================================================
     `);
     }
+  }
+
+  private async _refreshContact(userName: string, ticket?: string): Promise<Contact> {
+    const contact = await this._client!.api.getContact(userName, ticket);
+
+    // may return contact with empty payload, empty username, nickname, etc.
+    if (!contact.getUsername()) {
+      contact.setUsername(userName);
+    }
+
+    await this._updateContactCache(contact.toObject());
+
+    return contact;
+  }
+
+  private _startPuppetHeart(firstTime: boolean = true) {
+    if (firstTime && this._heartBeatTimer) {
+      return;
+    }
+
+    this.emit("heartbeat", { data: "heartbeat@padlocal" });
+
+    this._heartBeatTimer = setTimeout(() => {
+      this._startPuppetHeart(false);
+    }, 15 * 1000); // 15s
+  }
+
+  private _stopPuppetHeart() {
+    if (!this._heartBeatTimer) {
+      return;
+    }
+
+    clearTimeout(this._heartBeatTimer);
+    this._heartBeatTimer = undefined;
   }
 }
 

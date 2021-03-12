@@ -1,5 +1,5 @@
 import { parseString } from "xml2js";
-import { log } from "brolog";
+import { log } from "wechaty-puppet";
 
 export async function xmlToJson(xml: string): Promise<any> {
   return new Promise((resolve) => {

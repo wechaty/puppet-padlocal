@@ -1,9 +1,15 @@
 import { Contact, log, Wechaty } from "wechaty";
 import { ScanStatus } from "wechaty-puppet";
-import { createPuppet } from "./puppet-padlocal-common";
+import config from "config";
+import PuppetPadlocal from "../src/puppet-padlocal";
+
+// log.level("silly");
 
 export function createBot(): Wechaty {
-  const puppet = createPuppet();
+  const token: string = config.get("padLocal.token");
+  const puppet = new PuppetPadlocal({
+    token,
+  });
 
   return new Wechaty({
     name: "TestBot",

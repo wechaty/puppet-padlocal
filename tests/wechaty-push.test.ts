@@ -3,7 +3,7 @@ import { Contact, Friendship, log, Message, Room, RoomInvitation, Wechaty } from
 import { prepareSingedOnBot } from "./wechaty-common";
 import { isContactId } from "../src/padlocal/utils/is-type";
 import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
-import { MessageType } from "wechaty-puppet";
+import { FriendshipType, MessageType } from "wechaty-puppet";
 
 const LOGPRE = "TestBot";
 
@@ -48,7 +48,7 @@ test(
           const dataBuffer = await attachFile.toBuffer();
           expect(dataBuffer.length).toBeGreaterThan(0);
 
-          // fs.writeFileSync("/Users/haoda/Downloads/voice.slk", dataBuffer);
+          log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
 
           break;
 
@@ -58,6 +58,9 @@ test(
 
           const videoData = await videoFile.toBuffer();
           expect(videoData.length).toBeGreaterThan(0);
+
+          log.info(LOGPRE, `get message video: ${videoData.length}`);
+
           break;
 
         case MessageType.Emoticon:
@@ -70,6 +73,8 @@ test(
           const emotionBuffer: Buffer = await emotionFile.toBuffer();
           expect(emotionBuffer.length).toBeTruthy();
 
+          log.info(LOGPRE, `get message emotion: ${emotionBuffer.length}`);
+
           break;
 
         case MessageType.Image:
@@ -81,15 +86,21 @@ test(
           const thumbImageData = await thumbImage.toBuffer();
           expect(thumbImageData && thumbImageData.length).toBeTruthy();
 
+          log.info(LOGPRE, `get message image, thumb: ${thumbImageData.length}`);
+
           const artworkImage = await messageImage.artwork();
           expect(artworkImage).toBeTruthy();
           const artworkImageData = await artworkImage.toBuffer();
           expect(artworkImageData && artworkImageData.length).toBeTruthy();
 
+          log.info(LOGPRE, `get message image, artwork: ${artworkImageData.length}`);
+
           const hdImage = await messageImage.hd();
           expect(hdImage).toBeTruthy();
           const hdImageData = await hdImage.toBuffer();
           expect(hdImageData && hdImageData.length).toBeTruthy();
+
+          log.info(LOGPRE, `get message image, hd: ${hdImageData.length}`);
 
           break;
 
@@ -103,10 +114,16 @@ test(
           expect(urlThumbImage).toBeTruthy();
           const urlThumbImageData = await urlThumbImage.toBuffer();
           expect(urlThumbImageData && urlThumbImageData.length).toBeTruthy();
+
+          log.info(LOGPRE, `get message url thumb: ${urlThumbImageData.length}`);
+
           break;
 
         case MessageType.MiniProgram:
           const miniProgram = await message.toMiniProgram();
+
+          log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
+
           expect(miniProgram).toBeTruthy();
 
           expect(miniProgram.appid()?.length).toBeGreaterThan(0);
@@ -135,6 +152,16 @@ test(
 
       bot.on("friendship", async (friendship: Friendship) => {
         log.info(LOGPRE, `on friendship: ${friendship.toJSON()}`);
+
+        if (friendship.type() === FriendshipType.Receive) {
+          try {
+            log.info(LOGPRE, `receive friendship: ${friendship.toJSON()}`);
+
+            log.info(LOGPRE, "accept success");
+          } catch (e) {
+            log.error(LOGPRE, `accept failed: ${e.stack}`);
+          }
+        }
       });
 
       bot.on("room-invite", async (roomInvite: RoomInvitation) => {
