@@ -157,6 +157,8 @@ test(
           try {
             log.info(LOGPRE, `receive friendship: ${friendship.toJSON()}`);
 
+            await friendship.accept();
+
             log.info(LOGPRE, "accept success");
           } catch (e) {
             log.error(LOGPRE, `accept failed: ${e.stack}`);

@@ -30,6 +30,8 @@ interface ReceiveXmlSchema {
       ticket: string;
       sourcenickname?: string;
       sourceusername?: string;
+      sharecardnickname?: string;
+      sharecardusername?: string;
     };
   };
 }
@@ -94,7 +96,9 @@ export default async (_puppet: Puppet, message: Message.AsObject): Promise<Messa
         timestamp: message.createtime,
         type: FriendshipType.Receive,
         sourceNickName: verifyXml.msg.$.sourcenickname,
-        sourceUserName: verifyXml.msg.$.sourceusername,
+        sourceContactId: verifyXml.msg.$.sourceusername,
+        shareCardNickName: verifyXml.msg.$.sharecardnickname,
+        shareCardContactId: verifyXml.msg.$.sharecardusername,
       } as FriendshipPayloadReceive;
     }
 
