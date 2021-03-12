@@ -1,6 +1,6 @@
 import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { Puppet, FriendshipPayloadConfirm, FriendshipPayloadVerify, FriendshipType } from "wechaty-puppet";
-import { FriendshipPayloadReceive, FriendshipSource } from "wechaty-puppet/src/schemas/friendship";
+import { FriendshipPayloadReceive } from "wechaty-puppet/src/schemas/friendship";
 import { isContactId, isIMContactId } from "../utils/is-type";
 import { xmlToJson } from "../utils/xml-to-json";
 import { MessageParserRetType } from "./message-parser";
@@ -28,10 +28,8 @@ interface ReceiveXmlSchema {
       content: string;
       scene: string;
       ticket: string;
-      sourceusername?: string;
       sourcenickname?: string;
-      sharecardusername?: string;
-      sharecardnickname?: string;
+      sourceusername?: string;
     };
   };
 }
@@ -86,7 +84,7 @@ export default async (_puppet: Puppet, message: Message.AsObject): Promise<Messa
   } else {
     const verifyXml = await isReceive(message);
     if (verifyXml) {
-      const friendshipPayload = {
+      return {
         contactId: verifyXml.msg.$.fromusername,
         hello: verifyXml.msg.$.content,
         id: message.id,
@@ -95,16 +93,9 @@ export default async (_puppet: Puppet, message: Message.AsObject): Promise<Messa
         ticket: verifyXml.msg.$.ticket,
         timestamp: message.createtime,
         type: FriendshipType.Receive,
+        sourceNickName: verifyXml.msg.$.sourcenickname,
+        sourceUserName: verifyXml.msg.$.sourceusername,
       } as FriendshipPayloadReceive;
-      if(verifyXml.msg.$.sourceusername || verifyXml.msg.$.sharecardnickname){
-        friendshipPayload.source = {
-          sourceContactId:verifyXml.msg.$.sourceusername,
-          sourceName:verifyXml.msg.$.sourcenickname,
-          shareCardContactId:verifyXml.msg.$.sharecardusername,
-          shareCardName: verifyXml.msg.$.sharecardnickname
-        } as FriendshipSource;
-      }
-      return friendshipPayload;
     }
 
     return null;
