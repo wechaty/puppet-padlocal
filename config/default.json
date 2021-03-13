@@ -29,12 +29,12 @@
     "friendship": {
       "acceptId": "",
       "add": {
-        "userName": "USER_NAME",
-        "hello": ""
+        "userName": "wxid_3k...",
+        "hello": "Hello, this is PadLocal"
       },
       "search": {
-        "phone": "PHONE_NUMBER",
-        "weixin": "WEIXIN_ID"
+        "phone": "132xxxxxxxx",
+        "weixin": "oxddoxdd"
       }
     },
 
