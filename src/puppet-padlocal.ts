@@ -76,6 +76,7 @@ export type PuppetPadlocalOptions = PuppetOptions & {
 
 const PRE = "[PuppetPadlocal]";
 const SEARCH_CONTACT_PREFIX = "$search$-";
+const STRANGER_SUFFIX = "@stranger";
 
 const logLevel = process.env.PADLOCAL_LOG || process.env.WECHATY_LOG;
 if (logLevel) {
@@ -358,10 +359,24 @@ class PuppetPadlocal extends Puppet {
     const contact = await this.contactRawPayload(contactId);
 
     if (alias) {
-      await this._client!.api.updateContactRemark(contactId, alias || "");
+      // contact is stranger, set alias in cache, to update after user is added
+      if (contact.username.indexOf(STRANGER_SUFFIX) !== -1) {
+        await this._cacheMgr!.setContactStrangerAlias(contact.username, alias);
 
-      contact.remark = alias;
-      await this._updateContactCache(contact);
+        // to suppress warning: 15:31:06 WARN Contact alias(asd3) sync with server fail: set(asd3) is not equal to get()
+        if (contactId.startsWith(SEARCH_CONTACT_PREFIX)) {
+          const searchContact = await this._cacheMgr?.getContactSearch(contactId);
+          if (searchContact && searchContact.contact) {
+            searchContact.contact.remark = alias;
+            await this._cacheMgr!.setContactSearch(contactId, searchContact);
+          }
+        }
+      } else {
+        await this._client!.api.updateContactRemark(contact.username, alias);
+
+        contact.remark = alias;
+        await this._updateContactCache(contact);
+      }
     } else {
       return contact.remark;
     }
@@ -555,7 +570,12 @@ class PuppetPadlocal extends Puppet {
       addContactScene = res.getToaddscene();
     }
 
-    await this._client!.api.addContact(stranger, ticket, addContactScene, hello);
+    if (stranger.indexOf(STRANGER_SUFFIX) === -1 || !ticket) {
+      // the contact is already a friend
+      log.warn(`contact: ${stranger} is already a friend, skip adding`);
+    } else {
+      await this._client!.api.addContact(stranger, ticket, addContactScene, hello);
+    }
   }
 
   public async friendshipSearchPhone(phone: string): Promise<null | string> {
@@ -1385,7 +1405,16 @@ class PuppetPadlocal extends Puppet {
 
   private async _onPushContact(contact: Contact): Promise<void> {
     log.verbose(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
-    return this._updateContactCache(contact.toObject());
+
+    await this._updateContactCache(contact.toObject());
+
+    if (contact.getEncryptusername()) {
+      const aliasToSet = await this._cacheMgr!.getContactStrangerAlias(contact.getEncryptusername());
+      if (aliasToSet) {
+        await this.contactAlias(contact.getUsername(), aliasToSet);
+        await this._cacheMgr!.deleteContactStrangerAlias(contact.getEncryptusername());
+      }
+    }
   }
 
   private async _onPushMessage(message: Message): Promise<void> {

@@ -3,7 +3,7 @@ import os from "os";
 import path from "path";
 import LRU from "lru-cache";
 
-import { log } from "wechaty-puppet";
+import { log, FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
 import FlashStoreSync from "flash-store";
 import {
   ChatRoomMember,
@@ -13,7 +13,6 @@ import {
   MessageRevokeInfo,
   SearchContactResponse,
 } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
 
 const PRE = "[CacheManager]";
 
@@ -26,6 +25,7 @@ export class CacheManager {
   private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
   private _contactCache?: FlashStoreSync<Contact.AsObject>;
   private _contactSearchCache?: LRU<string, SearchContactResponse.AsObject>;
+  private _contactStrangerAliasCache?: FlashStoreSync<string>; // set alias before add contact
   private _roomCache?: FlashStoreSync<Contact.AsObject>;
   private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
   private _roomInvitationCache?: FlashStoreSync<RoomInvitationPayload>;
@@ -84,7 +84,7 @@ export class CacheManager {
       },
       maxAge: 1000 * 60 * 60,
     });
-
+    this._contactStrangerAliasCache = new FlashStoreSync(path.join(baseDir, "contact-stranger-alias"));
     this._roomCache = new FlashStoreSync(path.join(baseDir, "room-raw-payload"));
     this._roomMemberCache = new FlashStoreSync(path.join(baseDir, "room-member-raw-payload"));
     this._roomInvitationCache = new FlashStoreSync(path.join(baseDir, "room-invitation-raw-payload"));
@@ -100,6 +100,7 @@ export class CacheManager {
 
     if (
       this._contactCache &&
+      this._contactStrangerAliasCache &&
       this._roomMemberCache &&
       this._roomCache &&
       this._friendshipCache &&
@@ -110,6 +111,7 @@ export class CacheManager {
 
       await Promise.all([
         this._contactCache.close(),
+        this._contactStrangerAliasCache.close(),
         this._roomMemberCache.close(),
         this._roomCache.close(),
         this._friendshipCache.close(),
@@ -117,6 +119,7 @@ export class CacheManager {
       ]);
 
       this._contactCache = undefined;
+      this._contactStrangerAliasCache = undefined;
       this._roomMemberCache = undefined;
       this._roomCache = undefined;
       this._friendshipCache = undefined;
@@ -210,6 +213,18 @@ export class CacheManager {
 
   public async hasContactSearch(id: string): Promise<boolean> {
     return this._contactSearchCache!.has(id);
+  }
+
+  public async getContactStrangerAlias(encryptedUserName: string): Promise<string | undefined> {
+    return this._contactStrangerAliasCache!.get(encryptedUserName);
+  }
+
+  public async setContactStrangerAlias(encryptedUserName: string, alias: string): Promise<void> {
+    await this._contactStrangerAliasCache!.set(encryptedUserName, alias);
+  }
+
+  public async deleteContactStrangerAlias(encryptedUserName: string): Promise<void> {
+    await this._contactStrangerAliasCache!.delete(encryptedUserName);
   }
 
   /**
