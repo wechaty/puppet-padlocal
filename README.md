@@ -6,99 +6,40 @@
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 ![Stage](https://img.shields.io/badge/Stage-beta-yellow)
 
+## WECHATY PUPPET NEW STAR
+> "New star from our community, which is the third most used Wechaty Puppet Provider now. Thank you very much @padlocal, for creating this WPP & WPS!"
+> 
+> — ⭐️ Wechaty [The Trends in March 2021](https://wechaty.js.org/2021/03/04/wechaty-puppet-providers-trends/)
+
+Leading the puppet trends:
+
+![img.png](https://user-images.githubusercontent.com/64943823/111100398-abd46c00-8582-11eb-93aa-c2e21d94265d.png)
+
 ## HOW TO USE
-
-### Play with Wechaty
-PadLocal is a complete Wechaty puppet implementation. You can use all the Wechaty apis as always. 👉🏻 https://github.com/wechaty/wechaty#guitar-api
-
-All you need to do is to provide PadLocal as Wechaty puppet:
-
+PadLocal is a complete Wechaty puppet implementation, **Zero Code Change** is needed to upgrade from old puppet. 
+All you need to do is to set PadLocal as the puppet:
 ```
 const bot = new Wechaty({
     name: "PadLocalBot",
     new PuppetPadlocal({ token: padLocalToken })
 })
 ```
+> Detailed tutorials to "[Get Started with PadLocal](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Get-Started-with-PadLocal)"
 
-### Have a quick run
+## HOW TO APPLY TOKEN
+[TOKEN 申请方法](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/TOKEN-%E7%94%B3%E8%AF%B7%E6%96%B9%E6%B3%95)
 
-Apply a token with the steps at the end of the introduction, then put the token into config file.
+## DESIGN CONCEPT
+We adopt several advanced technologies which make us different and outstanding, including:
+- Local IP: You use your own IP. No centralized server IPs are used, more secure.
+- Local Device: You host your now puppet, no puppet state synchronization with servers, more robust. 
+- Stateless High-Availability Service: **99.99%** SLA is guaranteed. Continuous integration is on the fly.
 
-```
-npm run demo
-```
+> Learn more about our implementation: [设计理念](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5)
 
-### wechaty-puppet-padlocal-demo
-Also, we provided a simple [demo project](https://github.com/padlocal/wechaty-puppet-padlocal-demo) to show how to use padlocal puppet. You can checkout this repo to see how it works.
-
-If you want to explore PadLocal step by step, following instructions may be helpful.
-
-### Step-by-step instructions
-#### 1. Check your Node version first, the most recent version is recommended. ```Node 14.15.4 LTS``` has been well tested. Or you may encounter bugs issued by Node, e.g. [#13](https://github.com/padlocal/wechaty-puppet-padlocal/issues/13) .  
-```
-node --version // >= 14.15.4
-``` 
-#### 2. Create and init your bot project
-```
-mkdir my-padlocal-bot && cd my-padlocal-bot
-npm init -y
-npm install ts-node typescript -g --registry=https://r.npm.taobao.org
-tsc --init --target ES6
-``` 
-#### 3. Install Wechaty and Padlocal puppet
-```
-npm install wechaty@latest --registry=https://r.npm.taobao.org
-npm install wechaty-puppet-padlocal@latest --registry=https://r.npm.taobao.org
-```
-
-#### 4. Write bot demo code
-
-```
-// bot.ts
-
-import {PuppetPadlocal} from "wechaty-puppet-padlocal";
-import {Contact, Message, ScanStatus, Wechaty} from "wechaty";
-
-const token: string = ""            // padlocal token
-const puppet = new PuppetPadlocal({ token })
-
-const bot = new Wechaty({
-    name: "TestBot",
-    puppet,
-})
-
-bot
-.on("scan", (qrcode: string, status: ScanStatus) => {
-    if (status === ScanStatus.Waiting && qrcode) {
-        const qrcodeImageUrl = ["https://api.qrserver.com/v1/create-qr-code/?data=", encodeURIComponent(qrcode)].join("");
-        console.log(`onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`);
-    } else {
-        console.log(`onScan: ${ScanStatus[status]}(${status})`);
-    }
-})
-
-.on("login", (user: Contact) => {
-    console.log(`${user} login`);
-})
-
-.on("logout", (user: Contact) => {
-    console.log(`${user} logout`);
-})
-
-.on("message", async (message: Message) => {
-    console.log(`on message: ${message.toString()}`);
-})
-
-.start()
-
-console.log("TestBot", "started");
-```
-```
-ts-node bot.ts
-```
 ## PUPPET COMPARISON
 
-### Puppet Comparison
+PadLocal is _"one of"_ the most powerful puppet yet. 
 
 Puppet|donut|wxwork|paimon|padlocal
 :---|:---:|:---:|:---:|:---:
@@ -152,6 +93,5 @@ Puppet|donut|wxwork|paimon|padlocal
 登出事件|✅|✅|❌|✅
 主动退出登录|✅|❌|✅|✅
 依赖协议|Windows|Windows|iPad|iPad
- 
- ## HOW TO GET TOKEN
-[TOKEN 申请方法](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/TOKEN-%E7%94%B3%E8%AF%B7%E6%96%B9%E6%B3%95)
+
+> [Wechaty puppet compatibility](https://github.com/wechaty/wechaty-puppet/wiki/Compatibility)
