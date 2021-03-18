@@ -208,5 +208,6 @@ export function chatRoomMemberToContact(chatRoomMember: ChatRoomMember): Contact
   return new Contact()
     .setUsername(chatRoomMember.getUsername())
     .setNickname(chatRoomMember.getNickname())
-    .setAvatar(chatRoomMember.getAvatar());
+    .setAvatar(chatRoomMember.getAvatar())
+    .setStranger(true);
 }
