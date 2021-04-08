@@ -68,6 +68,7 @@ import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
 import nodeUrl from "url";
+import { addRunningPuppet, removeRunningPuppet } from "./cleanup";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -145,6 +146,8 @@ class PuppetPadlocal extends Puppet {
     this._startPuppetHeart();
 
     this.state.on("pending");
+
+    addRunningPuppet(this);
 
     await this._setupClient();
 
@@ -238,9 +241,7 @@ class PuppetPadlocal extends Puppet {
 
         this.state.on(true);
       })
-      .catch(async (e) => {
-        log.error(PRE, `login failed: ${e.stack}`, e);
-
+      .catch(async (_) => {
         await this._stopClient(true);
       });
   }
@@ -282,7 +283,7 @@ class PuppetPadlocal extends Puppet {
     this.state.off("pending");
 
     this._client!.removeAllListeners();
-    this._client!.shutdown();
+    await this._client!.shutdown();
     this._client = undefined;
 
     this.id = undefined;
@@ -294,6 +295,8 @@ class PuppetPadlocal extends Puppet {
 
     this.state.off(true);
 
+    removeRunningPuppet(this);
+
     this._stopPuppetHeart();
 
     if (restart && this._restartStrategy.canRetry()) {
@@ -303,6 +306,7 @@ class PuppetPadlocal extends Puppet {
       }, this._restartStrategy.nextRetryDelay());
     }
   }
+
   /**
    * logout account and stop the bot
    */
