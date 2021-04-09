@@ -2,12 +2,12 @@ import { ChatRoomMember, Contact, Message } from "padlocal-client-ts/dist/proto/
 import {
   ContactPayload,
   ContactType,
+  log,
   MessagePayload,
   MessageType,
   Puppet,
   RoomMemberPayload,
   RoomPayload,
-  log,
 } from "wechaty-puppet";
 import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
 import { MessagePayloadBase } from "wechaty-puppet/dist/src/schemas/message";
@@ -194,6 +194,12 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: Messag
       case AppMessageType.GroupNote:
         payload.type = MessageType.GroupNote;
         payload.text = appPayload.title;
+        break;
+      case AppMessageType.ReferMsg:
+        payload.type = MessageType.Text;
+        payload.text = `「${appPayload.refermsg!.displayname}：${
+          appPayload.refermsg!.content
+        }」\n- - - - - - - - - - - - - - - -\n${appPayload.title}`;
         break;
       default:
         payload.type = MessageType.Unknown;

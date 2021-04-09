@@ -22,6 +22,14 @@ interface AppMsgXmlSchema {
       thumburl: string;
       md5: any;
       recorditem?: string;
+      refermsg?: {
+        type: string;
+        svrid: string;
+        fromusr: string;
+        chatusr: string;
+        displayname: string;
+        content: string;
+      };
     };
     fromusername: string;
     appinfo: {
@@ -49,6 +57,7 @@ export enum AppMessageType {
   MiniProgram = 33,
   MiniProgramApp = 36, // this is forwardable mini program
   GroupNote = 53,
+  ReferMsg = 57,
   Transfers = 2000,
   RedEnvelopes = 2001,
   ReaderType = 100001,
@@ -66,6 +75,15 @@ export interface AppAttachPayload {
   islargefilemsg: number;
 }
 
+export interface ReferMsgPayload {
+  type: string;
+  svrid: string;
+  fromusr: string;
+  chatusr: string;
+  displayname: string;
+  content: string;
+}
+
 export interface AppMessagePayload {
   des?: string;
   thumburl?: string;
@@ -76,6 +94,7 @@ export interface AppMessagePayload {
   md5?: string;
   fromusername?: string;
   recorditem?: string;
+  refermsg?: ReferMsgPayload;
 }
 
 export async function appMessageParser(message: Message.AsObject): Promise<AppMessagePayload> {
@@ -87,6 +106,7 @@ export async function appMessageParser(message: Message.AsObject): Promise<AppMe
 
   const appMsgXml: AppMsgXmlSchema = await xmlToJson(tryXmlText);
   const { title, des, url, thumburl, type, md5, recorditem } = appMsgXml.msg.appmsg;
+
   let appattach: AppAttachPayload | undefined;
   const tmp = appMsgXml.msg.appmsg.appattach;
   if (tmp) {
@@ -102,6 +122,7 @@ export async function appMessageParser(message: Message.AsObject): Promise<AppMe
       totallen: (tmp.totallen && parseInt(tmp.totallen, 10)) || 0,
     };
   }
+
   return {
     appattach,
     des,
@@ -111,5 +132,6 @@ export async function appMessageParser(message: Message.AsObject): Promise<AppMe
     title,
     type: parseInt(type, 10),
     url,
+    refermsg: appMsgXml.msg.appmsg.refermsg,
   };
 }
