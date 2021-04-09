@@ -35,7 +35,7 @@ test(
     const getMessagePayload = async (message: Message) => {
       switch (message.type()) {
         case MessageType.Text:
-          if (message.from()?.id === recallUserId && message.text()!.indexOf("recall") !== -1) {
+          if (message.talker()?.id === recallUserId && message.text()!.indexOf("recall") !== -1) {
             await message.recall();
           }
           break;
@@ -143,7 +143,7 @@ test(
       bot.on("message", async (message: Message) => {
         log.info(LOGPRE, `on message: ${message.toString()}`);
 
-        if (message.from()?.id === forwardFrom && message.to()?.id === forwardFrom) {
+        if (message.talker()?.id === forwardFrom && message.to()?.id === forwardFrom) {
           await forwardMessage(bot, message);
         }
 

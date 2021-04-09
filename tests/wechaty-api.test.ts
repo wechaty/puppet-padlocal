@@ -157,7 +157,7 @@ const toUserName: string = config.get("test.message.send.toUserName");
 const expectSendMessage = async (message: Message, expectedMessageType: MessageType) => {
   const selfContact = bot.userSelf();
   expect(message).toBeTruthy();
-  expect(message.from()!.id).toEqual(selfContact.id);
+  expect(message.talker()!.id).toEqual(selfContact.id);
   expect(message.to() || message.room()).toBeTruthy();
   expect(message.type()).toBe(expectedMessageType);
   expect(message.date()).toBeTruthy();

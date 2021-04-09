@@ -14,6 +14,7 @@ import { MessagePayloadBase } from "wechaty-puppet/dist/src/schemas/message";
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
 import { WechatMessageType } from "../message-parser/WechatMessageType";
+import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat";
 
 const PRE = "[SchemaMapper]";
 
@@ -42,28 +43,38 @@ export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.
   if (isRoomId(message.fromusername) || isIMRoomId(message.fromusername)) {
     roomId = message.fromusername;
 
+    // text:    "wxid_xxxx:\nnihao"
+    // appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
+    // pat:     "19850419xxx@chatroom:\n<sysmsg type="pat"><pat><fromusername>xxx</fromusername><chatusername>19850419xxx@chatroom</chatusername><pattedusername>wxid_xxx</pattedusername>...<template><![CDATA["${vagase}" 拍了拍我]]></template></pat></sysmsg>"
+
     const parts = message.content.split(":\n");
     if (parts && parts.length > 1) {
       if (isContactId(parts[0]) || isIMContactId(parts[0])) {
         fromId = parts[0];
+        text = parts[1];
+      }
+      // pat message
+      else if (isRoomId(parts[0]) || isIMRoomId(parts[0])) {
+        const patMessage = await isPatMessage(message);
+        if (patMessage) {
+          const patMessagePayload = await patMessageParser(message);
+          fromId = patMessagePayload.fromusername;
+          text = patMessagePayload.template;
+        }
       }
     }
   } else if (isRoomId(message.tousername) || isIMRoomId(message.tousername)) {
     roomId = message.tousername;
     fromId = message.fromusername;
+
+    const startIndex = message.content.indexOf(":\n");
+    text = message.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
   } else {
     fromId = message.fromusername;
     toId = message.tousername;
   }
 
-  // set text
-  if (roomId) {
-    const startIndex = message.content.indexOf(":\n");
-
-    text = message.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
-  } else if (isContactId(message.fromusername)) {
-    text = message.content;
-  } else if (isIMContactId(message.fromusername)) {
+  if (!text) {
     text = message.content;
   }
 
