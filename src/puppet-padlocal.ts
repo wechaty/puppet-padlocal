@@ -132,6 +132,10 @@ class PuppetPadlocal extends Puppet {
     }
   }
 
+  public get client() {
+    return this._client;
+  }
+
   public async start(): Promise<void> {
     await this._startClient(LoginPolicy.DEFAULT);
   }
