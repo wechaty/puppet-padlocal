@@ -92,11 +92,11 @@ export class CacheManager {
 
     const contactTotal = await this._contactCache.size;
 
-    log.verbose(PRE, `initCache() inited ${contactTotal} Contacts,  cachedir="${baseDir}"`);
+    log.silly(PRE, `initCache() inited ${contactTotal} Contacts,  cachedir="${baseDir}"`);
   }
 
   async close() {
-    log.verbose(PRE, "close()");
+    log.silly(PRE, "close()");
 
     if (
       this._contactCache &&
@@ -128,7 +128,7 @@ export class CacheManager {
 
       log.silly(PRE, "close() cache closed.");
     } else {
-      log.verbose(PRE, "close() cache not exist.");
+      log.silly(PRE, "close() cache not exist.");
     }
   }
 

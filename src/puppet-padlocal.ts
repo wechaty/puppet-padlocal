@@ -182,7 +182,7 @@ class PuppetPadlocal extends Puppet {
           break;
       }
 
-      log.verbose(
+      log.silly(
         PRE,
         `scan event, status: ${ScanStatusName[scanStatus]}${qrCodeImageURL ? ", with qrcode: " + qrCodeImageURL : ""}`
       );
@@ -214,14 +214,14 @@ class PuppetPadlocal extends Puppet {
 
       onLoginSuccess: async (_) => {
         const userName = this._client!.selfContact!.getUsername();
-        log.verbose(PRE, `login success: ${userName}`);
+        log.silly(PRE, `login success: ${userName}`);
 
         await this.login(this._client!.selfContact!.getUsername());
       },
 
       // Will sync message and contact after login success, since last time login.
       onSync: async (syncEvent: SyncEvent) => {
-        log.verbose(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
+        log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
         for (const contact of syncEvent.getContactList()) {
           await this._onPushContact(contact);
@@ -233,7 +233,7 @@ class PuppetPadlocal extends Puppet {
       },
     })
       .then(() => {
-        log.verbose(PRE, `on ready`);
+        log.silly(PRE, `on ready`);
 
         this.emit("ready", {
           data: "ready",
@@ -1408,7 +1408,7 @@ class PuppetPadlocal extends Puppet {
   }
 
   private async _onPushContact(contact: Contact): Promise<void> {
-    log.verbose(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
+    log.silly(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
 
     await this._updateContactCache(contact.toObject());
 
@@ -1424,8 +1424,8 @@ class PuppetPadlocal extends Puppet {
   private async _onPushMessage(message: Message): Promise<void> {
     const messageId = message.getId();
 
-    log.verbose(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
-    log.verbose(PRE, Buffer.from(message.serializeBinary()).toString("hex"));
+    log.silly(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
+    log.silly(PRE, Buffer.from(message.serializeBinary()).toString("hex"));
 
     // filter out duplicated messages
     if (await this._cacheMgr!.hasMessage(messageId)) {
