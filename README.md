@@ -27,7 +27,7 @@ const bot = new Wechaty({
 > Detailed tutorials to "[Get Started with PadLocal](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Get-Started-with-PadLocal)"
 
 ## HOW TO APPLY TOKEN
-[TOKEN 申请方法](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/TOKEN-%E7%94%B3%E8%AF%B7%E6%96%B9%E6%B3%95)
+👉🏻 [pad-local.com](http://pad-local.com/) 👈🏻, get **FREE** trial token for **7** days.
 
 ## DESIGN CONCEPT
 We adopt several advanced technologies which make us different and outstanding, including:
