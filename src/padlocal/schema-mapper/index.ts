@@ -133,7 +133,7 @@ export function padLocalContactToWechaty(contact: Contact.AsObject): ContactPayl
   return {
     id: contact.username,
     gender: contact.gender,
-    type: isContactOfficialId(contact.username) ? ContactType.Official : ContactType.Unknown,
+    type: isContactOfficialId(contact.username) ? ContactType.Official : ContactType.Individual,
     name: contact.nickname,
     avatar: contact.avatar,
     alias: contact.remark,
