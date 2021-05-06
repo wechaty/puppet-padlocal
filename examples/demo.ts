@@ -1,9 +1,10 @@
 // read config from local-test.json
 process.env.NODE_CONFIG_ENV = "test";
 
-import { Contact, Message, ScanStatus, Wechaty, log } from "wechaty";
+import { Contact, log, Message, ScanStatus, Wechaty } from "wechaty";
 import PuppetPadlocal from "../src/puppet-padlocal";
 import config from "config";
+import QRCode from "qrcode-terminal";
 
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });
@@ -15,8 +16,12 @@ const bot = new Wechaty({
 
   .on("scan", (qrcode: string, status: ScanStatus) => {
     if (status === ScanStatus.Waiting && qrcode) {
-      const qrcodeImageUrl = ["https://api.qrserver.com/v1/create-qr-code/?data=", encodeURIComponent(qrcode)].join("");
-      log.info("TestBot", `onScan: ${ScanStatus[status]}(${status}) - ${qrcodeImageUrl}`);
+      log.info(
+        "TestBot",
+        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`
+      );
+
+      QRCode.generate(qrcode, { small: true });
     } else {
       log.info("TestBot", `onScan: ${ScanStatus[status]}(${status})`);
     }
