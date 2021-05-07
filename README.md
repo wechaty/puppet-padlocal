@@ -11,37 +11,19 @@
 > 
 > — ⭐️ Wechaty [The Trends in March 2021](https://wechaty.js.org/2021/03/04/wechaty-puppet-providers-trends/)
 
-Leading the puppet trends:
+## GETTING STARTED
+  * [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
+  * [Getting Started with TypeScript/JavaScript(RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
+  * [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
 
-![img.png](https://user-images.githubusercontent.com/64943823/111100398-abd46c00-8582-11eb-93aa-c2e21d94265d.png)
-
-## HOW TO USE
-PadLocal is a complete Wechaty puppet implementation, **Zero Code Change** is needed to upgrade from old puppet. 
-All you need to do is to set PadLocal as the puppet:
-```
-const bot = new Wechaty({
-    name: "PadLocalBot",
-    new PuppetPadlocal({ token: padLocalToken })
-})
-```
-> Detailed tutorials to "[Get Started with PadLocal](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Get-Started-with-PadLocal)"
-
-## HOW TO APPLY TOKEN
-👉🏻 [pad-local.com](http://pad-local.com/) 👈🏻, get **FREE** trial token for **7** days.
-
-## DESIGN CONCEPT
-We adopt several advanced technologies which make us different and outstanding, including:
-- Local IP: You use your own IP. No centralized server IPs are used, more secure.
-- Local Device: You host your now puppet, no puppet state synchronization with servers, more robust. 
-- Stateless High-Availability Service: **99.99%** SLA is guaranteed. Continuous integration is on the fly.
-
-> Learn more about our implementation: [设计理念](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5)
+## REFERENCE
+ * [API 使用文档 (TypeScript/JavaScript)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/API-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3-(TypeScript-JavaScript))
 
 ## PUPPET COMPARISON
 
 PadLocal is _"one of"_ the most powerful puppet yet. 
 
-Puppet|donut|wxwork|paimon|padlocal
+Puppet|donut|wxwork|paimon|padlocal👍
 :---|:---:|:---:|:---:|:---:
 支持账号|个人微信|企业微信|个人微信|个人微信
 **<消息>**|
