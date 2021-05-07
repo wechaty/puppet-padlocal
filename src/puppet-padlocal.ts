@@ -733,9 +733,9 @@ class PuppetPadlocal extends Puppet {
     if (imageType === ImageType.Thumbnail) {
       pbImageType = PadLocalImageType.THUMB;
     } else if (imageType === ImageType.HD) {
-      pbImageType = PadLocalImageType.HD;
-    } else {
       pbImageType = PadLocalImageType.NORMAL;
+    } else {
+      pbImageType = PadLocalImageType.HD;
     }
     const ret = await this._client!.api.getMessageImage(messagePayload.content, messagePayload.tousername, pbImageType);
 
