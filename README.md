@@ -13,7 +13,7 @@
 
 ## GETTING STARTED
   * [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
-  * [Getting Started with TypeScript/JavaScript(RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
+  * [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
   * [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
 
 ## REFERENCE
