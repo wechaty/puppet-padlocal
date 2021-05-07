@@ -12,9 +12,9 @@
 > — ⭐️ Wechaty [The Trends in March 2021](https://wechaty.js.org/2021/03/04/wechaty-puppet-providers-trends/)
 
 ## GETTING STARTED
-  * [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
-  * [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
-  * [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
+  * STEP 1: [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
+  * STEP 2: [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
+  * STEP 2 or: [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
 
 ## REFERENCE
  * [API 使用文档 (TypeScript/JavaScript)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/API-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3-(TypeScript-JavaScript))
