@@ -1286,6 +1286,31 @@ class PuppetPadlocal extends Puppet {
   }
 
   /****************************************************************************
+   * extra methods section
+   ***************************************************************************/
+
+  /**
+   * CAUTION: For edge case usage only!
+   * Sync contact is a time consuming action, may last for minutes especially when you have massive contacts.
+   * You MUST understand what exactly you are doing.
+   */
+  public async syncContact() {
+    if (this.state.on() !== true) {
+      throw new Error("Can not sync contact before login");
+    }
+
+    await this.client!.api.syncContact({
+      onSync: (contactList: Contact[]) => {
+        this._onPushSerialExecutor.execute(async () => {
+          for (const contact of contactList) {
+            await this._onPushContact(contact);
+          }
+        });
+      },
+    });
+  }
+
+  /****************************************************************************
    * private section
    ***************************************************************************/
 
