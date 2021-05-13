@@ -26,14 +26,7 @@ interface MiniProgramXmlSchema {
 }
 
 export async function miniProgramMessageParser(rawPayload: Message.AsObject): Promise<MiniProgramPayload> {
-  const content = rawPayload.content.trim();
-
-  let tryXmlText = content;
-  if (!/^<msg>.*/.test(content)) {
-    tryXmlText = content.replace(/^[^\n]+\n/, "");
-  }
-
-  const miniProgramXml: MiniProgramXmlSchema = await xmlToJson(tryXmlText);
+  const miniProgramXml: MiniProgramXmlSchema = await xmlToJson(rawPayload.content);
   const appmsg = miniProgramXml.msg.appmsg;
   const weappinfo = appmsg.weappinfo;
   const appattach = appmsg.appattach;

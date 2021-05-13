@@ -20,8 +20,7 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
   let linkList;
 
   if (!needParseXML) {
-    const tryXmlText = content.replace(/^[^\n]+\n/, "");
-    const roomXml: RoomXmlSchema = await xmlToJson(tryXmlText); // toJson(tryXmlText, { object: true }) as RoomRelatedXmlSchema
+    const roomXml: RoomXmlSchema = await xmlToJson(content);
     if (!roomXml || !roomXml.sysmsg || !roomXml.sysmsg.sysmsgtemplate) {
       return null;
     }

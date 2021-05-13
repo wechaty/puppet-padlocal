@@ -98,13 +98,7 @@ export interface AppMessagePayload {
 }
 
 export async function appMessageParser(message: Message.AsObject): Promise<AppMessagePayload> {
-  const content = message.content.trim();
-  let tryXmlText = content;
-  if (!/^<msg>.*/.test(content)) {
-    tryXmlText = content.replace(/^[^\n]+\n/, "");
-  }
-
-  const appMsgXml: AppMsgXmlSchema = await xmlToJson(tryXmlText);
+  const appMsgXml: AppMsgXmlSchema = await xmlToJson(message.content);
   const { title, des, url, thumburl, type, md5, recorditem } = appMsgXml.msg.appmsg;
 
   let appattach: AppAttachPayload | undefined;

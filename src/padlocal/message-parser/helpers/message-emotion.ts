@@ -33,9 +33,7 @@ export interface EmojiMessagePayload {
 }
 
 export async function emotionPayloadParser(message: Message.AsObject): Promise<EmojiMessagePayload> {
-  const tryXmlText = message.content.replace(/^[^\n]+\n/, "");
-
-  const jsonPayload: EmotionXmlSchema = await xmlToJson(tryXmlText);
+  const jsonPayload: EmotionXmlSchema = await xmlToJson(message.content);
 
   const len = parseInt(jsonPayload.msg.emoji.$.len, 10) || 0;
   const width = parseInt(jsonPayload.msg.emoji.$.width, 10) || 0;
