@@ -1082,6 +1082,27 @@ class PuppetPadlocal extends Puppet {
           messagePayload.tousername
         );
         newMessageId = response.getMsgid();
+
+        let pushContent = messagePayload.pushcontent;
+        if (pushContent && pushContent.indexOf(":") !== -1) {
+          pushContent = pushContent.split(":")[1];
+        }
+
+        if (isRoomId(toUserName)) {
+          pushContent = `${this._client!.selfContact!.getNickname()}:${pushContent}`;
+        }
+
+        await this._onSendMessage(
+          new Message()
+            .setType(WechatMessageType.App)
+            .setFromusername(this.id!)
+            .setTousername(toUserName)
+            .setContent(response.getMsgcontent())
+            .setPushcontent(pushContent),
+          response.getMsgid(),
+          response.getMessagerevokeinfo()!
+        );
+
         break;
 
       case MessageType.Emoticon:

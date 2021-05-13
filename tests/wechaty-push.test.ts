@@ -14,24 +14,6 @@ test(
     const forwardTo: string = config.get("test.push.forwardTo");
     const recallUserId: string = config.get("test.push.recallUserId");
 
-    const forwardMessage = async (bot: Wechaty, message: Message): Promise<void> => {
-      if (message.type() === MessageType.Unknown) {
-        return;
-      }
-
-      try {
-        let to;
-        if (isContactId(forwardTo)) {
-          to = await bot.Contact.find({ id: forwardTo });
-        } else {
-          to = await bot.Room.find({ id: forwardTo });
-        }
-        await message.forward(to!);
-      } catch (e) {
-        log.error(LOGPRE, `Error while forwarding message: ${e.stack}`);
-      }
-    };
-
     const getMessagePayload = async (message: Message) => {
       switch (message.type()) {
         case MessageType.Text:
@@ -139,11 +121,30 @@ test(
       }
     };
 
+    const forwardMessage = async (bot: Wechaty, message: Message): Promise<void> => {
+      if (message.type() === MessageType.Unknown) {
+        return;
+      }
+
+      try {
+        let to;
+        if (isContactId(forwardTo)) {
+          to = await bot.Contact.find({ id: forwardTo });
+        } else {
+          to = await bot.Room.find({ id: forwardTo });
+        }
+        const newMessage = await message.forward(to!);
+        await getMessagePayload(newMessage as Message);
+      } catch (e) {
+        log.error(LOGPRE, `Error while forwarding message: ${e.stack}`);
+      }
+    };
+
     await prepareSingedOnBot(async (bot) => {
       bot.on("message", async (message: Message) => {
         log.info(LOGPRE, `on message: ${message.toString()}`);
 
-        if (message.talker()?.id === forwardFrom && message.to()?.id === forwardFrom) {
+        if (message.talker()?.id === forwardFrom) {
           await forwardMessage(bot, message);
         }
 
