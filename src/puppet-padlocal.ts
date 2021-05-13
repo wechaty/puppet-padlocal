@@ -640,6 +640,9 @@ class PuppetPadlocal extends Puppet {
     const message: MessagePayload = await this.messageRawPayloadParser(messagePayload);
 
     switch (message.type) {
+      case MessageType.Image:
+        return this._getMessageImageFileBox(messageId, messagePayload, ImageType.HD);
+
       case MessageType.Audio:
         let audioData: Buffer;
         if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
@@ -716,39 +719,7 @@ class PuppetPadlocal extends Puppet {
 
   public async messageImage(messageId: string, imageType: ImageType): Promise<FileBox> {
     const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
-    const message: MessagePayload = await this.messageRawPayloadParser(messagePayload);
-
-    if (message.type !== MessageType.Image) {
-      throw new Error(`message ${messageId} is not image type message`);
-    }
-
-    if (imageType === ImageType.Thumbnail) {
-      if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
-        const imageData = Buffer.from(messagePayload.binarypayload);
-        return FileBox.fromBuffer(imageData, `message-${messageId}-image-thumb.jpg`);
-      }
-    }
-
-    let pbImageType: PadLocalImageType;
-    if (imageType === ImageType.Thumbnail) {
-      pbImageType = PadLocalImageType.THUMB;
-    } else if (imageType === ImageType.HD) {
-      pbImageType = PadLocalImageType.NORMAL;
-    } else {
-      pbImageType = PadLocalImageType.HD;
-    }
-    const ret = await this._client!.api.getMessageImage(messagePayload.content, messagePayload.tousername, pbImageType);
-
-    let imageNameSuffix: string;
-    if (ret.imageType === PadLocalImageType.THUMB) {
-      imageNameSuffix = "thumb";
-    } else if (ret.imageType === PadLocalImageType.HD) {
-      imageNameSuffix = "hd";
-    } else {
-      imageNameSuffix = "normal";
-    }
-
-    return FileBox.fromBuffer(ret.imageData, `message-${messageId}-image-${imageNameSuffix}.jpg`);
+    return this._getMessageImageFileBox(messageId, messagePayload, imageType);
   }
 
   public async messageMiniProgram(messageId: string): Promise<MiniProgramPayload> {
@@ -1593,6 +1564,42 @@ class PuppetPadlocal extends Puppet {
 
     clearTimeout(this._heartBeatTimer);
     this._heartBeatTimer = undefined;
+  }
+
+  private async _getMessageImageFileBox(messageId: string, messagePayload: Message.AsObject, imageType: ImageType) {
+    const message: MessagePayload = await this.messageRawPayloadParser(messagePayload);
+
+    if (message.type !== MessageType.Image) {
+      throw new Error(`message ${messageId} is not image type message`);
+    }
+
+    if (imageType === ImageType.Thumbnail) {
+      if (messagePayload.binarypayload && messagePayload.binarypayload.length) {
+        const imageData = Buffer.from(messagePayload.binarypayload);
+        return FileBox.fromBuffer(imageData, `message-${messageId}-image-thumb.jpg`);
+      }
+    }
+
+    let pbImageType: PadLocalImageType;
+    if (imageType === ImageType.Thumbnail) {
+      pbImageType = PadLocalImageType.THUMB;
+    } else if (imageType === ImageType.HD) {
+      pbImageType = PadLocalImageType.NORMAL;
+    } else {
+      pbImageType = PadLocalImageType.HD;
+    }
+    const ret = await this._client!.api.getMessageImage(messagePayload.content, messagePayload.tousername, pbImageType);
+
+    let imageNameSuffix: string;
+    if (ret.imageType === PadLocalImageType.THUMB) {
+      imageNameSuffix = "thumb";
+    } else if (ret.imageType === PadLocalImageType.HD) {
+      imageNameSuffix = "hd";
+    } else {
+      imageNameSuffix = "normal";
+    }
+
+    return FileBox.fromBuffer(ret.imageData, `message-${messageId}-image-${imageNameSuffix}.jpg`);
   }
 }
 
