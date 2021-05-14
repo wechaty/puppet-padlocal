@@ -10,14 +10,14 @@ const ROOM_LEAVE_OTHER_REGEX_LIST = [/^(You) removed "(.+)" from the group chat/
 const ROOM_LEAVE_BOT_REGEX_LIST = [/^(You) were removed from the group chat by "([^"]+)"/, /^(你)被"([^"]+?)"移出群聊/];
 
 const roomLeaveDebounceMap: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();
-const DEBOUNCE_TIMEOUT = 2000; // 2 seconds
+const DEBOUNCE_TIMEOUT = 3600 * 1000; // 1 hour
 
-function debounceKey(roomId: string, removeeId: string) {
+function roomLeaveDebounceKey(roomId: string, removeeId: string) {
   return `${roomId}:${removeeId}`;
 }
 
-function addDebounce(roomId: string, removeeId: string) {
-  const key = debounceKey(roomId, removeeId);
+function roomLeaveAddDebounce(roomId: string, removeeId: string) {
+  const key = roomLeaveDebounceKey(roomId, removeeId);
   const oldTimeout = roomLeaveDebounceMap.get(key);
   if (oldTimeout) {
     clearTimeout(oldTimeout);
@@ -29,11 +29,15 @@ function addDebounce(roomId: string, removeeId: string) {
   roomLeaveDebounceMap.set(key, timeout);
 }
 
-export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolean {
-  const key = debounceKey(roomId, removeeId);
-  const ret = roomLeaveDebounceMap.get(key) !== undefined;
+// to fix: https://github.com/padlocal/wechaty-puppet-padlocal/issues/43
+export function removeRoomLeaveDebounce(roomId: string, removeeId: string) {
+  const key = roomLeaveDebounceKey(roomId, removeeId);
+  roomLeaveDebounceMap.delete(key);
+}
 
-  return ret;
+export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolean {
+  const key = roomLeaveDebounceKey(roomId, removeeId);
+  return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
 export default async (puppet: Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
@@ -81,7 +85,7 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     throw new Error("for typescript type checking, will never go here");
   }
 
-  addDebounce(roomId, leaverId);
+  roomLeaveAddDebounce(roomId, leaverId);
 
   return {
     removeeIdList: [leaverId],

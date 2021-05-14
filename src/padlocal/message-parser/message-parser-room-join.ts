@@ -5,6 +5,7 @@ import { isRoomId } from "../utils/is-type";
 import { xmlToJson } from "../utils/xml-to-json";
 import { getUserName } from "../utils/get-xml-label";
 import { MessageParserRetType } from "./message-parser";
+import { removeRoomLeaveDebounce } from "./message-parser-room-leave";
 
 const ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_ZH = [
   /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
@@ -91,9 +92,11 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     return null;
   }
 
-  const checkString = (inviteeIdList: string | string[]) => {
+  const stringToList = (inviteeIdList: string | string[]) => {
     return typeof inviteeIdList !== "string" ? inviteeIdList : [inviteeIdList];
   };
+
+  let ret: EventRoomJoinPayload | null = null;
 
   /**
    * Parse all Names From the Event Text
@@ -106,8 +109,8 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     const other = matches[1];
     const inviteeIdList = getUserName(linkList, other);
 
-    return {
-      inviteeIdList: checkString(inviteeIdList),
+    ret = {
+      inviteeIdList: stringToList(inviteeIdList),
       inviterId: (await puppet.roomMemberSearch(roomId, YOU))[0],
       roomId,
       timestamp,
@@ -121,7 +124,7 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     const _inviterName = matches[1];
     const inviterId = getUserName(linkList, _inviterName);
 
-    return {
+    ret = {
       inviteeIdList: await puppet.roomMemberSearch(roomId, YOU),
       inviterId,
       roomId,
@@ -140,8 +143,8 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     const _others = matches[2];
     const inviteeIdList = getUserName(linkList, _others);
 
-    return {
-      inviteeIdList: checkString(inviteeIdList),
+    ret = {
+      inviteeIdList: stringToList(inviteeIdList),
       inviterId,
       roomId,
       timestamp,
@@ -157,13 +160,19 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     const other = matches[1];
     const inviteeIdList = getUserName(linkList, other);
 
-    return {
-      inviteeIdList: checkString(inviteeIdList),
+    ret = {
+      inviteeIdList: stringToList(inviteeIdList),
       inviterId,
       roomId,
       timestamp,
     } as EventRoomJoinPayload;
   }
 
-  return null;
+  if (ret) {
+    ret.inviteeIdList.forEach((inviteeId) => {
+      removeRoomLeaveDebounce(ret!.roomId, inviteeId);
+    });
+  }
+
+  return ret;
 };
