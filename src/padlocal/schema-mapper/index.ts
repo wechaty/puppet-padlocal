@@ -179,6 +179,12 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: Messag
         payload.type = MessageType.Text;
         payload.text = appPayload.title;
         break;
+      case AppMessageType.Audio:
+        payload.type = MessageType.Url;
+        break;
+      case AppMessageType.Video:
+        payload.type = MessageType.Url;
+        break;
       case AppMessageType.Url:
         payload.type = MessageType.Url;
         break;
