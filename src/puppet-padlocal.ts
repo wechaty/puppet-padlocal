@@ -69,6 +69,7 @@ import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup";
+import { FriendshipAddOptions } from "wechaty-puppet/dist/src/schemas/friendship";
 
 export type PuppetPadlocalOptions = PuppetOptions & {
   serverCAFilePath?: string;
@@ -540,7 +541,7 @@ class PuppetPadlocal extends Puppet {
     // after adding friend, new version of contact will be pushed
   }
 
-  public async friendshipAdd(contactId: string, hello: string): Promise<void> {
+  public async friendshipAdd(contactId: string, option?: FriendshipAddOptions): Promise<void> {
     let stranger: string;
     let ticket: string;
     let addContactScene: AddContactScene;
@@ -582,7 +583,21 @@ class PuppetPadlocal extends Puppet {
       // the contact is already a friend
       log.warn(`contact: ${stranger} is already a friend, skip adding`);
     } else {
-      await this._client!.api.addContact(stranger, ticket, addContactScene, hello);
+      let hello: string | undefined;
+      let roomId: string | undefined;
+      let cid: string | undefined;
+
+      if (option) {
+        if (typeof option === "string") {
+          hello = option;
+        } else {
+          hello = (option as any).hello;
+          roomId = (option as any).roomId;
+          cid = (option as any).contactId;
+        }
+      }
+
+      await this._client!.api.addContact(stranger, ticket, addContactScene, hello!, roomId, cid);
     }
   }
 

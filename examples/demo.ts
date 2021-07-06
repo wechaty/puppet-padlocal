@@ -9,6 +9,8 @@ import QRCode from "qrcode-terminal";
 import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
 import { isContactId } from "../src/padlocal/utils/is-type";
 
+// log.level("silly");
+
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });
 
