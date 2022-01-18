@@ -4,7 +4,7 @@ import PuppetPadlocal from "../src/puppet-padlocal.js";
 
 // log.level("silly");
 
-export function createBot (): Wechaty {
+export function createBot(): Wechaty {
   const token: string = config.get("padLocal.token");
   const puppet = new PuppetPadlocal({
     token,
@@ -18,7 +18,7 @@ export function createBot (): Wechaty {
 
 type PrepareBotFunc = (bot: Wechaty) => Promise<void>;
 
-export async function prepareSingedOnBot (prepareBotFunc?: PrepareBotFunc): Promise<Wechaty> {
+export async function prepareSingedOnBot(prepareBotFunc?: PrepareBotFunc): Promise<Wechaty> {
   const bot = createBot();
 
   bot.on("scan", (qrcode: string, status: ScanStatus) => {

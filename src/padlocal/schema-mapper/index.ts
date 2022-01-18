@@ -12,7 +12,7 @@ import { isPatMessage, patMessageParser } from "../message-parser/helpers/messag
 
 const PRE = "[SchemaMapper]";
 
-export async function padLocalMessageToWechaty (puppet: PUPPET.Puppet, message: Message.AsObject): Promise<PUPPET.payloads.Message> {
+export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = message.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
 
@@ -129,7 +129,7 @@ export async function padLocalMessageToWechaty (puppet: PUPPET.Puppet, message: 
   return payload;
 }
 
-export function padLocalContactToWechaty (contact: Contact.AsObject): PUPPET.payloads.Contact {
+export function padLocalContactToWechaty(contact: Contact.AsObject): PUPPET.payloads.Contact {
   return {
     id: contact.username,
     gender: contact.gender,
@@ -146,7 +146,7 @@ export function padLocalContactToWechaty (contact: Contact.AsObject): PUPPET.pay
   };
 }
 
-export function padLocalRoomToWechaty (contact: Contact.AsObject): PUPPET.payloads.Room {
+export function padLocalRoomToWechaty(contact: Contact.AsObject): PUPPET.payloads.Room {
   return {
     adminIdList: [],
     avatar: contact.avatar,
@@ -157,7 +157,7 @@ export function padLocalRoomToWechaty (contact: Contact.AsObject): PUPPET.payloa
   };
 }
 
-export function padLocalRoomMemberToWechaty (chatRoomMember: ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
+export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
   return {
     id: chatRoomMember.username,
     roomAlias: chatRoomMember.displayname,
@@ -167,7 +167,7 @@ export function padLocalRoomMemberToWechaty (chatRoomMember: ChatRoomMember.AsOb
   };
 }
 
-async function _adjustMessageByAppMsg (message: Message.AsObject, payload: PUPPET.payloads.Message) {
+async function _adjustMessageByAppMsg(message: Message.AsObject, payload: PUPPET.payloads.Message) {
   if (payload.type !== PUPPET.types.Message.Attachment) {
     return;
   }
@@ -227,7 +227,7 @@ async function _adjustMessageByAppMsg (message: Message.AsObject, payload: PUPPE
   }
 }
 
-export function chatRoomMemberToContact (chatRoomMember: ChatRoomMember): Contact {
+export function chatRoomMemberToContact(chatRoomMember: ChatRoomMember): Contact {
   return new Contact()
     .setUsername(chatRoomMember.getUsername())
     .setNickname(chatRoomMember.getNickname())

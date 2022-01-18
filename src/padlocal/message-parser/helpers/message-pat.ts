@@ -23,7 +23,7 @@ export interface PatMessagePayload {
   template: string;
 }
 
-export async function isPatMessage (message: Message.AsObject) {
+export async function isPatMessage(message: Message.AsObject) {
   const content = message.content.trim();
   const parts = content.split(":");
   if (parts.length < 1) {
@@ -39,7 +39,7 @@ export async function isPatMessage (message: Message.AsObject) {
   return patXml.sysmsg.$.type === "pat";
 }
 
-export async function patMessageParser (message: Message.AsObject): Promise<PatMessagePayload> {
+export async function patMessageParser(message: Message.AsObject): Promise<PatMessagePayload> {
   const content = message.content.trim();
   const parts = content.split(":");
   const chatroom = parts[0]!;

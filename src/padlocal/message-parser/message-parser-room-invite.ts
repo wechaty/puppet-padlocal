@@ -8,7 +8,7 @@ const ROOM_OTHER_INVITE_TITLE_EN = [/Group Chat Invitation/];
 const ROOM_OTHER_INVITE_LIST_ZH = [/^"(.+)"邀请你加入群聊(.*)，进入可查看详情。/];
 const ROOM_OTHER_INVITE_LIST_EN = [/"(.+)" invited you to join the group chat "(.+)"\. Enter to view details\./];
 
-export default async (_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   let appMsgPayload: AppMessagePayload;
   try {
     appMsgPayload = await appMessageParser(message);

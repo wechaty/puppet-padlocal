@@ -7,12 +7,12 @@ export class SerialExecutor {
   private _jobs: SerialJob[];
   private _executing: boolean;
 
-  constructor () {
+  constructor() {
     this._jobs = [];
     this._executing = false;
   }
 
-  execute<T> (jobFunc: SerialJobFunc, type?: string): Promise<T> {
+  execute<T>(jobFunc: SerialJobFunc, type?: string): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobs.push(new SerialJob(jobFunc, new PromiseCallback(resolve, reject), type));
 
@@ -23,7 +23,7 @@ export class SerialExecutor {
   /**
    * @param type: if type is undefined, clear all jobs in queue
    */
-  clear (type?: string) {
+  clear(type?: string) {
     this._jobs = this._jobs.filter((job: SerialJob) => {
       if (!type) {
         return false;
@@ -33,7 +33,7 @@ export class SerialExecutor {
     });
   }
 
-  private _executeNextJob () {
+  private _executeNextJob() {
     if (this._executing) {
       return;
     }

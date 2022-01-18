@@ -48,7 +48,7 @@ const isNeedVerify = (message: Message.AsObject): boolean => {
   });
 };
 
-const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | null> => {
+const isReceive = async(message: Message.AsObject): Promise<ReceiveXmlSchema | null> => {
   if (message.type !== WechatMessageType.VerifyMsg && message.type !== WechatMessageType.VerifyMsgEnterprise) {
     return null;
   }
@@ -68,7 +68,7 @@ const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | 
   return null;
 };
 
-export default async (_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   if (isConfirm(message)) {
     return {
       contactId: message.fromusername,

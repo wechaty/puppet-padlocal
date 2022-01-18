@@ -33,7 +33,7 @@ export interface EmojiMessagePayload {
   gameext?: string;
 }
 
-export async function emotionPayloadParser (message: Message.AsObject): Promise<EmojiMessagePayload> {
+export async function emotionPayloadParser(message: Message.AsObject): Promise<EmojiMessagePayload> {
   const jsonPayload: EmotionXmlSchema = await xmlToJson(message.content);
 
   const len = parseInt(jsonPayload.msg.emoji.$.len, 10) || 0;
@@ -61,7 +61,7 @@ export async function emotionPayloadParser (message: Message.AsObject): Promise<
   };
 }
 
-export function emotionPayloadGenerator (emojiMessagePayload: EmojiMessagePayload): string {
+export function emotionPayloadGenerator(emojiMessagePayload: EmojiMessagePayload): string {
   return `<msg><emoji cdnurl="${emojiMessagePayload.cdnurl}" len="${emojiMessagePayload.len}" md5="${
     emojiMessagePayload.md5
   }" type="${emojiMessagePayload.type}"/>${emojiMessagePayload.gameext || ""}</msg>`;

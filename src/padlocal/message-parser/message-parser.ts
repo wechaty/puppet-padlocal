@@ -8,11 +8,11 @@ export type MessageParserRetType = ParsedMessagePayloadSpec[keyof ParsedMessageP
 export type MessageParser = (puppet: Puppet, message: Message.AsObject) => Promise<MessageParserRetType>;
 
 const MessageParsers: Map<MessageCategory, MessageParser> = new Map();
-export function registerMessageParser (category: MessageCategory, parser: MessageParser): void {
+export function registerMessageParser(category: MessageCategory, parser: MessageParser): void {
   MessageParsers.set(category, parser);
 }
 
-export async function parseMessage (puppet: Puppet, message: Message.AsObject): Promise<ParsedMessage<any>> {
+export async function parseMessage(puppet: Puppet, message: Message.AsObject): Promise<ParsedMessage<any>> {
   for (const [category, parser] of MessageParsers.entries()) {
     try {
       const parsedPayload = await parser(puppet, message);

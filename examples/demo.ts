@@ -17,7 +17,7 @@ import { isContactId } from "../src/padlocal/utils/is-type.js";
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });
 
-async function getMessagePayload (message: Message) {
+async function getMessagePayload(message: Message) {
   const recallUserId: string = config.get("test.push.recallUserId");
 
   switch (message.type()) {
@@ -125,7 +125,7 @@ bot
     log.info("TestBot", `${user} logout, reason: ${reason}`);
   })
 
-  .on("message", async (message: Message) => {
+  .on("message", async(message: Message) => {
     log.info("TestBot", `on message: ${message.toString()}`);
 
     const forwardFrom = config.get("test.push.forwardFrom");

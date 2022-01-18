@@ -30,7 +30,7 @@ const ROOM_JOIN_OTHER_INVITE_OTHER_QRCODE_REGEX_LIST_EN = [
   /^"(.+)" joined the group chat via the QR Code shared by "(.+)"/,
 ];
 
-export default async (puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;

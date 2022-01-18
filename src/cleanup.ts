@@ -13,7 +13,7 @@ nodeCleanup((exitCode, signal) => {
   const puppets = RunningPuppets.slice();
 
   Promise.all(
-    puppets.map(async (puppet) => {
+    puppets.map(async(puppet) => {
       await puppet.stop();
     }),
   ).finally(() => {
@@ -24,11 +24,11 @@ nodeCleanup((exitCode, signal) => {
   return false;
 });
 
-export function addRunningPuppet (puppet: PUPPET.Puppet) {
+export function addRunningPuppet(puppet: PUPPET.Puppet) {
   RunningPuppets.push(puppet);
 }
 
-export function removeRunningPuppet (puppet: PUPPET.Puppet) {
+export function removeRunningPuppet(puppet: PUPPET.Puppet) {
   const puppetIndex = RunningPuppets.indexOf(puppet);
   if (puppetIndex !== -1) {
     delete RunningPuppets[puppetIndex];

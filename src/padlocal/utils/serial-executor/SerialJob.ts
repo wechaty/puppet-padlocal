@@ -8,7 +8,7 @@ export class SerialJob {
   readonly func: SerialJobFunc;
   readonly promiseCallback: PromiseCallback;
 
-  constructor (func: SerialJobFunc, promiseCallback: PromiseCallback, type?: string) {
+  constructor(func: SerialJobFunc, promiseCallback: PromiseCallback, type?: string) {
     this.func = func;
     this.promiseCallback = promiseCallback;
     this.type = type;

@@ -10,7 +10,7 @@ import type { MessageParserRetType } from "./message-parser.js";
 const ROOM_TOPIC_OTHER_REGEX_LIST = [/^"(.+)" changed the group name to "(.+)"$/, /^"(.+)"修改群名为“(.+)”$/];
 const ROOM_TOPIC_YOU_REGEX_LIST = [/^(You) changed the group name to "(.+)"$/, /^(你)修改群名为“(.+)”$/];
 
-export default async (puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;

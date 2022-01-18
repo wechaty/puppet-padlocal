@@ -1,6 +1,6 @@
 import { prepareSingedOnBot } from "./wechaty-common.js";
 
-test("login", async () => {
+test("login", async() => {
   const bot = await prepareSingedOnBot();
 
   expect(bot.isLoggedIn).toBeTruthy();
@@ -14,7 +14,7 @@ test("login", async () => {
 
 test(
   "logout",
-  async () => {
+  async() => {
     const bot = await prepareSingedOnBot();
 
     expect(bot.isLoggedIn).toBeTruthy();

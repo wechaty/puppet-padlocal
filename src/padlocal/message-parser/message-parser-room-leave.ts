@@ -13,11 +13,11 @@ const ROOM_LEAVE_BOT_REGEX_LIST = [/^(You) were removed from the group chat by "
 const roomLeaveDebounceMap: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const DEBOUNCE_TIMEOUT = 3600 * 1000; // 1 hour
 
-function roomLeaveDebounceKey (roomId: string, removeeId: string) {
+function roomLeaveDebounceKey(roomId: string, removeeId: string) {
   return `${roomId}:${removeeId}`;
 }
 
-function roomLeaveAddDebounce (roomId: string, removeeId: string) {
+function roomLeaveAddDebounce(roomId: string, removeeId: string) {
   const key = roomLeaveDebounceKey(roomId, removeeId);
   const oldTimeout = roomLeaveDebounceMap.get(key);
   if (oldTimeout) {
@@ -31,17 +31,17 @@ function roomLeaveAddDebounce (roomId: string, removeeId: string) {
 }
 
 // to fix: https://github.com/padlocal/wechaty-puppet-padlocal/issues/43
-export function removeRoomLeaveDebounce (roomId: string, removeeId: string) {
+export function removeRoomLeaveDebounce(roomId: string, removeeId: string) {
   const key = roomLeaveDebounceKey(roomId, removeeId);
   roomLeaveDebounceMap.delete(key);
 }
 
-export function isRoomLeaveDebouncing (roomId: string, removeeId: string): boolean {
+export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolean {
   const key = roomLeaveDebounceKey(roomId, removeeId);
   return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
-export default async (puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;

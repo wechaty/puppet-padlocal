@@ -82,7 +82,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   private _restartStrategy = RetryStrategy.getStrategy(RetryStrategyRule.FAST, Number.MAX_SAFE_INTEGER);
   private _heartBeatTimer?: ReturnType<typeof setTimeout>;
 
-  constructor (public override options: PuppetPadlocalOptions = {}) {
+  constructor(public override options: PuppetPadlocalOptions = {}) {
     super(options);
 
     // try to fill token from env if not exits
@@ -118,15 +118,15 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  public get client () {
+  public get client() {
     return this._client;
   }
 
-  public async onStart (): Promise<void> {
+  public async onStart(): Promise<void> {
     await this._startClient(LoginPolicy.DEFAULT);
   }
 
-  private async _startClient (loginPolicy: LoginPolicy): Promise<void> {
+  private async _startClient(loginPolicy: LoginPolicy): Promise<void> {
     this._startPuppetHeart();
 
     addRunningPuppet(this);
@@ -142,7 +142,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       [PUPPET.types.ScanStatus.Timeout]: "Timeout",
     };
 
-    const onQrCodeEvent = async (qrCodeEvent: QRCodeEvent) => {
+    const onQrCodeEvent = async(qrCodeEvent: QRCodeEvent) => {
       let scanStatus: PUPPET.types.ScanStatus = PUPPET.types.ScanStatus.Unknown;
       let qrCodeImageURL: string | undefined;
       switch (qrCodeEvent.getStatus()) {
@@ -194,7 +194,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
       onQrCodeEvent,
 
-      onLoginSuccess: async (_) => {
+      onLoginSuccess: async(_) => {
         const userName = this._client!.selfContact!.getUsername();
         log.silly(PRE, `login success: ${userName}`);
 
@@ -202,7 +202,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       },
 
       // Will sync message and contact after login success, since last time login.
-      onSync: async (syncEvent: SyncEvent) => {
+      onSync: async(syncEvent: SyncEvent) => {
         log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
         for (const contact of syncEvent.getContactList()) {
@@ -222,7 +222,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         });
 
       })
-      .catch(async (_) => {
+      .catch(async(_) => {
         await this._stopClient(true);
       });
   }
@@ -232,7 +232,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * @param userId
    * @protected
    */
-  override async login (userId: string): Promise<void> {
+  override async login(userId: string): Promise<void> {
     this._restartStrategy.reset();
 
     // create cache manager firstly
@@ -250,11 +250,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
   /**
    * stop the bot, with account signed on, will try auto login next time bot start.
    */
-  public async onStop (): Promise<void> {
+  public async onStop(): Promise<void> {
     await this._stopClient(false);
   }
 
-  private async _stopClient (restart: boolean): Promise<void> {
+  private async _stopClient(restart: boolean): Promise<void> {
     this._client!.removeAllListeners();
     await this._client!.shutdown();
     this._client = undefined;
@@ -281,7 +281,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   /**
    * logout account and stop the bot
    */
-  override async logout (): Promise<void> {
+  override async logout(): Promise<void> {
     if (!this.id) {
       throw new Error("logout before login?");
     }
@@ -293,7 +293,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._stopClient(true);
   }
 
-  override ding (_data?: string): void {
+  override ding(_data?: string): void {
     // TODO: add checking healthy
     this.emit("dong", { data: "Everything is ok" });
   }
@@ -302,7 +302,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * contact
    ***************************************************************************/
 
-  override async contactSelfName (name: string): Promise<void> {
+  override async contactSelfName(name: string): Promise<void> {
     await this._client!.api.updateSelfNickName(name);
 
     this._client!.selfContact!.setNickname(name);
@@ -312,14 +312,14 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._updateContactCache(contact);
   }
 
-  override async contactSelfQRCode (): Promise<string> {
+  override async contactSelfQRCode(): Promise<string> {
     const response = await this._client!.api.getContactQRCode(this._client!.selfContact!.getUsername(), 1);
 
     const fileBox = FileBox.fromBuffer(Buffer.from(response.getQrcode()), `qr-${this.id}.jpg`);
     return fileBox.toQRCode();
   }
 
-  override async contactSelfSignature (signature: string): Promise<void> {
+  override async contactSelfSignature(signature: string): Promise<void> {
     await this._client!.api.updateSelfSignature(signature);
 
     this._client!.selfContact!.setSignature(signature);
@@ -331,7 +331,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
   override contactAlias(contactId: string): Promise<string>;
   override contactAlias(contactId: string, alias: string | null): Promise<void>;
-  override async contactAlias (contactId: string, alias?: string | null): Promise<void | string> {
+  override async contactAlias(contactId: string, alias?: string | null): Promise<void | string> {
     const contact = await this.contactRawPayload(contactId);
 
     if (alias) {
@@ -360,7 +360,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
   override async contactAvatar(contactId: string): Promise<FileBoxInterface>;
   override async contactAvatar(contactId: string, file: FileBoxInterface): Promise<void>;
-  override async contactAvatar (contactId: string, file?: FileBoxInterface): Promise<void | FileBoxInterface> {
+  override async contactAvatar(contactId: string, file?: FileBoxInterface): Promise<void | FileBoxInterface> {
     if (file) {
       throw new Error("set avatar is not unsupported");
     }
@@ -369,25 +369,25 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return FileBox.fromUrl(contact.avatar, { name: `avatar-${contactId}.jpg` });
   }
 
-  override  async contactList (): Promise<string[]> {
+  override  async contactList(): Promise<string[]> {
     return this._cacheMgr!.getContactIds();
   }
 
-  override contactCorporationRemark (contactId: string, corporationRemark: string | null): Promise<void> {
+  override contactCorporationRemark(contactId: string, corporationRemark: string | null): Promise<void> {
     throw new Error(
       `contactCorporationRemark(${contactId}, ${corporationRemark}) called failed: Method not supported.`,
     );
   }
 
-  override contactDescription (contactId: string, description: string | null): Promise<void> {
+  override contactDescription(contactId: string, description: string | null): Promise<void> {
     throw new Error(`contactDescription(${contactId}, ${description}) called failed: Method not supported.`);
   }
 
-  override contactPhone (contactId: string, phoneList: string[]): Promise<void> {
+  override contactPhone(contactId: string, phoneList: string[]): Promise<void> {
     throw new Error(`contactPhone(${contactId}, ${phoneList}) called failed: Method not supported.`);
   }
 
-  public async contactDelete (contactId: string): Promise<void> {
+  public async contactDelete(contactId: string): Promise<void> {
     const contact = await this._refreshContact(contactId);
     if (contact.getStranger()) {
       log.warn(`can not delete contact which is not a friend:: ${contactId}`);
@@ -403,7 +403,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * tag
    ***************************************************************************/
 
-  override async tagContactAdd (tagName: string, contactId: string): Promise<void> {
+  override async tagContactAdd(tagName: string, contactId: string): Promise<void> {
     const label = (await this._findTagWithName(tagName, true))!;
 
     const contact = await this.contactRawPayload(contactId);
@@ -423,7 +423,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._updateContactCache(contact);
   }
 
-  override async tagContactRemove (tagName: string, contactId: string): Promise<void> {
+  override async tagContactRemove(tagName: string, contactId: string): Promise<void> {
     const label = await this._findTagWithName(tagName);
     if (!label) {
       throw new Error(`can not find tag with name: ${tagName}`);
@@ -447,7 +447,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._updateContactCache(contact);
   }
 
-  override async tagContactDelete (tagName: string): Promise<void> {
+  override async tagContactDelete(tagName: string): Promise<void> {
     const label = (await this._findTagWithName(tagName, false));
     if (!label) {
       throw new Error(`tag:${tagName} doesn't exist`);
@@ -459,7 +459,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._getTagList(true);
   }
 
-  override async tagContactList (contactId?: string): Promise<string[]> {
+  override async tagContactList(contactId?: string): Promise<string[]> {
     // the all tag
     if (!contactId) {
       const { labelList } = await this._getTagList(true);
@@ -492,7 +492,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * friendship
    ***************************************************************************/
 
-  override async friendshipAccept (friendshipId: string): Promise<void> {
+  override async friendshipAccept(friendshipId: string): Promise<void> {
     const friendship: PUPPET.payloads.FriendshipReceive = (await this.friendshipRawPayload(
       friendshipId,
     )) as PUPPET.payloads.FriendshipReceive;
@@ -508,7 +508,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     // after adding friend, new version of contact will be pushed
   }
 
-  override async friendshipAdd (contactId: string, option?: PUPPET.types.FriendshipAddOptions): Promise<void> {
+  override async friendshipAdd(contactId: string, option?: PUPPET.types.FriendshipAddOptions): Promise<void> {
     let stranger: string;
     let ticket: string;
     let addContactScene: AddContactScene;
@@ -568,15 +568,15 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  override async friendshipSearchPhone (phone: string): Promise<null | string> {
+  override async friendshipSearchPhone(phone: string): Promise<null | string> {
     return this._friendshipSearch(phone);
   }
 
-  override async friendshipSearchWeixin (weixin: string): Promise<null | string> {
+  override async friendshipSearchWeixin(weixin: string): Promise<null | string> {
     return this._friendshipSearch(weixin);
   }
 
-  private async _friendshipSearch (id: string): Promise<null | string> {
+  private async _friendshipSearch(id: string): Promise<null | string> {
     const cachedContactSearch = await this._cacheMgr!.getContactSearch(id);
     if (cachedContactSearch) {
       return id;
@@ -590,7 +590,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return searchId;
   }
 
-  private async _findRoomIdForUserName (userName: string): Promise<string[]> {
+  private async _findRoomIdForUserName(userName: string): Promise<string[]> {
     const ret = [];
 
     const roomIds = (await this._cacheMgr?.getRoomIds()) || [];
@@ -613,11 +613,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * get message payload
    ***************************************************************************/
 
-  override async messageContact (_messageId: string): Promise<string> {
+  override async messageContact(_messageId: string): Promise<string> {
     throw new Error("not implement");
   }
 
-  override async messageFile (messageId: string): Promise<FileBoxInterface> {
+  override async messageFile(messageId: string): Promise<FileBoxInterface> {
     const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
     const message: PUPPET.payloads.Message = await this.messageRawPayloadParser(messagePayload);
 
@@ -705,12 +705,12 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  override async messageImage (messageId: string, imageType: PUPPET.types.Image): Promise<FileBoxInterface> {
+  override async messageImage(messageId: string, imageType: PUPPET.types.Image): Promise<FileBoxInterface> {
     const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
     return this._getMessageImageFileBox(messageId, messagePayload, imageType);
   }
 
-  override async messageMiniProgram (messageId: string): Promise<PUPPET.payloads.MiniProgram> {
+  override async messageMiniProgram(messageId: string): Promise<PUPPET.payloads.MiniProgram> {
     const messagePayload = await this.messageRawPayload(messageId);
     const message = await this.messageRawPayloadParser(messagePayload);
 
@@ -721,7 +721,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return miniProgramMessageParser(messagePayload);
   }
 
-  override async messageUrl (messageId: string): Promise<PUPPET.payloads.UrlLink> {
+  override async messageUrl(messageId: string): Promise<PUPPET.payloads.UrlLink> {
     const rawPayload = await this.messageRawPayload(messageId);
     const payload = await this.messageRawPayloadParser(rawPayload);
 
@@ -743,7 +743,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * send message
    ***************************************************************************/
 
-  override async messageSendContact (toUserName: string, contactId: string): Promise<string> {
+  override async messageSendContact(toUserName: string, contactId: string): Promise<string> {
     const contactPayload = await this.contactRawPayload(contactId);
     const contact = new Contact()
       .setUsername(contactPayload.username)
@@ -780,7 +780,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return response.getMsgid();
   }
 
-  override async messageSendFile (toUserName: string, fileBox: FileBoxInterface): Promise<string> {
+  override async messageSendFile(toUserName: string, fileBox: FileBoxInterface): Promise<string> {
     // image/jpeg, image/png
     if (fileBox.mediaType.startsWith("image/")) {
       const imageData = await fileBox.toBuffer();
@@ -905,7 +905,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  override async messageSendMiniProgram (toUserName: string, mpPayload: PUPPET.payloads.MiniProgram): Promise<string> {
+  override async messageSendMiniProgram(toUserName: string, mpPayload: PUPPET.payloads.MiniProgram): Promise<string> {
     const miniProgram = new AppMessageMiniProgram();
     mpPayload.appid && miniProgram.setMpappid(mpPayload.appid);
     mpPayload.title && miniProgram.setTitle(mpPayload.title);
@@ -964,7 +964,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return response.getMsgid();
   }
 
-  override async messageSendText (toUserName: string, text: string, mentionIdList?: string[]): Promise<string> {
+  override async messageSendText(toUserName: string, text: string, mentionIdList?: string[]): Promise<string> {
     const response: SendTextMessageResponse = await this._client!.api.sendTextMessage(
       genIdempotentId(),
       toUserName,
@@ -988,7 +988,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return response.getMsgid();
   }
 
-  override async messageSendUrl (toUserName: string, linkPayload: PUPPET.payloads.UrlLink): Promise<string> {
+  override async messageSendUrl(toUserName: string, linkPayload: PUPPET.payloads.UrlLink): Promise<string> {
     const appMessageLink = new AppMessageLink();
 
     appMessageLink.setTitle(linkPayload.title).setUrl(linkPayload.url);
@@ -1016,7 +1016,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return response.getMsgid();
   }
 
-  override async messageRecall (messageId: string): Promise<boolean> {
+  override async messageRecall(messageId: string): Promise<boolean> {
     const message = (await this._cacheMgr!.getMessage(messageId))!;
 
     const messageRevokeInfo = (await this._cacheMgr!.getMessageRevokeInfo(messageId))!;
@@ -1033,7 +1033,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return true;
   }
 
-  override async messageForward (toUserName: string, messageId: string): Promise<string> {
+  override async messageForward(toUserName: string, messageId: string): Promise<string> {
     const messagePayload = await this.messageRawPayload(messageId);
     const message = await this.messageRawPayloadParser(messagePayload);
 
@@ -1109,16 +1109,16 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * room
    ***************************************************************************/
 
-  override async roomAdd (roomId: string, contactId: string): Promise<void> {
+  override async roomAdd(roomId: string, contactId: string): Promise<void> {
     await this._client!.api.addChatRoomMember(roomId, contactId);
   }
 
-  override async roomAvatar (roomId: string): Promise<FileBoxInterface> {
+  override async roomAvatar(roomId: string): Promise<FileBoxInterface> {
     const chatroom = await this.roomRawPayload(roomId);
     return FileBox.fromUrl(chatroom.avatar || "");
   }
 
-  override async roomCreate (contactIdList: string[], topic?: string): Promise<string> {
+  override async roomCreate(contactIdList: string[], topic?: string): Promise<string> {
     const res = await this._client!.api.createChatRoom(genIdempotentId(), contactIdList);
 
     if (topic) {
@@ -1128,34 +1128,34 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return res.getRoomid();
   }
 
-  override async roomDel (roomId: string, contactId: string): Promise<void> {
+  override async roomDel(roomId: string, contactId: string): Promise<void> {
     await this._client!.api.deleteChatRoomMember(roomId, contactId);
   }
 
-  override async roomList (): Promise<string[]> {
+  override async roomList(): Promise<string[]> {
     return this._cacheMgr!.getRoomIds();
   }
 
-  override async roomQRCode (roomId: string): Promise<string> {
+  override async roomQRCode(roomId: string): Promise<string> {
     const res = await this._client!.api.getChatRoomQrCode(roomId);
 
     const fileBox = FileBox.fromBuffer(Buffer.from(res.getQrcode()), `qr-${this.id}.jpg`);
     return fileBox.toQRCode();
   }
 
-  override async roomQuit (roomId: string): Promise<void> {
+  override async roomQuit(roomId: string): Promise<void> {
     await this._client!.api.quitChatRoom(roomId);
   }
 
   override async roomTopic(roomId: string): Promise<string>;
   override async roomTopic(roomId: string, topic: string): Promise<void>;
-  override async roomTopic (roomId: string, topic?: string): Promise<void | string> {
+  override async roomTopic(roomId: string, topic?: string): Promise<void | string> {
     await this._client!.api.setChatRoomName(roomId, topic || "");
   }
 
   override async roomAnnounce(roomId: string): Promise<string>;
   override async roomAnnounce(roomId: string, text: string): Promise<void>;
-  override async roomAnnounce (roomId: string, text?: string): Promise<void | string> {
+  override async roomAnnounce(roomId: string, text?: string): Promise<void | string> {
     if (text === undefined) {
       return this._client!.api.getChatRoomAnnouncement(roomId);
     } else {
@@ -1163,12 +1163,12 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  override async roomMemberList (roomId: string): Promise<string[]> {
+  override async roomMemberList(roomId: string): Promise<string[]> {
     const roomMemberMap = await this._getRoomMemberList(roomId);
     return Object.values(roomMemberMap).map((m) => m.username);
   }
 
-  override async roomInvitationAccept (roomInvitationId: string): Promise<void> {
+  override async roomInvitationAccept(roomInvitationId: string): Promise<void> {
     const roomInvitation = await this.roomInvitationRawPayload(roomInvitationId);
     await this._client!.api.acceptChatRoomInvitation(roomInvitation.inviterId, roomInvitation.invitation);
   }
@@ -1177,11 +1177,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * RawPayload section
    ***************************************************************************/
 
-  override async contactRawPayloadParser (payload: Contact.AsObject): Promise<PUPPET.payloads.Contact> {
+  override async contactRawPayloadParser(payload: Contact.AsObject): Promise<PUPPET.payloads.Contact> {
     return padLocalContactToWechaty(payload);
   }
 
-  override async contactRawPayload (id: string): Promise<Contact.AsObject> {
+  override async contactRawPayload(id: string): Promise<Contact.AsObject> {
     if (id.startsWith(SEARCH_CONTACT_PREFIX)) {
       const searchContact = await this._cacheMgr?.getContactSearch(id);
       return searchContact!.contact!;
@@ -1190,7 +1190,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     let ret = await this._cacheMgr!.getContact(id);
 
     if (!ret) {
-      ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async () => {
+      ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async() => {
         const contact = await this._refreshContact(id);
         return contact.toObject();
       });
@@ -1199,11 +1199,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async messageRawPayloadParser (payload: Message.AsObject): Promise<PUPPET.payloads.Message> {
+  override async messageRawPayloadParser(payload: Message.AsObject): Promise<PUPPET.payloads.Message> {
     return padLocalMessageToWechaty(this, payload);
   }
 
-  override async messageRawPayload (id: string): Promise<Message.AsObject> {
+  override async messageRawPayload(id: string): Promise<Message.AsObject> {
     const ret = await this._cacheMgr!.getMessage(id);
 
     if (!ret) {
@@ -1213,11 +1213,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async roomRawPayloadParser (payload: Contact.AsObject): Promise<PUPPET.payloads.Room> {
+  override async roomRawPayloadParser(payload: Contact.AsObject): Promise<PUPPET.payloads.Room> {
     return padLocalRoomToWechaty(payload);
   }
 
-  override async roomRawPayload (id: string): Promise<Contact.AsObject> {
+  override async roomRawPayload(id: string): Promise<Contact.AsObject> {
     let ret = await this._cacheMgr!.getRoom(id);
 
     if (!ret) {
@@ -1228,16 +1228,16 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async roomMemberRawPayload (roomId: string, contactId: string): Promise<ChatRoomMember.AsObject> {
+  override async roomMemberRawPayload(roomId: string, contactId: string): Promise<ChatRoomMember.AsObject> {
     const roomMemberMap = await this._getRoomMemberList(roomId);
     return roomMemberMap[contactId]!;
   }
 
-  override async roomMemberRawPayloadParser (rawPayload: ChatRoomMember.AsObject): Promise<PUPPET.payloads.RoomMember> {
+  override async roomMemberRawPayloadParser(rawPayload: ChatRoomMember.AsObject): Promise<PUPPET.payloads.RoomMember> {
     return padLocalRoomMemberToWechaty(rawPayload);
   }
 
-  override async roomInvitationRawPayload (roomInvitationId: string): Promise<PUPPET.payloads.RoomInvitation> {
+  override async roomInvitationRawPayload(roomInvitationId: string): Promise<PUPPET.payloads.RoomInvitation> {
     const ret = await this._cacheMgr!.getRoomInvitation(roomInvitationId);
 
     if (!ret) {
@@ -1247,11 +1247,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async roomInvitationRawPayloadParser (rawPayload: PUPPET.payloads.RoomInvitation): Promise<PUPPET.payloads.RoomInvitation> {
+  override async roomInvitationRawPayloadParser(rawPayload: PUPPET.payloads.RoomInvitation): Promise<PUPPET.payloads.RoomInvitation> {
     return rawPayload;
   }
 
-  override async friendshipRawPayload (id: string): Promise<PUPPET.payloads.Friendship> {
+  override async friendshipRawPayload(id: string): Promise<PUPPET.payloads.Friendship> {
     const ret = await this._cacheMgr!.getFriendshipRawPayload(id);
 
     if (!ret) {
@@ -1261,7 +1261,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async friendshipRawPayloadParser (rawPayload: PUPPET.payloads.Friendship): Promise<PUPPET.payloads.Friendship> {
+  override async friendshipRawPayloadParser(rawPayload: PUPPET.payloads.Friendship): Promise<PUPPET.payloads.Friendship> {
     return rawPayload;
   }
 
@@ -1274,7 +1274,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * Sync contact is a time consuming action, may last for minutes especially when you have massive contacts.
    * You MUST understand what exactly you are doing.
    */
-  async syncContact () {
+  async syncContact() {
     if (this.state.active() !== true) {
       throw new Error("Can not sync contact before login");
     }
@@ -1282,7 +1282,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this.client!.api.syncContact({
       onSync: (contactList: Contact[]) => {
         this.wrapAsync(
-          this._onPushSerialExecutor.execute(async () => {
+          this._onPushSerialExecutor.execute(async() => {
             for (const contact of contactList) {
               await this._onPushContact(contact);
             }
@@ -1296,7 +1296,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * private section
    ***************************************************************************/
 
-  private async _findTagWithName (tagName: string, addIfNotExist?: boolean): Promise<Label | null> {
+  private async _findTagWithName(tagName: string, addIfNotExist?: boolean): Promise<Label | null> {
     let labelList = (await this._getTagList()).labelList;
     let ret = labelList.find((l) => l.getName() === tagName);
     if (!ret) {
@@ -1317,7 +1317,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret || null;
   }
 
-  private async _getTagList (force?: boolean): Promise<{ labelList: Label[]; fromCache: boolean }> {
+  private async _getTagList(force?: boolean): Promise<{ labelList: Label[]; fromCache: boolean }> {
     let labelList = this._cacheMgr!.getLabelList();
     let fromCache = true;
 
@@ -1333,7 +1333,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     };
   }
 
-  private async _getRoomMemberList (roomId: string, force?: boolean): Promise<RoomMemberMap> {
+  private async _getRoomMemberList(roomId: string, force?: boolean): Promise<RoomMemberMap> {
     let ret = await this._cacheMgr!.getRoomMember(roomId);
     if (!ret || force) {
       const resMembers = await this._client!.api.getChatRoomMembers(roomId);
@@ -1360,7 +1360,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  private async _updateContactCache (contact: Contact.AsObject): Promise<void> {
+  private async _updateContactCache(contact: Contact.AsObject): Promise<void> {
     if (!contact.username) {
       log.warn(PRE, `username is required for contact: ${JSON.stringify(contact)}`);
       return;
@@ -1408,7 +1408,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _updateRoomMember (roomId: string, roomMemberMap?: RoomMemberMap) {
+  private async _updateRoomMember(roomId: string, roomMemberMap?: RoomMemberMap) {
     if (roomMemberMap) {
       await this._cacheMgr!.setRoomMember(roomId, roomMemberMap);
     } else {
@@ -1418,7 +1418,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this.dirtyPayload(PUPPET.types.Payload.RoomMember, roomId);
   }
 
-  private async _onPushContact (contact: Contact): Promise<void> {
+  private async _onPushContact(contact: Contact): Promise<void> {
     log.silly(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
 
     await this._updateContactCache(contact.toObject());
@@ -1432,7 +1432,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _onPushMessage (message: Message): Promise<void> {
+  private async _onPushMessage(message: Message): Promise<void> {
     const messageId = message.getId();
 
     log.silly(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
@@ -1492,7 +1492,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _onSendMessage (partialMessage: Message, messageId: string, messageRevokeInfo: MessageRevokeInfo) {
+  private async _onSendMessage(partialMessage: Message, messageId: string, messageRevokeInfo: MessageRevokeInfo) {
     partialMessage.setId(messageId);
     partialMessage.setCreatetime(messageRevokeInfo.getCreatetime());
 
@@ -1500,11 +1500,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._cacheMgr!.setMessageRevokeInfo(messageId, messageRevokeInfo.toObject());
   }
 
-  private async _setupClient () {
+  private async _setupClient() {
     this._client = await PadLocalClient.create(this.options.token!, true);
 
     this._client.on("kickout", this.wrapAsync(
-      async (_detail: KickOutEvent) => {
+      async(_detail: KickOutEvent) => {
         if (this.id) {
           this.emit("logout", { contactId: this.id, data: _detail.errorMessage });
         }
@@ -1513,8 +1513,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }),
     );
     this._client.on("message", this.wrapAsync(
-      async (messageList: Message[]) => {
-        await this._onPushSerialExecutor.execute(async () => {
+      async(messageList: Message[]) => {
+        await this._onPushSerialExecutor.execute(async() => {
           for (const message of messageList) {
             // handle message one by one
             await this._onPushMessage(message);
@@ -1524,8 +1524,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
     ));
 
     this._client.on("contact", this.wrapAsync(
-      async (contactList: Contact[]) => {
-        await this._onPushSerialExecutor.execute(async () => {
+      async(contactList: Contact[]) => {
+        await this._onPushSerialExecutor.execute(async() => {
           for (const contact of contactList) {
             await this._onPushContact(contact);
           }
@@ -1548,7 +1548,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _refreshContact (userName: string, ticket?: string): Promise<Contact> {
+  private async _refreshContact(userName: string, ticket?: string): Promise<Contact> {
     const contact = await this._client!.api.getContact(userName, ticket);
 
     // may return contact with empty payload, empty username, nickname, etc.
@@ -1561,7 +1561,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return contact;
   }
 
-  private _startPuppetHeart (firstTime: boolean = true) {
+  private _startPuppetHeart(firstTime: boolean = true) {
     if (firstTime && this._heartBeatTimer) {
       return;
     }
@@ -1573,7 +1573,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }, 15 * 1000); // 15s
   }
 
-  private _stopPuppetHeart () {
+  private _stopPuppetHeart() {
     if (!this._heartBeatTimer) {
       return;
     }
@@ -1582,7 +1582,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     this._heartBeatTimer = undefined;
   }
 
-  private async _getMessageImageFileBox (messageId: string, messagePayload: Message.AsObject, imageType: PUPPET.types.Image) {
+  private async _getMessageImageFileBox(messageId: string, messagePayload: Message.AsObject, imageType: PUPPET.types.Image) {
     const message: PUPPET.payloads.Message = await this.messageRawPayloadParser(messagePayload);
 
     if (message.type !== PUPPET.types.Message.Image) {
