@@ -2,168 +2,168 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable import/first */
 // read config from local-test.json
-process.env['NODE_CONFIG_ENV'] = 'test'
+process.env["NODE_CONFIG_ENV"] = "test";
 
-import * as PUPPET from 'wechaty-puppet'
-import { Contact, log, Message, ScanStatus, WechatyBuilder } from 'wechaty'
-import PuppetPadlocal from '../src/puppet-padlocal.js'
-import config from 'config'
-import QRCode from 'qrcode-terminal'
+import * as PUPPET from "wechaty-puppet";
+import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
+import PuppetPadlocal from "../src/puppet-padlocal.js";
+import config from "config";
+import QRCode from "qrcode-terminal";
 // import type { FileBoxJsonObjectUrl } from 'file-box/src/file-box.type'
-import { isContactId } from '../src/padlocal/utils/is-type.js'
+import { isContactId } from "../src/padlocal/utils/is-type.js";
 
 // log.level("silly");
 
-const token: string = config.get('padLocal.token')
-const puppet = new PuppetPadlocal({ token })
+const token: string = config.get("padLocal.token");
+const puppet = new PuppetPadlocal({ token });
 
 async function getMessagePayload (message: Message) {
-  const recallUserId: string = config.get('test.push.recallUserId')
+  const recallUserId: string = config.get("test.push.recallUserId");
 
   switch (message.type()) {
     case PUPPET.types.Message.Text:
-      if (message.talker().id === recallUserId && message.text()!.indexOf('recall') !== -1) {
-        await message.recall()
+      if (message.talker().id === recallUserId && message.text()!.indexOf("recall") !== -1) {
+        await message.recall();
       }
-      break
+      break;
 
     case PUPPET.types.Message.Attachment:
     case PUPPET.types.Message.Audio:
-      const attachFile = await message.toFileBox()
+      const attachFile = await message.toFileBox();
 
-      const dataBuffer = await attachFile.toBuffer()
+      const dataBuffer = await attachFile.toBuffer();
 
-      log.info('TestBot', `get message audio or attach: ${dataBuffer.length}`)
+      log.info("TestBot", `get message audio or attach: ${dataBuffer.length}`);
 
-      break
+      break;
 
     case PUPPET.types.Message.Video:
-      const videoFile = await message.toFileBox()
+      const videoFile = await message.toFileBox();
 
-      const videoData = await videoFile.toBuffer()
+      const videoData = await videoFile.toBuffer();
 
-      log.info('TestBot', `get message video: ${videoData.length}`)
+      log.info("TestBot", `get message video: ${videoData.length}`);
 
-      break
+      break;
 
     case PUPPET.types.Message.Emoticon:
-      const emotionFile = await message.toFileBox()
+      const emotionFile = await message.toFileBox();
 
-      const emotionJSON = emotionFile.toJSON()
-      log.info('TestBot', `get message emotion json: ${JSON.stringify(emotionJSON)}`)
+      const emotionJSON = emotionFile.toJSON();
+      log.info("TestBot", `get message emotion json: ${JSON.stringify(emotionJSON)}`);
 
-      const emotionBuffer: Buffer = await emotionFile.toBuffer()
+      const emotionBuffer: Buffer = await emotionFile.toBuffer();
 
-      log.info('TestBot', `get message emotion: ${emotionBuffer.length}`)
+      log.info("TestBot", `get message emotion: ${emotionBuffer.length}`);
 
-      break
+      break;
 
     case PUPPET.types.Message.Image:
-      const messageImage = await message.toImage()
+      const messageImage = await message.toImage();
 
-      const thumbImage = await messageImage.thumbnail()
-      const thumbImageData = await thumbImage.toBuffer()
+      const thumbImage = await messageImage.thumbnail();
+      const thumbImageData = await thumbImage.toBuffer();
 
-      log.info('TestBot', `get message image, thumb: ${thumbImageData.length}`)
+      log.info("TestBot", `get message image, thumb: ${thumbImageData.length}`);
 
-      const hdImage = await messageImage.hd()
-      const hdImageData = await hdImage.toBuffer()
+      const hdImage = await messageImage.hd();
+      const hdImageData = await hdImage.toBuffer();
 
-      log.info('TestBot', `get message image, hd: ${hdImageData.length}`)
+      log.info("TestBot", `get message image, hd: ${hdImageData.length}`);
 
-      const artworkImage = await messageImage.artwork()
-      const artworkImageData = await artworkImage.toBuffer()
+      const artworkImage = await messageImage.artwork();
+      const artworkImageData = await artworkImage.toBuffer();
 
-      log.info('TestBot', `get message image, artwork: ${artworkImageData.length}`)
+      log.info("TestBot", `get message image, artwork: ${artworkImageData.length}`);
 
-      break
+      break;
 
     case PUPPET.types.Message.Url:
-      const urlLink = await message.toUrlLink()
-      log.info('TestBot', `get message url: ${JSON.stringify(urlLink)}`)
+      const urlLink = await message.toUrlLink();
+      log.info("TestBot", `get message url: ${JSON.stringify(urlLink)}`);
 
-      const urlThumbImage = await message.toFileBox()
-      const urlThumbImageData = await urlThumbImage.toBuffer()
+      const urlThumbImage = await message.toFileBox();
+      const urlThumbImageData = await urlThumbImage.toBuffer();
 
-      log.info('TestBot', `get message url thumb: ${urlThumbImageData.length}`)
+      log.info("TestBot", `get message url thumb: ${urlThumbImageData.length}`);
 
-      break
+      break;
 
     case PUPPET.types.Message.MiniProgram:
-      const miniProgram = await message.toMiniProgram()
+      const miniProgram = await message.toMiniProgram();
 
-      log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`)
+      log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
 
-      break
+      break;
   }
 }
 
 const bot = WechatyBuilder.build({
-  name: 'TestBot',
+  name: "TestBot",
   puppet,
-})
+});
 
 bot
-  .on('scan', (qrcode: string, status: ScanStatus) => {
+  .on("scan", (qrcode: string, status: ScanStatus) => {
     if (status === ScanStatus.Waiting && qrcode) {
       log.info(
-        'TestBot',
+        "TestBot",
         `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`,
-      )
+      );
 
-      QRCode.generate(qrcode, { small: true })
+      QRCode.generate(qrcode, { small: true });
     } else {
-      log.info('TestBot', `onScan: ${ScanStatus[status]}(${status})`)
+      log.info("TestBot", `onScan: ${ScanStatus[status]}(${status})`);
     }
   })
 
-  .on('login', (user: Contact) => {
-    log.info('TestBot', `${user} login`)
+  .on("login", (user: Contact) => {
+    log.info("TestBot", `${user} login`);
   })
 
-  .on('logout', (user, reason) => {
-    log.info('TestBot', `${user} logout, reason: ${reason}`)
+  .on("logout", (user, reason) => {
+    log.info("TestBot", `${user} logout, reason: ${reason}`);
   })
 
-  .on('message', async (message: Message) => {
-    log.info('TestBot', `on message: ${message.toString()}`)
+  .on("message", async (message: Message) => {
+    log.info("TestBot", `on message: ${message.toString()}`);
 
-    const forwardFrom = config.get('test.push.forwardFrom')
-    const forwardTo: string = config.get('test.push.forwardTo')
+    const forwardFrom = config.get("test.push.forwardFrom");
+    const forwardTo: string = config.get("test.push.forwardTo");
 
     if (message.type() === PUPPET.types.Message.Text) {
       // ding-dong bot
-      if (message.to()?.self() && message.text().indexOf('ding') !== -1) {
-        await message.talker().say(message.text().replace('ding', 'dong'))
+      if (message.to()?.self() && message.text().indexOf("ding") !== -1) {
+        await message.talker().say(message.text().replace("ding", "dong"));
       }
     }
 
     if (message.talker().id === forwardFrom) {
       if (message.type() === PUPPET.types.Message.Unknown) {
-        return
+        return;
       }
 
       try {
-        let to
+        let to;
         if (isContactId(forwardTo)) {
-          to = await bot.Contact.find({ id: forwardTo })
+          to = await bot.Contact.find({ id: forwardTo });
         } else {
-          to = await bot.Room.find({ id: forwardTo })
+          to = await bot.Room.find({ id: forwardTo });
         }
-        const newMessage = await message.forward(to!)
-        await getMessagePayload(newMessage as Message)
+        const newMessage = await message.forward(to!);
+        await getMessagePayload(newMessage as Message);
       } catch (e) {
-        log.error('TestBot', `Error while forwarding message: ${(e as Error).stack}`)
+        log.error("TestBot", `Error while forwarding message: ${(e as Error).stack}`);
       }
     }
 
-    await getMessagePayload(message)
+    await getMessagePayload(message);
   })
 
-  .on('error', (error) => {
-    log.info('TestBot', `on error: ${error.toString()}`)
-  })
+  .on("error", (error) => {
+    log.info("TestBot", `on error: ${error.toString()}`);
+  });
 
 bot.start().then(() => {
-  log.info('TestBot', 'started.')
-}).catch(console.error)
+  log.info("TestBot", "started.");
+}).catch(console.error);
