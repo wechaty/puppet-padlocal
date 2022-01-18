@@ -1,56 +1,56 @@
-import { MessageType } from "wechaty-puppet";
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { WechatMessageType } from "../WechatMessageType";
+import * as PUPPET from "wechaty-puppet";
+import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { WechatMessageType } from "../WechatMessageType.js";
 
-export function convertMessageType(wechatMessageType: WechatMessageType): MessageType {
-  let type: MessageType;
+export function convertMessageType (wechatMessageType: WechatMessageType): PUPPET.types.Message {
+  let type: PUPPET.types.Message;
 
   switch (wechatMessageType) {
     case WechatMessageType.Text:
-      type = MessageType.Text;
+      type = PUPPET.types.Message.Text;
       break;
 
     case WechatMessageType.Image:
-      type = MessageType.Image;
+      type = PUPPET.types.Message.Image;
       break;
 
     case WechatMessageType.Voice:
-      type = MessageType.Audio;
+      type = PUPPET.types.Message.Audio;
       break;
 
     case WechatMessageType.Emoticon:
-      type = MessageType.Emoticon;
+      type = PUPPET.types.Message.Emoticon;
       break;
 
     case WechatMessageType.App:
     case WechatMessageType.File:
-      type = MessageType.Attachment;
+      type = PUPPET.types.Message.Attachment;
       break;
 
     case WechatMessageType.Location:
-      type = MessageType.Location;
+      type = PUPPET.types.Message.Location;
       break;
 
     case WechatMessageType.Video:
-      type = MessageType.Video;
+      type = PUPPET.types.Message.Video;
       break;
 
     case WechatMessageType.Sys:
-      type = MessageType.Unknown;
+      type = PUPPET.types.Message.Unknown;
       break;
 
     case WechatMessageType.ShareCard:
-      type = MessageType.Contact;
+      type = PUPPET.types.Message.Contact;
       break;
 
     case WechatMessageType.VoipMsg:
     case WechatMessageType.Recalled:
-      type = MessageType.Recalled;
+      type = PUPPET.types.Message.Recalled;
       break;
 
     case WechatMessageType.StatusNotify:
     case WechatMessageType.SysNotice:
-      type = MessageType.Unknown;
+      type = PUPPET.types.Message.Unknown;
       break;
 
     default:
@@ -60,14 +60,14 @@ export function convertMessageType(wechatMessageType: WechatMessageType): Messag
   return type;
 }
 
-export function getMessageFileName(message: Message.AsObject, messageType: MessageType): string {
+export function getMessageFileName (message: Message.AsObject, messageType: PUPPET.types.Message): string {
   const msgId = message.id;
 
-  if (messageType === MessageType.Audio) {
+  if (messageType === PUPPET.types.Message.Audio) {
     return msgId + ".slk";
-  } else if (messageType === MessageType.Image) {
+  } else if (messageType === PUPPET.types.Message.Image) {
     return msgId + ".jpg";
-  } else if (messageType === MessageType.Video) {
+  } else if (messageType === PUPPET.types.Message.Video) {
     return msgId + ".mp4";
   }
 

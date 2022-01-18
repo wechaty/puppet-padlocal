@@ -1,28 +1,22 @@
+/* eslint-disable sort-keys */
+/* eslint-disable brace-style */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { ChatRoomMember, Contact, Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import {
-  ContactPayload,
-  ContactType,
-  log,
-  MessagePayload,
-  MessageType,
-  Puppet,
-  RoomMemberPayload,
-  RoomPayload,
-} from "wechaty-puppet";
-import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
-import { MessagePayloadBase } from "wechaty-puppet/dist/src/schemas/message";
-import { convertMessageType } from "../message-parser/helpers/message";
-import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
-import { WechatMessageType } from "../message-parser/WechatMessageType";
-import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat";
+import * as PUPPET from "wechaty-puppet";
+import { log } from "wechaty-puppet";
+import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type.js";
+import { convertMessageType } from "../message-parser/helpers/message.js";
+import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg.js";
+import type { WechatMessageType } from "../message-parser/WechatMessageType.js";
+import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat.js";
 
 const PRE = "[SchemaMapper]";
 
-export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.AsObject): Promise<MessagePayload> {
+export async function padLocalMessageToWechaty (puppet: PUPPET.Puppet, message: Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = message.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
 
-  const payloadBase: MessagePayloadBase = {
+  const payloadBase: PUPPET.payloads.MessageBase = {
     id: message.id,
     timestamp: message.createtime,
     type,
@@ -47,6 +41,12 @@ export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.
     // appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
     // pat:     "19850419xxx@chatroom:\n<sysmsg type="pat"><pat><fromusername>xxx</fromusername><chatusername>19850419xxx@chatroom</chatusername><pattedusername>wxid_xxx</pattedusername>...<template><![CDATA["${vagase}" 拍了拍我]]></template></pat></sysmsg>"
 
+    /**
+     * Issue #91 - messageForward can not forward text with ":\n" correctly. #91
+     *  @link https://github.com/wechaty/puppet-padlocal/issues/91
+     *
+     * TODO: fix me
+     */
     const parts = message.content.split(":\n");
     if (parts && parts.length > 1) {
       if (isContactId(parts[0]) || isIMContactId(parts[0])) {
@@ -98,7 +98,7 @@ export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.
   }
    */
 
-  let payload: MessagePayload;
+  let payload: PUPPET.payloads.Message;
 
   // Two branch is the same code.
   // Only for making TypeScript happy
@@ -129,11 +129,11 @@ export async function padLocalMessageToWechaty(puppet: Puppet, message: Message.
   return payload;
 }
 
-export function padLocalContactToWechaty(contact: Contact.AsObject): ContactPayload {
+export function padLocalContactToWechaty (contact: Contact.AsObject): PUPPET.payloads.Contact {
   return {
     id: contact.username,
     gender: contact.gender,
-    type: isContactOfficialId(contact.username) ? ContactType.Official : ContactType.Individual,
+    type: isContactOfficialId(contact.username) ? PUPPET.types.Contact.Official : PUPPET.types.Contact.Individual,
     name: contact.nickname,
     avatar: contact.avatar,
     alias: contact.remark,
@@ -146,7 +146,7 @@ export function padLocalContactToWechaty(contact: Contact.AsObject): ContactPayl
   };
 }
 
-export function padLocalRoomToWechaty(contact: Contact.AsObject): RoomPayload {
+export function padLocalRoomToWechaty (contact: Contact.AsObject): PUPPET.payloads.Room {
   return {
     adminIdList: [],
     avatar: contact.avatar,
@@ -157,7 +157,7 @@ export function padLocalRoomToWechaty(contact: Contact.AsObject): RoomPayload {
   };
 }
 
-export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObject): RoomMemberPayload {
+export function padLocalRoomMemberToWechaty (chatRoomMember: ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
   return {
     id: chatRoomMember.username,
     roomAlias: chatRoomMember.displayname,
@@ -167,8 +167,8 @@ export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObj
   };
 }
 
-async function _adjustMessageByAppMsg(message: Message.AsObject, payload: MessagePayload) {
-  if (payload.type !== MessageType.Attachment) {
+async function _adjustMessageByAppMsg (message: Message.AsObject, payload: PUPPET.payloads.Message) {
+  if (payload.type !== PUPPET.types.Message.Attachment) {
     return;
   }
 
@@ -176,58 +176,58 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: Messag
     const appPayload = await appMessageParser(message);
     switch (appPayload.type) {
       case AppMessageType.Text:
-        payload.type = MessageType.Text;
+        payload.type = PUPPET.types.Message.Text;
         payload.text = appPayload.title;
         break;
       case AppMessageType.Audio:
-        payload.type = MessageType.Url;
+        payload.type = PUPPET.types.Message.Url;
         break;
       case AppMessageType.Video:
-        payload.type = MessageType.Url;
+        payload.type = PUPPET.types.Message.Url;
         break;
       case AppMessageType.Url:
-        payload.type = MessageType.Url;
+        payload.type = PUPPET.types.Message.Url;
         break;
       case AppMessageType.Attach:
-        payload.type = MessageType.Attachment;
+        payload.type = PUPPET.types.Message.Attachment;
         payload.filename = appPayload.title;
         break;
       case AppMessageType.ChatHistory:
-        payload.type = MessageType.ChatHistory;
+        payload.type = PUPPET.types.Message.ChatHistory;
         break;
       case AppMessageType.MiniProgram:
       case AppMessageType.MiniProgramApp:
-        payload.type = MessageType.MiniProgram;
+        payload.type = PUPPET.types.Message.MiniProgram;
         break;
       case AppMessageType.RedEnvelopes:
-        payload.type = MessageType.RedEnvelope;
+        payload.type = PUPPET.types.Message.RedEnvelope;
         break;
       case AppMessageType.Transfers:
-        payload.type = MessageType.Transfer;
+        payload.type = PUPPET.types.Message.Transfer;
         break;
       case AppMessageType.RealtimeShareLocation:
-        payload.type = MessageType.Location;
+        payload.type = PUPPET.types.Message.Location;
         break;
       case AppMessageType.GroupNote:
-        payload.type = MessageType.GroupNote;
+        payload.type = PUPPET.types.Message.GroupNote;
         payload.text = appPayload.title;
         break;
       case AppMessageType.ReferMsg:
-        payload.type = MessageType.Text;
+        payload.type = PUPPET.types.Message.Text;
         payload.text = `「${appPayload.refermsg!.displayname}：${
           appPayload.refermsg!.content
         }」\n- - - - - - - - - - - - - - - -\n${appPayload.title}`;
         break;
       default:
-        payload.type = MessageType.Unknown;
+        payload.type = PUPPET.types.Message.Unknown;
         break;
     }
   } catch (e) {
-    log.warn(PRE, `Error occurred while parse message attachment: ${JSON.stringify(message)} , ${e.stack}`);
+    log.warn(PRE, `Error occurred while parse message attachment: ${JSON.stringify(message)} , ${(e as Error).stack}`);
   }
 }
 
-export function chatRoomMemberToContact(chatRoomMember: ChatRoomMember): Contact {
+export function chatRoomMemberToContact (chatRoomMember: ChatRoomMember): Contact {
   return new Contact()
     .setUsername(chatRoomMember.getUsername())
     .setNickname(chatRoomMember.getNickname())

@@ -1,11 +1,5 @@
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import {
-  EventRoomJoinPayload,
-  EventRoomLeavePayload,
-  EventRoomTopicPayload,
-  FriendshipPayload,
-  RoomInvitationPayload,
-} from "wechaty-puppet";
+import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import type * as PUPPET from "wechaty-puppet";
 
 export enum MessageCategory {
   NormalMessage, // none-trivial conversation messages, e.g. text, image, voice, video.
@@ -18,11 +12,11 @@ export enum MessageCategory {
 
 export interface ParsedMessagePayloadSpec {
   [MessageCategory.NormalMessage]: Message.AsObject;
-  [MessageCategory.Friendship]: FriendshipPayload;
-  [MessageCategory.RoomInvite]: RoomInvitationPayload;
-  [MessageCategory.RoomJoin]: EventRoomJoinPayload;
-  [MessageCategory.RoomLeave]: EventRoomLeavePayload;
-  [MessageCategory.RoomTopic]: EventRoomTopicPayload;
+  [MessageCategory.Friendship]: PUPPET.payloads.Friendship;
+  [MessageCategory.RoomInvite]: PUPPET.payloads.RoomInvitation;
+  [MessageCategory.RoomJoin]: PUPPET.payloads.EventRoomJoin;
+  [MessageCategory.RoomLeave]: PUPPET.payloads.EventRoomLeave;
+  [MessageCategory.RoomTopic]: PUPPET.payloads.EventRoomTopic;
 }
 
 export interface ParsedMessage<T extends keyof ParsedMessagePayloadSpec> {

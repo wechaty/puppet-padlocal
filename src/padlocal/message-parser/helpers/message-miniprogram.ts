@@ -1,6 +1,6 @@
-import { MiniProgramPayload } from "wechaty-puppet";
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { xmlToJson } from "../../utils/xml-to-json";
+import type * as PUPPET from "wechaty-puppet";
+import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { xmlToJson } from "../../utils/xml-to-json.js";
 
 interface MiniProgramXmlSchema {
   msg: {
@@ -25,7 +25,7 @@ interface MiniProgramXmlSchema {
   };
 }
 
-export async function miniProgramMessageParser(rawPayload: Message.AsObject): Promise<MiniProgramPayload> {
+export async function miniProgramMessageParser (rawPayload: Message.AsObject): Promise<PUPPET.payloads.MiniProgram> {
   const miniProgramXml: MiniProgramXmlSchema = await xmlToJson(rawPayload.content);
   const appmsg = miniProgramXml.msg.appmsg;
   const weappinfo = appmsg.weappinfo;
@@ -33,13 +33,13 @@ export async function miniProgramMessageParser(rawPayload: Message.AsObject): Pr
 
   return {
     appid: weappinfo.appid,
-    username: weappinfo.username,
-    title: appmsg.title,
     description: appmsg.sourcedisplayname,
-    pagePath: weappinfo.pagepath,
     iconUrl: weappinfo.weappiconurl,
+    pagePath: weappinfo.pagepath,
     shareId: weappinfo.shareId,
-    thumbUrl: appattach.cdnthumburl,
     thumbKey: appattach.cdnthumbaeskey,
+    thumbUrl: appattach.cdnthumburl,
+    title: appmsg.title,
+    username: weappinfo.username,
   };
 }

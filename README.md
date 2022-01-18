@@ -7,22 +7,25 @@
 ![Stage](https://img.shields.io/badge/Stage-beta-yellow)
 
 ## WECHATY PUPPET NEW STAR
+
 > "New star from our community, which is the third most used Wechaty Puppet Provider now. Thank you very much @padlocal, for creating this WPP & WPS!"
-> 
+>  
 > — ⭐️ Wechaty [The Trends in March 2021](https://wechaty.js.org/2021/03/04/wechaty-puppet-providers-trends/)
 
 ## GETTING STARTED
-  * STEP 1: [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
-  * STEP 2: [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
-  * STEP 2 or: [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
+
+* STEP 1: [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
+* STEP 2: [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
+* STEP 2 or: [Getting Started with Python/Java/Go](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-Python-Java-Go)
 
 ## REFERENCE
- * [API 使用文档 (TypeScript/JavaScript)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/API-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3-(TypeScript-JavaScript))
- * [常见问题列表](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E5%88%97%E8%A1%A8)
+
+* [API 使用文档 (TypeScript/JavaScript)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/API-%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3-(TypeScript-JavaScript))
+* [常见问题列表](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E5%88%97%E8%A1%A8)
 
 ## PUPPET COMPARISON
 
-PadLocal is _"one of"_ the most powerful puppet yet. 
+PadLocal is _"one of"_ the most powerful puppet yet.
 
 Puppet|donut|wxwork|paimon|padlocal👍
 :---|:---:|:---:|:---:|:---:
@@ -78,3 +81,11 @@ Puppet|donut|wxwork|paimon|padlocal👍
 依赖协议|Windows|Windows|iPad|iPad
 
 > [Wechaty puppet compatibility](https://github.com/wechaty/wechaty-puppet/wiki/Compatibility)
+
+## Author
+
+[@PadLocal](https://github.com/padlocal)
+
+## License
+
+Apache-2.0

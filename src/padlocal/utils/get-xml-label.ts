@@ -1,4 +1,4 @@
-export function getUserName(linkList: any, name: string) {
+export function getUserName (linkList: any, name: string) {
   const otherObjectArray = linkList.filter((link: any) => name.includes(link.$.name));
 
   if (!otherObjectArray || otherObjectArray.length === 0) {
@@ -11,7 +11,7 @@ export function getUserName(linkList: any, name: string) {
   return inviteeIdList;
 }
 
-export function getNickName(linkList: any, name: string) {
+export function getNickName (linkList: any, name: string) {
   const otherObjectArray = linkList.filter((link: any) => name.includes(link.$.name));
 
   if (!otherObjectArray || otherObjectArray.length === 0) {

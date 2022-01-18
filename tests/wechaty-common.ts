@@ -1,17 +1,16 @@
-import { Contact, log, Wechaty } from "wechaty";
-import { ScanStatus } from "wechaty-puppet";
+import { Contact, log, Wechaty, WechatyBuilder, ScanStatus } from "wechaty";
 import config from "config";
-import PuppetPadlocal from "../src/puppet-padlocal";
+import PuppetPadlocal from "../src/puppet-padlocal.js";
 
 // log.level("silly");
 
-export function createBot(): Wechaty {
+export function createBot (): Wechaty {
   const token: string = config.get("padLocal.token");
   const puppet = new PuppetPadlocal({
     token,
   });
 
-  return new Wechaty({
+  return WechatyBuilder.build({
     name: "TestBot",
     puppet,
   });
@@ -19,7 +18,7 @@ export function createBot(): Wechaty {
 
 type PrepareBotFunc = (bot: Wechaty) => Promise<void>;
 
-export async function prepareSingedOnBot(prepareBotFunc?: PrepareBotFunc): Promise<Wechaty> {
+export async function prepareSingedOnBot (prepareBotFunc?: PrepareBotFunc): Promise<Wechaty> {
   const bot = createBot();
 
   bot.on("scan", (qrcode: string, status: ScanStatus) => {
@@ -35,7 +34,7 @@ export async function prepareSingedOnBot(prepareBotFunc?: PrepareBotFunc): Promi
     log.info("TestBot", "%s login", user);
   });
 
-  bot.on("logout", (user: Contact, reason: string) => {
+  bot.on("logout", (user, reason) => {
     log.info("TestBot", "%s logout, reason:%s", user, reason);
   });
 

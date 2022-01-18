@@ -1,11 +1,13 @@
+/* eslint-disable sort-keys */
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
 import LRU from "lru-cache";
 
-import { log, FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
+import type * as PUPPET from "wechaty-puppet";
+import { log } from "wechaty-puppet";
 import FlashStoreSync from "flash-store";
-import {
+import type {
   ChatRoomMember,
   Contact,
   Label,
@@ -19,25 +21,26 @@ const PRE = "[CacheManager]";
 export type RoomMemberMap = { [contactId: string]: ChatRoomMember.AsObject };
 
 export class CacheManager {
+
   private readonly _userName: string;
 
   private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
   private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
-  private _contactCache?: FlashStoreSync<Contact.AsObject>;
+  private _contactCache?: FlashStoreSync<string, Contact.AsObject>;
   private _contactSearchCache?: LRU<string, SearchContactResponse.AsObject>;
-  private _contactStrangerAliasCache?: FlashStoreSync<string>; // set alias before add contact
-  private _roomCache?: FlashStoreSync<Contact.AsObject>;
-  private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
-  private _roomInvitationCache?: FlashStoreSync<RoomInvitationPayload>;
-  private _friendshipCache?: FlashStoreSync<FriendshipPayload>;
+  private _contactStrangerAliasCache?: FlashStoreSync<string, string>; // set alias before add contact
+  private _roomCache?: FlashStoreSync<string, Contact.AsObject>;
+  private _roomMemberCache?: FlashStoreSync<string, RoomMemberMap>;
+  private _roomInvitationCache?: FlashStoreSync<string, PUPPET.payloads.RoomInvitation>;
+  private _friendshipCache?: FlashStoreSync<string, PUPPET.payloads.Friendship>;
 
   private _labelList?: Label[];
 
-  constructor(userName: string) {
+  constructor (userName: string) {
     this._userName = userName;
   }
 
-  async init(): Promise<void> {
+  async init (): Promise<void> {
     if (this._messageCache) {
       throw new Error("already initialized");
     }
@@ -49,7 +52,7 @@ export class CacheManager {
       "puppet-padlocal-cache",
       path.sep,
       this._userName,
-      path.sep
+      path.sep,
     );
 
     const baseDirExist = await fs.pathExists(baseDir);
@@ -60,7 +63,7 @@ export class CacheManager {
     this._messageCache = new LRU<string, Message.AsObject>({
       max: 1000,
       // length: function (n) { return n * 2},
-      dispose(key: string, val: any) {
+      dispose (key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
       maxAge: 1000 * 60 * 60,
@@ -69,7 +72,7 @@ export class CacheManager {
     this._messageRevokeCache = new LRU<string, MessageRevokeInfo.AsObject>({
       max: 1000,
       // length: function (n) { return n * 2},
-      dispose(key: string, val: any) {
+      dispose (key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
       maxAge: 1000 * 60 * 60,
@@ -79,7 +82,7 @@ export class CacheManager {
     this._contactSearchCache = new LRU<string, SearchContactResponse.AsObject>({
       max: 1000,
       // length: function (n) { return n * 2},
-      dispose(key: string, val: any) {
+      dispose (key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
       maxAge: 1000 * 60 * 60,
@@ -95,17 +98,17 @@ export class CacheManager {
     log.silly(PRE, `initCache() inited ${contactTotal} Contacts,  cachedir="${baseDir}"`);
   }
 
-  async close() {
+  async close () {
     log.silly(PRE, "close()");
 
     if (
-      this._contactCache &&
-      this._contactStrangerAliasCache &&
-      this._roomMemberCache &&
-      this._roomCache &&
-      this._friendshipCache &&
-      this._roomInvitationCache &&
-      this._messageCache
+      this._contactCache
+      && this._contactStrangerAliasCache
+      && this._roomMemberCache
+      && this._roomCache
+      && this._friendshipCache
+      && this._roomInvitationCache
+      && this._messageCache
     ) {
       log.silly(PRE, "close() closing caches ...");
 
@@ -137,23 +140,23 @@ export class CacheManager {
    * Message Section
    * --------------------------------
    */
-  public async getMessage(messageId: string): Promise<Message.AsObject | undefined> {
+  public async getMessage (messageId: string): Promise<Message.AsObject | undefined> {
     return this._messageCache!.get(messageId);
   }
 
-  public async setMessage(messageId: string, payload: Message.AsObject): Promise<void> {
+  public async setMessage (messageId: string, payload: Message.AsObject): Promise<void> {
     await this._messageCache!.set(messageId, payload);
   }
 
-  public async hasMessage(messageId: string): Promise<boolean> {
+  public async hasMessage (messageId: string): Promise<boolean> {
     return this._messageCache!.has(messageId);
   }
 
-  public async getMessageRevokeInfo(messageId: string): Promise<MessageRevokeInfo.AsObject | undefined> {
+  public async getMessageRevokeInfo (messageId: string): Promise<MessageRevokeInfo.AsObject | undefined> {
     return this._messageRevokeCache!.get(messageId);
   }
 
-  public async setMessageRevokeInfo(messageId: string, messageSendResult: MessageRevokeInfo.AsObject): Promise<void> {
+  public async setMessageRevokeInfo (messageId: string, messageSendResult: MessageRevokeInfo.AsObject): Promise<void> {
     await this._messageRevokeCache!.set(messageId, messageSendResult);
   }
 
@@ -162,19 +165,19 @@ export class CacheManager {
    * Contact Section
    * --------------------------------
    */
-  public async getContact(contactId: string): Promise<Contact.AsObject | undefined> {
+  public async getContact (contactId: string): Promise<Contact.AsObject | undefined> {
     return this._contactCache!.get(contactId);
   }
 
-  public async setContact(contactId: string, payload: Contact.AsObject): Promise<void> {
+  public async setContact (contactId: string, payload: Contact.AsObject): Promise<void> {
     await this._contactCache!.set(contactId, payload);
   }
 
-  public async deleteContact(contactId: string): Promise<void> {
+  public async deleteContact (contactId: string): Promise<void> {
     await this._contactCache!.delete(contactId);
   }
 
-  public async getContactIds(): Promise<string[]> {
+  public async getContactIds (): Promise<string[]> {
     const result: string[] = [];
     for await (const key of this._contactCache!.keys()) {
       result.push(key);
@@ -183,7 +186,7 @@ export class CacheManager {
     return result;
   }
 
-  public async getAllContacts(): Promise<Contact.AsObject[]> {
+  public async getAllContacts (): Promise<Contact.AsObject[]> {
     const result: Contact.AsObject[] = [];
     for await (const value of this._contactCache!.values()) {
       result.push(value);
@@ -191,11 +194,11 @@ export class CacheManager {
     return result;
   }
 
-  public async hasContact(contactId: string): Promise<boolean> {
+  public async hasContact (contactId: string): Promise<boolean> {
     return this._contactCache!.has(contactId);
   }
 
-  public async getContactCount(): Promise<number> {
+  public async getContactCount (): Promise<number> {
     return this._contactCache!.size;
   }
 
@@ -203,27 +206,27 @@ export class CacheManager {
    * contact search
    */
 
-  public async getContactSearch(id: string): Promise<SearchContactResponse.AsObject | undefined> {
+  public async getContactSearch (id: string): Promise<SearchContactResponse.AsObject | undefined> {
     return this._contactSearchCache!.get(id);
   }
 
-  public async setContactSearch(id: string, payload: SearchContactResponse.AsObject): Promise<void> {
+  public async setContactSearch (id: string, payload: SearchContactResponse.AsObject): Promise<void> {
     await this._contactSearchCache!.set(id, payload);
   }
 
-  public async hasContactSearch(id: string): Promise<boolean> {
+  public async hasContactSearch (id: string): Promise<boolean> {
     return this._contactSearchCache!.has(id);
   }
 
-  public async getContactStrangerAlias(encryptedUserName: string): Promise<string | undefined> {
+  public async getContactStrangerAlias (encryptedUserName: string): Promise<string | undefined> {
     return this._contactStrangerAliasCache!.get(encryptedUserName);
   }
 
-  public async setContactStrangerAlias(encryptedUserName: string, alias: string): Promise<void> {
+  public async setContactStrangerAlias (encryptedUserName: string, alias: string): Promise<void> {
     await this._contactStrangerAliasCache!.set(encryptedUserName, alias);
   }
 
-  public async deleteContactStrangerAlias(encryptedUserName: string): Promise<void> {
+  public async deleteContactStrangerAlias (encryptedUserName: string): Promise<void> {
     await this._contactStrangerAliasCache!.delete(encryptedUserName);
   }
 
@@ -232,19 +235,19 @@ export class CacheManager {
    * Room Section
    * --------------------------------
    */
-  public async getRoom(roomId: string): Promise<Contact.AsObject | undefined> {
+  public async getRoom (roomId: string): Promise<Contact.AsObject | undefined> {
     return this._roomCache!.get(roomId);
   }
 
-  public async setRoom(roomId: string, payload: Contact.AsObject): Promise<void> {
+  public async setRoom (roomId: string, payload: Contact.AsObject): Promise<void> {
     await this._roomCache!.set(roomId, payload);
   }
 
-  public async deleteRoom(roomId: string): Promise<void> {
+  public async deleteRoom (roomId: string): Promise<void> {
     await this._roomCache!.delete(roomId);
   }
 
-  public async getRoomIds(): Promise<string[]> {
+  public async getRoomIds (): Promise<string[]> {
     const result: string[] = [];
     for await (const key of this._roomCache!.keys()) {
       result.push(key);
@@ -252,27 +255,28 @@ export class CacheManager {
     return result;
   }
 
-  public async getRoomCount(): Promise<number> {
+  public async getRoomCount (): Promise<number> {
     return this._roomCache!.size;
   }
 
-  public async hasRoom(roomId: string): Promise<boolean> {
+  public async hasRoom (roomId: string): Promise<boolean> {
     return this._roomCache!.has(roomId);
   }
+
   /**
    * -------------------------------
    * Room Member Section
    * --------------------------------
    */
-  public async getRoomMember(roomId: string): Promise<RoomMemberMap | undefined> {
+  public async getRoomMember (roomId: string): Promise<RoomMemberMap | undefined> {
     return this._roomMemberCache!.get(roomId);
   }
 
-  public async setRoomMember(roomId: string, payload: RoomMemberMap): Promise<void> {
+  public async setRoomMember (roomId: string, payload: RoomMemberMap): Promise<void> {
     await this._roomMemberCache!.set(roomId, payload);
   }
 
-  public async deleteRoomMember(roomId: string): Promise<void> {
+  public async deleteRoomMember (roomId: string): Promise<void> {
     await this._roomMemberCache!.delete(roomId);
   }
 
@@ -281,15 +285,15 @@ export class CacheManager {
    * Room Invitation Section
    * -------------------------------
    */
-  public async getRoomInvitation(messageId: string): Promise<RoomInvitationPayload | undefined> {
+  public async getRoomInvitation (messageId: string): Promise<PUPPET.payloads.RoomInvitation | undefined> {
     return this._roomInvitationCache!.get(messageId);
   }
 
-  public async setRoomInvitation(messageId: string, payload: RoomInvitationPayload): Promise<void> {
+  public async setRoomInvitation (messageId: string, payload: PUPPET.payloads.RoomInvitation): Promise<void> {
     await this._roomInvitationCache!.set(messageId, payload);
   }
 
-  public async deleteRoomInvitation(messageId: string): Promise<void> {
+  public async deleteRoomInvitation (messageId: string): Promise<void> {
     await this._roomInvitationCache!.delete(messageId);
   }
 
@@ -298,19 +302,20 @@ export class CacheManager {
    * Friendship Cache Section
    * --------------------------------
    */
-  public async getFriendshipRawPayload(id: string): Promise<FriendshipPayload | undefined> {
+  public async getFriendshipRawPayload (id: string): Promise<PUPPET.payloads.Friendship | undefined> {
     return this._friendshipCache!.get(id);
   }
 
-  public async setFriendshipRawPayload(id: string, payload: FriendshipPayload) {
+  public async setFriendshipRawPayload (id: string, payload: PUPPET.payloads.Friendship) {
     await this._friendshipCache!.set(id, payload);
   }
 
-  public getLabelList(): Label[] | undefined {
+  public getLabelList (): Label[] | undefined {
     return this._labelList;
   }
 
-  public setLabelList(labelList: Label[]): void {
+  public setLabelList (labelList: Label[]): void {
     this._labelList = labelList;
   }
+
 }

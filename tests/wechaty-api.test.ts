@@ -1,9 +1,10 @@
 import config from "config";
-import { Contact, FileBox, Message, MiniProgram, UrlLink, Wechaty } from "wechaty";
-import { prepareSingedOnBot } from "./wechaty-common";
-import { MessageType, MiniProgramPayload } from "wechaty-puppet";
-import { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion";
-import PuppetPadlocal from "../src/puppet-padlocal";
+import { Contact, Message, impls, Wechaty } from "wechaty";
+import { FileBox } from "file-box";
+import { prepareSingedOnBot } from "./wechaty-common.js";
+import * as PUPPET from "wechaty-puppet";
+import type { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion.js";
+import type PuppetPadlocal from "../src/puppet-padlocal.js";
 
 let bot: Wechaty;
 
@@ -17,10 +18,10 @@ afterAll(async () => {
 
 describe("contact", () => {
   test("set self name", async () => {
-    const self = bot.userSelf();
+    const self = bot.currentUser;
 
     const oldName = self.name();
-    console.log(`old name: ${oldName}`);
+    console.info(`old name: ${oldName}`);
 
     const toName: string = config.get("test.contact.changeNickName");
 
@@ -28,20 +29,20 @@ describe("contact", () => {
 
     const newName = self.name();
     expect(newName).toEqual(toName);
-    console.log(`new name: ${newName}`);
+    console.info(`new name: ${newName}`);
   });
 
   test("self qr code", async () => {
-    const self = bot.userSelf();
+    const self = bot.currentUser;
     const qrStr = await self.qrcode();
     expect(qrStr.length).toBeGreaterThan(0);
 
-    console.log(`qr: ${qrStr}`);
+    console.info(`qr: ${qrStr}`);
   });
 
   test("set self signature", async () => {
     const toSignature: string = config.get("test.contact.changeSignature");
-    const self = bot.userSelf();
+    const self = bot.currentUser;
     await self.signature(toSignature);
   });
 
@@ -51,18 +52,18 @@ describe("contact", () => {
 
     const contact = (await bot.Contact.find({ id: userName }))!;
     const oldAlias = await contact.alias();
-    console.log(`old alias: ${oldAlias}`);
+    console.info(`old alias: ${oldAlias}`);
 
     await contact.alias(toAlias);
 
     const newAlias = await contact.alias();
     expect(newAlias).toEqual(toAlias);
 
-    console.log(`new alias: ${newAlias}`);
+    console.info(`new alias: ${newAlias}`);
   });
 
   test("contact avatar", async () => {
-    const selfContact = bot.userSelf();
+    const selfContact = bot.currentUser;
     const selfAvatarFileBox = await selfContact.avatar();
     expect(selfAvatarFileBox).toBeTruthy();
 
@@ -112,7 +113,7 @@ describe("tag", () => {
   test("get contact tag list", async () => {
     const contact = await bot.Contact.find({ id: userName });
     const tags = await contact!.tags();
-    console.log(tags);
+    console.info(tags);
   });
 });
 
@@ -154,8 +155,8 @@ describe("friendship", () => {
 const toChatRoomId: string = config.get("test.message.send.chatroomId");
 const toUserName: string = config.get("test.message.send.toUserName");
 
-const expectSendMessage = async (message: Message, expectedMessageType: MessageType) => {
-  const selfContact = bot.userSelf();
+const expectSendMessage = async (message: Message, expectedMessageType: PUPPET.types.Message) => {
+  const selfContact = bot.currentUser;
   expect(message).toBeTruthy();
   expect(message.talker()!.id).toEqual(selfContact.id);
   expect(message.to() || message.room()).toBeTruthy();
@@ -163,10 +164,10 @@ const expectSendMessage = async (message: Message, expectedMessageType: MessageT
   expect(message.date()).toBeTruthy();
 };
 
-const sendToContact = async (payload: any, expectedMessageType: MessageType, toUser?: string): Promise<Message> => {
+const sendToContact = async (payload: any, expectedMessageType: PUPPET.types.Message, toUser?: string): Promise<Message> => {
   const to = toUser || toUserName;
-  const toContact = await bot.Contact.load(to);
-  const message = (await toContact.say(payload)) as Message;
+  const toContact = await bot.Contact.find({ id: to });
+  const message = (await toContact!.say(payload)) as Message;
 
   await expectSendMessage(message, expectedMessageType);
 
@@ -175,13 +176,13 @@ const sendToContact = async (payload: any, expectedMessageType: MessageType, toU
 
 const sendToRoom = async (
   payload: any,
-  expectedMessageType: MessageType,
+  expectedMessageType: PUPPET.types.Message,
   toRoomId?: string,
   ...mentionList: Contact[]
 ): Promise<Message> => {
   const to = toRoomId || toChatRoomId;
-  const toRoom = await bot.Room.load(to);
-  const message = (await toRoom.say(payload, ...mentionList)) as Message;
+  const toRoom = await bot.Room.find({ id: to });
+  const message = (await toRoom!.say(payload, ...mentionList)) as Message;
 
   await expectSendMessage(message, expectedMessageType);
 
@@ -189,7 +190,7 @@ const sendToRoom = async (
 };
 
 describe("message", () => {
-  const sendMessage = async (payload: any, expectedMessageType: MessageType): Promise<Message[]> => {
+  const sendMessage = async (payload: any, expectedMessageType: PUPPET.types.Message): Promise<Message[]> => {
     const message1 = await sendToContact(payload, expectedMessageType);
     const message2 = await sendToRoom(payload, expectedMessageType);
 
@@ -198,15 +199,15 @@ describe("message", () => {
 
   const recallMessages = async (messageList: Message[]) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[0].recall();
+    await messageList[0]!.recall();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await messageList[1].recall();
+    await messageList[1]!.recall();
   };
 
   test("send text message", async () => {
     const text = `hello padlocal: ${Date.now()}`;
-    await sendMessage(text, MessageType.Text);
+    await sendMessage(text, PUPPET.types.Message.Text);
   });
 
   test("send text message with at user list", async () => {
@@ -219,11 +220,11 @@ describe("message", () => {
       const contact = await bot.Contact.find({ id: contactId });
       contactList.push(contact!);
     }
-    await sendToRoom(text, MessageType.Text, undefined, ...contactList);
+    await sendToRoom(text, PUPPET.types.Message.Text, undefined, ...contactList);
   });
 
   test("recall text message", async () => {
-    const messageList = await sendMessage(`hi: ${Date.now()}`, MessageType.Text);
+    const messageList = await sendMessage(`hi: ${Date.now()}`, PUPPET.types.Message.Text);
     await recallMessages(messageList);
   });
 
@@ -231,7 +232,7 @@ describe("message", () => {
     const contactCardId: string = config.get("test.message.send.contactCardId");
     const contact = (await bot.Contact.find({ id: contactCardId }))!;
 
-    return sendMessage(contact, MessageType.Text);
+    return sendMessage(contact, PUPPET.types.Message.Text);
   };
 
   test("send contact card message", async () => {
@@ -248,7 +249,7 @@ describe("message", () => {
     const imageFilePath: string = config.get("test.message.send.imageFilePath");
     const fileBox = FileBox.fromFile(imageFilePath);
 
-    return sendMessage(fileBox, MessageType.Text);
+    return sendMessage(fileBox, PUPPET.types.Message.Text);
   };
 
   test("send image message", async () => {
@@ -271,7 +272,7 @@ describe("message", () => {
       voiceLength,
     };
 
-    return sendMessage(fileBox, MessageType.Text);
+    return sendMessage(fileBox, PUPPET.types.Message.Text);
   };
 
   test("send voice message", async () => {
@@ -288,7 +289,7 @@ describe("message", () => {
     const videoFilePath: string = config.get("test.message.send.videoFilePath");
     const fileBox = FileBox.fromFile(videoFilePath);
 
-    return sendMessage(fileBox, MessageType.Text);
+    return sendMessage(fileBox, PUPPET.types.Message.Text);
   };
 
   test("send video message", async () => {
@@ -305,7 +306,7 @@ describe("message", () => {
     const fileFilePath: string = config.get("test.message.send.fileFilePath");
     const fileBox = FileBox.fromFile(fileFilePath);
 
-    return sendMessage(fileBox, MessageType.Text);
+    return sendMessage(fileBox, PUPPET.types.Message.Text);
   };
 
   test("send file message", async () => {
@@ -323,14 +324,14 @@ describe("message", () => {
     const url: string = config.get("test.message.send.link.url");
     const thumbImageUrl: string = config.get("test.message.send.link.thumbImageUrl");
 
-    const urlLink = new UrlLink({
-      title,
+    const urlLink = new impls.UrlLinkImpl({
       description,
       thumbnailUrl: thumbImageUrl,
+      title,
       url,
     });
 
-    return sendMessage(urlLink, MessageType.Url);
+    return sendMessage(urlLink, PUPPET.types.Message.Url);
   };
 
   test("send link message", async () => {
@@ -343,19 +344,19 @@ describe("message", () => {
   }, 10000);
 
   const sendMiniProgramMessageThumbCdn = async (): Promise<Message[]> => {
-    const miniProgramPayload: MiniProgramPayload = config.get("test.message.send.miniProgram");
-    const miniProgram = new MiniProgram(miniProgramPayload);
-    return sendMessage(miniProgram, MessageType.MiniProgram);
+    const miniProgramPayload: PUPPET.payloads.MiniProgram = config.get("test.message.send.miniProgram");
+    const miniProgram = new impls.MiniProgramImpl(miniProgramPayload);
+    return sendMessage(miniProgram, PUPPET.types.Message.MiniProgram);
   };
 
   const sendMiniProgramMessageThumbHttp = async (): Promise<Message[]> => {
-    const miniProgramPayload: MiniProgramPayload = Object.assign({}, config.get("test.message.send.miniProgram"));
+    const miniProgramPayload: PUPPET.payloads.MiniProgram = Object.assign({}, config.get("test.message.send.miniProgram"));
 
     miniProgramPayload.thumbUrl = config.get("test.message.send.miniProgramThumbURLHttp");
     miniProgramPayload.thumbKey = undefined;
 
-    const miniProgram = new MiniProgram(miniProgramPayload);
-    return sendMessage(miniProgram, MessageType.MiniProgram);
+    const miniProgram = new impls.MiniProgramImpl(miniProgramPayload);
+    return sendMessage(miniProgram, PUPPET.types.Message.MiniProgram);
   };
 
   test(
@@ -364,7 +365,7 @@ describe("message", () => {
       await sendMiniProgramMessageThumbCdn();
       await sendMiniProgramMessageThumbHttp();
     },
-    30 * 1000
+    30 * 1000,
   );
 
   test("recall miniprogram message", async () => {
@@ -374,13 +375,13 @@ describe("message", () => {
 
   const sendEmojiMessage = async (): Promise<Message[]> => {
     const emotionPayload: EmojiMessagePayload = config.get("test.message.send.emoji");
-    const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, `message-test-emotion.jpg`, {
+    const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, "message-test-emotion.jpg", {
       ...emotionPayload,
     });
 
     emoticonBox.mimeType = "emoticon";
 
-    return sendMessage(emoticonBox, MessageType.Emoticon);
+    return sendMessage(emoticonBox, PUPPET.types.Message.Emoticon);
   };
 
   test("send emoticon message", async () => {
@@ -411,7 +412,7 @@ describe("room", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    await newRoom.ready();
+    // await newRoom.ready();
 
     const newRoomTopic = await newRoom.topic();
     expect(newRoomTopic).toEqual(roomName);
@@ -419,7 +420,7 @@ describe("room", () => {
     const newRoomMemberList = await newRoom.memberAll();
     expect(newRoomMemberList.length).toEqual(3);
 
-    await sendToRoom("hello", MessageType.Text, newRoom.id);
+    await sendToRoom("hello", PUPPET.types.Message.Text, newRoom.id);
   });
 
   test("room member list", async () => {
@@ -427,7 +428,7 @@ describe("room", () => {
 
     const memberList = await room.memberAll();
 
-    console.log(memberList);
+    console.info(memberList);
 
     expect(memberList).toBeTruthy();
     expect(memberList.length).toBeGreaterThan(0);
@@ -441,7 +442,7 @@ describe("room", () => {
 
     const oldMemberList = await room.memberAll();
 
-    await room.del(contact!);
+    await room.remove(contact!);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -481,7 +482,7 @@ describe("room", () => {
     const room = (await bot.Room.find({ id: chatroomId }))!;
     const qrString = await room.qrCode();
 
-    console.log(`qr: ${qrString}`);
+    console.info(`qr: ${qrString}`);
 
     expect(qrString).toBeTruthy();
   });

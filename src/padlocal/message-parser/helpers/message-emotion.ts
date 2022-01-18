@@ -1,5 +1,6 @@
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { xmlToJson } from "../../utils/xml-to-json";
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { xmlToJson } from "../../utils/xml-to-json.js";
 
 interface EmotionXmlSchema {
   msg: {
@@ -32,7 +33,7 @@ export interface EmojiMessagePayload {
   gameext?: string;
 }
 
-export async function emotionPayloadParser(message: Message.AsObject): Promise<EmojiMessagePayload> {
+export async function emotionPayloadParser (message: Message.AsObject): Promise<EmojiMessagePayload> {
   const jsonPayload: EmotionXmlSchema = await xmlToJson(message.content);
 
   const len = parseInt(jsonPayload.msg.emoji.$.len, 10) || 0;
@@ -50,17 +51,17 @@ export async function emotionPayloadParser(message: Message.AsObject): Promise<E
   }
 
   return {
-    type,
+    cdnurl,
+    gameext,
+    height,
     len,
     md5,
-    cdnurl,
-    height,
+    type,
     width,
-    gameext,
   };
 }
 
-export function emotionPayloadGenerator(emojiMessagePayload: EmojiMessagePayload): string {
+export function emotionPayloadGenerator (emojiMessagePayload: EmojiMessagePayload): string {
   return `<msg><emoji cdnurl="${emojiMessagePayload.cdnurl}" len="${emojiMessagePayload.len}" md5="${
     emojiMessagePayload.md5
   }" type="${emojiMessagePayload.type}"/>${emojiMessagePayload.gameext || ""}</msg>`;

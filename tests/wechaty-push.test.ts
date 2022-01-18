@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+/* eslint-disable no-case-declarations */
 import config from "config";
 import { Contact, Friendship, log, Message, Room, RoomInvitation, Wechaty } from "wechaty";
-import { prepareSingedOnBot } from "./wechaty-common";
-import { isContactId } from "../src/padlocal/utils/is-type";
-import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
-import { FriendshipType, MessageType } from "wechaty-puppet";
+import { prepareSingedOnBot } from "./wechaty-common.js";
+import { isContactId } from "../src/padlocal/utils/is-type.js";
+import * as PUPPET from "wechaty-puppet";
 
 const LOGPRE = "TestBot";
 
@@ -16,14 +17,14 @@ test(
 
     const getMessagePayload = async (message: Message) => {
       switch (message.type()) {
-        case MessageType.Text:
-          if (message.talker()?.id === recallUserId && message.text()!.indexOf("recall") !== -1) {
+        case PUPPET.types.Message.Text:
+          if (message.talker().id === recallUserId && message.text()!.indexOf("recall") !== -1) {
             await message.recall();
           }
           break;
 
-        case MessageType.Attachment:
-        case MessageType.Audio:
+        case PUPPET.types.Message.Attachment:
+        case PUPPET.types.Message.Audio:
           const attachFile = await message.toFileBox();
           expect(attachFile).toBeTruthy();
 
@@ -34,7 +35,7 @@ test(
 
           break;
 
-        case MessageType.Video:
+        case PUPPET.types.Message.Video:
           const videoFile = await message.toFileBox();
           expect(videoFile).toBeTruthy();
 
@@ -45,11 +46,11 @@ test(
 
           break;
 
-        case MessageType.Emoticon:
+        case PUPPET.types.Message.Emoticon:
           const emotionFile = await message.toFileBox();
           expect(emotionFile).toBeTruthy();
 
-          const emotionJSON = emotionFile.toJSON() as FileBoxJsonObjectUrl;
+          const emotionJSON = emotionFile.toJSON() as any;
           expect(emotionJSON.remoteUrl.length).toBeGreaterThan(0);
 
           const emotionBuffer: Buffer = await emotionFile.toBuffer();
@@ -59,7 +60,7 @@ test(
 
           break;
 
-        case MessageType.Image:
+        case PUPPET.types.Message.Image:
           const messageImage = await message.toImage();
           expect(messageImage).toBeTruthy();
 
@@ -86,7 +87,7 @@ test(
 
           break;
 
-        case MessageType.Url:
+        case PUPPET.types.Message.Url:
           const urlLink = await message.toUrlLink();
           expect(urlLink).toBeTruthy();
           expect(urlLink.title()).toBeTruthy();
@@ -101,7 +102,7 @@ test(
 
           break;
 
-        case MessageType.MiniProgram:
+        case PUPPET.types.Message.MiniProgram:
           const miniProgram = await message.toMiniProgram();
 
           log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
@@ -122,7 +123,7 @@ test(
     };
 
     const forwardMessage = async (bot: Wechaty, message: Message): Promise<void> => {
-      if (message.type() === MessageType.Unknown) {
+      if (message.type() === PUPPET.types.Message.Unknown) {
         return;
       }
 
@@ -136,7 +137,7 @@ test(
         const newMessage = await message.forward(to!);
         await getMessagePayload(newMessage as Message);
       } catch (e) {
-        log.error(LOGPRE, `Error while forwarding message: ${e.stack}`);
+        log.error(LOGPRE, `Error while forwarding message: ${(e as Error).stack}`);
       }
     };
 
@@ -144,7 +145,7 @@ test(
       bot.on("message", async (message: Message) => {
         log.info(LOGPRE, `on message: ${message.toString()}`);
 
-        if (message.talker()?.id === forwardFrom) {
+        if (message.talker().id === forwardFrom) {
           await forwardMessage(bot, message);
         }
 
@@ -154,7 +155,7 @@ test(
       bot.on("friendship", async (friendship: Friendship) => {
         log.info(LOGPRE, `on friendship: ${friendship.toJSON()}`);
 
-        if (friendship.type() === FriendshipType.Receive) {
+        if (friendship.type() === PUPPET.types.Friendship.Receive) {
           try {
             log.info(LOGPRE, `receive friendship: ${friendship.toJSON()}`);
 
@@ -162,7 +163,7 @@ test(
 
             log.info(LOGPRE, "accept success");
           } catch (e) {
-            log.error(LOGPRE, `accept failed: ${e.stack}`);
+            log.error(LOGPRE, `accept failed: ${(e as Error).stack}`);
           }
         }
       });
@@ -178,7 +179,7 @@ test(
           LOGPRE,
           `on room join: ${room.toString()}, inviteeList: ${inviteeList.map((i) => i.id)}, inviter: ${
             inviter.id
-          }, ${date}`
+          }, ${date}`,
         );
       });
 
@@ -187,7 +188,7 @@ test(
           LOGPRE,
           `on room leave: ${room.toString()}, leaverList: ${leaverList.map((l) => l.id)}, remover: ${
             remover?.id
-          } ${date}`
+          } ${date}`,
         );
       });
 
@@ -199,5 +200,5 @@ test(
     // tslint:disable-next-line:no-empty
     return new Promise(() => {});
   },
-  Math.pow(2, 30)
+  Math.pow(2, 30),
 );
