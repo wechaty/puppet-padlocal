@@ -11,6 +11,12 @@
 > 
 > — ⭐️ Wechaty [The Trends in March 2021](https://wechaty.js.org/2021/03/04/wechaty-puppet-providers-trends/)
 
+## TL;DR
+
+1. Get PadLocal TOKEN (with 7 days free trial): <http://pad-local.com>
+2. PadLocal on Wechaty official website: <https://wechaty.js.org/docs/puppet-providers/padlocal/>
+3. Getting Started with Wechaty: <https://wechaty.js.org/docs/getting-started/>
+
 ## GETTING STARTED
   * STEP 1: [How to Apply Token](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/How-to-Apply-Token)
   * STEP 2: [Getting Started with TypeScript/JavaScript (RECOMMENDED)](https://github.com/padlocal/wechaty-puppet-padlocal/wiki/Getting-Started-with-TypeScript-Javascript)
