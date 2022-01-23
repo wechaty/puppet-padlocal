@@ -1,10 +1,10 @@
 /* eslint-disable sort-keys */
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import type {
-  ChatRoomMember,
+import {
+  type ChatRoomMember,
   Contact,
-  Message,
+  type Message,
 } from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
