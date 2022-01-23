@@ -28,8 +28,8 @@ import {
   QRCodeStatus,
   SendTextMessageResponse,
   SyncEvent,
-} from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
+} from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
 import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
 import {
@@ -49,12 +49,12 @@ import {
   emotionPayloadGenerator,
   emotionPayloadParser,
 } from "./padlocal/message-parser/helpers/message-emotion.js";
-import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
+import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
-import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
+import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave.js";
 import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
-import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
+import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
 
