@@ -2,14 +2,8 @@
   "name": "wechaty-puppet-padlocal",
   "version": "1.11.4",
   "description": "Puppet PadLocal for Wechaty",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/esm/src/mod.js",
-      "require": "./dist/cjs/src/mod.js"
-    }
-  },
-  "typings": "./dist/esm/src/mod.d.ts",
+  "main": "./dist/cjs/src/mod.js",
+  "typings": "./dist/cjs/src/mod.d.ts",
   "engines": {
     "node": ">= 16",
     "npm": ">=7"
@@ -32,9 +26,9 @@
     "test:pack": "bash -x scripts/npm-pack-testing.sh",
     "test:unit": "jest",
     "coverage": "jest --coverage",
-    "prepare": "npm run dist && bash ./scripts/generate-version.sh",
+    "Xprepare": "npm run dist && bash ./scripts/generate-version.sh",
     "serve": "tsc-watch",
-    "demo": "cross-env NODE_OPTIONS=\"--no-warnings --loader=ts-node/esm\" node examples/demo.ts"
+    "demo": "cross-env ts-node examples/demo.ts"
   },
   "repository": {
     "type": "git",
@@ -84,7 +78,7 @@
     "wechaty": "^1.11.42"
   },
   "peerDependencies": {
-    "wechaty-puppet": "^1.11.16"
+    "wechaty-puppet": "^1.11.17"
   },
   "dependencies": {
     "@types/config": "0.0.41",

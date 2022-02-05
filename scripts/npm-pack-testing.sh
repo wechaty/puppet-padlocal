@@ -45,25 +45,26 @@ echo
 echo "CommonJS: pack testing..."
 node smoke-testing.js
 
-#
-# ES Modules
-#
+# Huan(20220205): disable ESM temporary
+# #
+# # ES Modules
+# #
 
-# https://stackoverflow.com/a/59203952/1123955
-echo "`jq '.type="module"' package.json`" > package.json
+# # https://stackoverflow.com/a/59203952/1123955
+# echo "`jq '.type="module"' package.json`" > package.json
 
-./node_modules/.bin/tsc \
-  --target es2020 \
-  --module es2020 \
-  \
-  --moduleResolution node \
-  --esModuleInterop \
-  --lib esnext \
-  --noEmitOnError \
-  --noImplicitAny \
-  --skipLibCheck \
-  smoke-testing.ts
+# ./node_modules/.bin/tsc \
+#   --target es2020 \
+#   --module es2020 \
+#   \
+#   --moduleResolution node \
+#   --esModuleInterop \
+#   --lib esnext \
+#   --noEmitOnError \
+#   --noImplicitAny \
+#   --skipLibCheck \
+#   smoke-testing.ts
 
-echo
-echo "ES Module: pack testing..."
-node smoke-testing.js
+# echo
+# echo "ES Module: pack testing..."
+# node smoke-testing.js
