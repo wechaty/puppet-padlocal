@@ -1,6 +1,6 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "1.11.4",
+  "version": "1.11.5",
   "description": "Puppet PadLocal for Wechaty",
   "main": "./dist/cjs/src/mod.js",
   "typings": "./dist/cjs/src/mod.d.ts",
