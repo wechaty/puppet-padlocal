@@ -1,7 +1,8 @@
 {
   "extends": "@chatie/tsconfig",
   "compilerOptions": {
-    "outDir": "dist/esm",
+    "module": "CommonJS",
+    "outDir": "dist/cjs",
   },
   "exclude": [
     "node_modules/",
@@ -9,9 +10,7 @@
     "tests/fixtures/",
   ],
   "include": [
-    "app/**/*.ts",
     "bin/*.ts",
-    "bot/**/*.ts",
     "examples/**/*.ts",
     "scripts/**/*.ts",
     "src/**/*.ts",

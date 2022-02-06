@@ -67,6 +67,7 @@
     "@types/xml2js": "^0.4.9",
     "config": "^3.3.7",
     "jest": "^27.4.7",
+    "jest-ts-webcompat-resolver": "^1.0.0",
     "normalize-package-data": "^3.0.3",
     "pkg-jq": "^0.2.11",
     "prettier": "^2.5.1",
