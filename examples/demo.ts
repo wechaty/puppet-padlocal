@@ -1,15 +1,12 @@
 /* eslint-disable promise/always-return */
 /* eslint-disable no-case-declarations */
 /* eslint-disable import/first */
-// read config from local-test.json
-process.env["NODE_CONFIG_ENV"] = "test";
 
 import * as PUPPET from "wechaty-puppet";
 import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
 import PuppetPadlocal from "../src/puppet-padlocal";
 import config from "config";
 import QRCode from "qrcode-terminal";
-// import type { FileBoxJsonObjectUrl } from 'file-box/src/file-box.type'
 import { isContactId } from "../src/padlocal/utils/is-type";
 
 // log.level("silly");
@@ -108,7 +105,7 @@ bot
     if (status === ScanStatus.Waiting && qrcode) {
       log.info(
         "TestBot",
-        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`,
+        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`
       );
 
       QRCode.generate(qrcode, { small: true });
@@ -125,7 +122,7 @@ bot
     log.info("TestBot", `${user} logout, reason: ${reason}`);
   })
 
-  .on("message", async(message: Message) => {
+  .on("message", async (message: Message) => {
     log.info("TestBot", `on message: ${message.toString()}`);
 
     const forwardFrom = config.get("test.push.forwardFrom");
@@ -164,6 +161,9 @@ bot
     log.info("TestBot", `on error: ${error.toString()}`);
   });
 
-bot.start().then(() => {
-  log.info("TestBot", "started.");
-}).catch(console.error);
+bot
+  .start()
+  .then(() => {
+    log.info("TestBot", "started.");
+  })
+  .catch(console.error);
