@@ -28,35 +28,35 @@ import {
   QRCodeStatus,
   SendTextMessageResponse,
   SyncEvent,
-} from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
-import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
-import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
+} from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
+import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager";
+import { isIMContactId, isRoomId } from "./padlocal/utils/is-type";
 import {
   chatRoomMemberToContact,
   padLocalContactToWechaty,
   padLocalMessageToWechaty,
   padLocalRoomMemberToWechaty,
   padLocalRoomToWechaty,
-} from "./padlocal/schema-mapper/index.js";
-import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg.js";
-import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram.js";
-import { parseMessage } from "./padlocal/message-parser/index.js";
-import { MessageCategory } from "./padlocal/message-parser/message-parser-type.js";
+} from "./padlocal/schema-mapper/index";
+import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg";
+import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram";
+import { parseMessage } from "./padlocal/message-parser/index";
+import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
   emotionPayloadGenerator,
   emotionPayloadParser,
-} from "./padlocal/message-parser/helpers/message-emotion.js";
-import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
-import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
-import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
-import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave.js";
-import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
-import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
+} from "./padlocal/message-parser/helpers/message-emotion";
+import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
+import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
+import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
+import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
+import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
+import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
 import nodeUrl from "url";
-import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
+import { addRunningPuppet, removeRunningPuppet } from "./cleanup";
 
 export type PuppetPadlocalOptions = PUPPET.PuppetOptions & {
   serverCAFilePath?: string;

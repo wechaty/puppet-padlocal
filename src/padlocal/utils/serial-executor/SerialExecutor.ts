@@ -1,6 +1,6 @@
 /* eslint-disable promise/always-return */
-import { PromiseCallback } from "./PromiseCallback.js";
-import { SerialJob, SerialJobFunc } from "./SerialJob.js";
+import { PromiseCallback } from "./PromiseCallback";
+import { SerialJob, SerialJobFunc } from "./SerialJob";
 
 export class SerialExecutor {
 

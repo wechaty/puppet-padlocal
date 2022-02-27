@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import * as PUPPET from "wechaty-puppet";
-import type { RoomXmlSchema } from "./helpers/message-room.js";
-import { isRoomId } from "../utils/is-type.js";
-import { xmlToJson } from "../utils/xml-to-json.js";
-import { getUserName } from "../utils/get-xml-label.js";
-import type { MessageParserRetType } from "./message-parser.js";
-import { removeRoomLeaveDebounce } from "./message-parser-room-leave.js";
+import type { RoomXmlSchema } from "./helpers/message-room";
+import { isRoomId } from "../utils/is-type";
+import { xmlToJson } from "../utils/xml-to-json";
+import { getUserName } from "../utils/get-xml-label";
+import type { MessageParserRetType } from "./message-parser";
+import { removeRoomLeaveDebounce } from "./message-parser-room-leave";
 
 const ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_ZH = [
   /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,

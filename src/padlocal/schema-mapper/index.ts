@@ -5,14 +5,14 @@ import {
   type ChatRoomMember,
   Contact,
   type Message,
-} from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+} from "padlocal-client-ts/dist/proto/padlocal_pb";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type.js";
-import { convertMessageType } from "../message-parser/helpers/message.js";
-import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg.js";
-import type { WechatMessageType } from "../message-parser/WechatMessageType.js";
-import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat.js";
+import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
+import { convertMessageType } from "../message-parser/helpers/message";
+import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
+import type { WechatMessageType } from "../message-parser/WechatMessageType";
+import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat";
 
 const PRE = "[SchemaMapper]";
 

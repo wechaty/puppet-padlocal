@@ -6,11 +6,11 @@ process.env["NODE_CONFIG_ENV"] = "test";
 
 import * as PUPPET from "wechaty-puppet";
 import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
-import PuppetPadlocal from "../src/puppet-padlocal.js";
+import PuppetPadlocal from "../src/puppet-padlocal";
 import config from "config";
 import QRCode from "qrcode-terminal";
 // import type { FileBoxJsonObjectUrl } from 'file-box/src/file-box.type'
-import { isContactId } from "../src/padlocal/utils/is-type.js";
+import { isContactId } from "../src/padlocal/utils/is-type";
 
 // log.level("silly");
 

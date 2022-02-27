@@ -1,6 +1,6 @@
 import * as PUPPET from "wechaty-puppet";
 import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { WechatMessageType } from "../WechatMessageType.js";
+import { WechatMessageType } from "../WechatMessageType";
 
 export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET.types.Message {
   let type: PUPPET.types.Message;

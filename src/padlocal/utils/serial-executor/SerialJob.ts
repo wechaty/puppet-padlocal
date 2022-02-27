@@ -1,4 +1,4 @@
-import type { PromiseCallback } from "./PromiseCallback.js";
+import type { PromiseCallback } from "./PromiseCallback";
 
 export type SerialJobFunc = () => Promise<any>;
 

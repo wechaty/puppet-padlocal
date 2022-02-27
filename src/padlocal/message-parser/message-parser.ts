@@ -1,5 +1,5 @@
 import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { MessageCategory, ParsedMessage, ParsedMessagePayloadSpec } from "./message-parser-type.js";
+import { MessageCategory, ParsedMessage, ParsedMessagePayloadSpec } from "./message-parser-type";
 import { Puppet, log } from "wechaty-puppet";
 
 const PRE = "[MessageParser]";

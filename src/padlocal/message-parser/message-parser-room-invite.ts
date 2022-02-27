@@ -1,7 +1,7 @@
-import { appMessageParser, AppMessagePayload, AppMessageType } from "./helpers/message-appmsg.js";
+import { appMessageParser, AppMessagePayload, AppMessageType } from "./helpers/message-appmsg";
 import type * as PUPPET from "wechaty-puppet";
 import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import type { MessageParserRetType } from "./message-parser.js";
+import type { MessageParserRetType } from "./message-parser";
 
 const ROOM_OTHER_INVITE_TITLE_ZH = [/邀请你加入群聊/];
 const ROOM_OTHER_INVITE_TITLE_EN = [/Group Chat Invitation/];
