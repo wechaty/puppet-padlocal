@@ -1334,7 +1334,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   private async _getRoomMemberList(roomId: string, force?: boolean): Promise<RoomMemberMap> {
-    let ret = await this._cacheMgr!.getRoomMember(roomId);
+    let ret = await this._cacheMgr?.getRoomMember(roomId) || {};
     if (!ret || force) {
       const resMembers = await this._client!.api.getChatRoomMembers(roomId);
 
