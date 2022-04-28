@@ -16,30 +16,23 @@ import { isPatMessage, patMessageParser } from "../message-parser/helpers/messag
 
 const PRE = "[SchemaMapper]";
 
-export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<PUPPET.payloads.Message> {
-  const wechatMessageType = message.type as WechatMessageType;
+export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: Message.AsObject): Promise<PUPPET.payloads.Message> {
+  const wechatMessageType = padLocalMessage.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
-
-  const payloadBase: PUPPET.payloads.MessageBase = {
-    id: message.id,
-    timestamp: message.createtime,
-    type,
-  };
 
   /**
    * fromId: is mandatory
-   * roomId or toId: is mandatory
+   * roomId: is mandatory if message is room message
+   * listenerId: is mandatory if message is single chat message
    */
-  let fromId: undefined | string;
+  let talkerId: string = "";
   let roomId: undefined | string;
-  let toId: undefined | string;
-
-  let text: undefined | string;
-  let mentionIdList: string[] = [];
+  let listenerId: undefined | string;
+  let text: string = padLocalMessage.content;
 
   // enterprise wechat
-  if (isRoomId(message.fromusername) || isIMRoomId(message.fromusername)) {
-    roomId = message.fromusername;
+  if (isRoomId(padLocalMessage.fromusername) || isIMRoomId(padLocalMessage.fromusername)) {
+    roomId = padLocalMessage.fromusername;
 
     // text:    "wxid_xxxx:\nnihao"
     // appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
@@ -51,45 +44,31 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, message: M
      *
      * TODO: fix me
      */
-    const parts = message.content.split(":\n");
+    const parts = padLocalMessage.content.split(":\n");
     if (parts && parts.length > 1) {
       if (isContactId(parts[0]) || isIMContactId(parts[0])) {
-        fromId = parts[0];
-        text = parts[1];
+        talkerId = parts[0] as string;
+        text = parts[1] as string;
       }
       // pat message
       else if (isRoomId(parts[0]) || isIMRoomId(parts[0])) {
-        const patMessage = await isPatMessage(message);
+        const patMessage = await isPatMessage(padLocalMessage);
         if (patMessage) {
-          const patMessagePayload = await patMessageParser(message);
-          fromId = patMessagePayload.fromusername;
+          const patMessagePayload = await patMessageParser(padLocalMessage);
+          talkerId = patMessagePayload.fromusername;
           text = patMessagePayload.template;
         }
       }
     }
-  } else if (isRoomId(message.tousername) || isIMRoomId(message.tousername)) {
-    roomId = message.tousername;
-    fromId = message.fromusername;
+  } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
+    roomId = padLocalMessage.tousername;
+    talkerId = padLocalMessage.fromusername;
 
-    const startIndex = message.content.indexOf(":\n");
-    text = message.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
+    const startIndex = padLocalMessage.content.indexOf(":\n");
+    text = padLocalMessage.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
   } else {
-    fromId = message.fromusername;
-    toId = message.tousername;
-  }
-
-  if (!text) {
-    text = message.content;
-  }
-
-  // set mention list
-  if (roomId) {
-    if (message.atList.length === 1 && message.atList[0] === "announcement@all") {
-      const roomPayload = await puppet.roomPayload(roomId);
-      mentionIdList = roomPayload.memberIdList;
-    } else {
-      mentionIdList = message.atList;
-    }
+    talkerId = padLocalMessage.fromusername;
+    listenerId = padLocalMessage.tousername;
   }
 
   /**
@@ -102,35 +81,56 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, message: M
   }
    */
 
-  let payload: PUPPET.payloads.Message;
+  const messageBase: PUPPET.payloads.MessageBase = {
+    id: padLocalMessage.id,
+    talkerId,
+    text,
+    timestamp: padLocalMessage.createtime,
+    type
+  };
 
-  // Two branch is the same code.
-  // Only for making TypeScript happy
-  if (fromId && toId) {
-    payload = {
-      ...payloadBase,
-      fromId,
-      mentionIdList,
+  let message: PUPPET.payloads.Message;
+
+  // room message
+  if (roomId) {
+    let mentionIdList: string[] = [];
+    if (padLocalMessage.atList.length === 1 && padLocalMessage.atList[0] === "announcement@all") {
+      const roomPayload = await puppet.roomPayload(roomId);
+      mentionIdList = roomPayload.memberIdList;
+    } else {
+      mentionIdList = padLocalMessage.atList;
+    }
+
+    const messageRoom: PUPPET.payloads.MessageRoom = {
       roomId,
-      text,
-      toId,
+      mentionIdList
     };
-  } else if (roomId) {
-    payload = {
-      ...payloadBase,
-      fromId,
-      mentionIdList,
-      roomId,
-      text,
-      toId,
+
+    message = {
+      ...messageBase,
+      ...messageRoom
     };
-  } else {
+  }
+
+  // normal single chat message
+  else if (listenerId) {
+    const messageTo: PUPPET.payloads.MessageTo = {
+      listenerId
+    };
+
+    message = {
+      ...messageBase,
+      ...messageTo
+    };
+  }
+
+  else {
     throw new Error("neither toId nor roomId");
   }
 
-  await _adjustMessageByAppMsg(message, payload);
+  await _adjustMessageByAppMsg(padLocalMessage, message);
 
-  return payload;
+  return message;
 }
 
 export function padLocalContactToWechaty(contact: Contact.AsObject): PUPPET.payloads.Contact {

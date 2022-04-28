@@ -38,10 +38,10 @@ import {
   padLocalMessageToWechaty,
   padLocalRoomMemberToWechaty,
   padLocalRoomToWechaty,
-} from "./padlocal/schema-mapper/index";
+} from "./padlocal/schema-mapper";
 import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg";
 import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram";
-import { parseMessage } from "./padlocal/message-parser/index";
+import { parseMessage } from "./padlocal/message-parser";
 import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
 import * as XMLParser from "fast-xml-parser";
 import {
@@ -1271,7 +1271,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
   /**
    * CAUTION: For edge case usage only!
-   * Sync contact is a time consuming action, may last for minutes especially when you have massive contacts.
+   * Sync contact is a time-consuming action, may last for minutes especially when you have massive contacts.
    * You MUST understand what exactly you are doing.
    */
   async syncContact() {
