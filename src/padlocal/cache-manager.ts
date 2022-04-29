@@ -6,7 +6,7 @@ import LRU from "lru-cache";
 
 import type * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import FlashStoreSync from "flash-store";
+import {FlashStore} from "flash-store";
 import type {
   ChatRoomMember,
   Contact,
@@ -26,13 +26,13 @@ export class CacheManager {
 
   private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
   private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
-  private _contactCache?: FlashStoreSync<string, Contact.AsObject>;
+  private _contactCache?: FlashStore<string, Contact.AsObject>;
   private _contactSearchCache?: LRU<string, SearchContactResponse.AsObject>;
-  private _contactStrangerAliasCache?: FlashStoreSync<string, string>; // set alias before add contact
-  private _roomCache?: FlashStoreSync<string, Contact.AsObject>;
-  private _roomMemberCache?: FlashStoreSync<string, RoomMemberMap>;
-  private _roomInvitationCache?: FlashStoreSync<string, PUPPET.payloads.RoomInvitation>;
-  private _friendshipCache?: FlashStoreSync<string, PUPPET.payloads.Friendship>;
+  private _contactStrangerAliasCache?: FlashStore<string, string>; // set alias before add contact
+  private _roomCache?: FlashStore<string, Contact.AsObject>;
+  private _roomMemberCache?: FlashStore<string, RoomMemberMap>;
+  private _roomInvitationCache?: FlashStore<string, PUPPET.payloads.RoomInvitation>;
+  private _friendshipCache?: FlashStore<string, PUPPET.payloads.Friendship>;
 
   private _labelList?: Label[];
 
@@ -78,7 +78,7 @@ export class CacheManager {
       maxAge: 1000 * 60 * 60,
     });
 
-    this._contactCache = new FlashStoreSync(path.join(baseDir, "contact-raw-payload"));
+    this._contactCache = new FlashStore(path.join(baseDir, "contact-raw-payload"));
     this._contactSearchCache = new LRU<string, SearchContactResponse.AsObject>({
       max: 1000,
       // length: function (n) { return n * 2},
@@ -87,11 +87,11 @@ export class CacheManager {
       },
       maxAge: 1000 * 60 * 60,
     });
-    this._contactStrangerAliasCache = new FlashStoreSync(path.join(baseDir, "contact-stranger-alias"));
-    this._roomCache = new FlashStoreSync(path.join(baseDir, "room-raw-payload"));
-    this._roomMemberCache = new FlashStoreSync(path.join(baseDir, "room-member-raw-payload"));
-    this._roomInvitationCache = new FlashStoreSync(path.join(baseDir, "room-invitation-raw-payload"));
-    this._friendshipCache = new FlashStoreSync(path.join(baseDir, "friendship-raw-payload"));
+    this._contactStrangerAliasCache = new FlashStore(path.join(baseDir, "contact-stranger-alias"));
+    this._roomCache = new FlashStore(path.join(baseDir, "room-raw-payload"));
+    this._roomMemberCache = new FlashStore(path.join(baseDir, "room-member-raw-payload"));
+    this._roomInvitationCache = new FlashStore(path.join(baseDir, "room-invitation-raw-payload"));
+    this._friendshipCache = new FlashStore(path.join(baseDir, "friendship-raw-payload"));
 
     const contactTotal = await this._contactCache.size;
 
