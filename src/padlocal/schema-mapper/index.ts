@@ -29,7 +29,7 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
   let listenerId: undefined | string;
   let text: string = padLocalMessage.content;
 
-  // enterprise wechat
+  // room message sent by others
   if (isRoomId(padLocalMessage.fromusername) || isIMRoomId(padLocalMessage.fromusername)) {
     roomId = padLocalMessage.fromusername;
 
@@ -37,34 +37,40 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     // appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
     // pat:     "19850419xxx@chatroom:\n<sysmsg type="pat"><pat><fromusername>xxx</fromusername><chatusername>19850419xxx@chatroom</chatusername><pattedusername>wxid_xxx</pattedusername>...<template><![CDATA["${vagase}" 拍了拍我]]></template></pat></sysmsg>"
 
-    /**
-     * Issue #91 - messageForward can not forward text with ":\n" correctly. #91
-     *  @link https://github.com/wechaty/puppet-padlocal/issues/91
-     *
-     * TODO: fix me
-     */
-    const parts = padLocalMessage.content.split(":\n");
-    if (parts && parts.length > 1) {
-      if (isContactId(parts[0]) || isIMContactId(parts[0])) {
-        talkerId = parts[0] as string;
-        text = parts[1] as string;
+    // separator of talkerId and content
+    const separatorIndex = padLocalMessage.content.indexOf(":\n");
+    if (separatorIndex !== -1) {
+      const takerIdPrefix = padLocalMessage.content.slice(0, separatorIndex);
+      // chat message
+      if (isContactId(takerIdPrefix) || isIMContactId(takerIdPrefix)) {
+        text = padLocalMessage.content.slice(separatorIndex + 2);
+        talkerId = takerIdPrefix;
       }
-      // pat message
-      else if (isRoomId(parts[0]) || isIMRoomId(parts[0])) {
+      // pat and other system message
+      else if (isRoomId(takerIdPrefix) || isIMRoomId(takerIdPrefix)) {
+        text = padLocalMessage.content.slice(separatorIndex + 2);
+
+        // extract talkerId for pat message from payload
         const patMessagePayload = await parseMessagePatPayload(padLocalMessage);
         if (patMessagePayload) {
           talkerId = patMessagePayload.fromusername;
-          text = parts[1] as string;
+        }
+        else {
+          // FIXME: extract talkerId for other 10002 messages
         }
       }
     }
-  } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
+  }
+  // room message sent by self
+  else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
     roomId = padLocalMessage.tousername;
     talkerId = padLocalMessage.fromusername;
 
     const startIndex = padLocalMessage.content.indexOf(":\n");
     text = padLocalMessage.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
-  } else {
+  }
+  // single chat message
+  else {
     talkerId = padLocalMessage.fromusername;
     listenerId = padLocalMessage.tousername;
   }
