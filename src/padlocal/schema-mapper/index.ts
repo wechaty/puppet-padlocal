@@ -12,7 +12,7 @@ import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId }
 import { convertMessageType } from "../message-parser/helpers/message";
 import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
 import type { WechatMessageType } from "../message-parser/WechatMessageType";
-import { isPatMessage, patMessageParser } from "../message-parser/helpers/message-pat";
+import { parseMessagePatPayload } from "../message-parser/helpers/message-pat";
 
 const PRE = "[SchemaMapper]";
 
@@ -21,9 +21,8 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
   const type = convertMessageType(wechatMessageType);
 
   /**
-   * fromId: is mandatory
-   * roomId: is mandatory if message is room message
-   * listenerId: is mandatory if message is single chat message
+   * single chat message: talkerId + listenerId
+   * room message: talkerId + roomId
    */
   let talkerId: string = "";
   let roomId: undefined | string;
@@ -52,11 +51,10 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
       }
       // pat message
       else if (isRoomId(parts[0]) || isIMRoomId(parts[0])) {
-        const patMessage = await isPatMessage(padLocalMessage);
-        if (patMessage) {
-          const patMessagePayload = await patMessageParser(padLocalMessage);
+        const patMessagePayload = await parseMessagePatPayload(padLocalMessage);
+        if (patMessagePayload) {
           talkerId = patMessagePayload.fromusername;
-          text = patMessagePayload.template;
+          text = parts[1] as string;
         }
       }
     }
