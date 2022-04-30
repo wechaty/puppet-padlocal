@@ -1498,6 +1498,14 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
     await this._cacheMgr!.setMessage(messageId, partialMessage.toObject());
     await this._cacheMgr!.setMessageRevokeInfo(messageId, messageRevokeInfo.toObject());
+
+    // To fix: https://github.com/wechaty/puppet-padlocal/issues/101
+    // Call at next event loop, after send message func return hopefully
+    setImmediate(() => {
+      this.emit("message", {
+        messageId,
+      });
+    });
   }
 
   private async _setupClient() {

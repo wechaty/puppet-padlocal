@@ -145,7 +145,7 @@ test(
       bot.on("message", async(message: Message) => {
         log.info(LOGPRE, `on message: ${message.toString()}`);
 
-        if (message.talker().id === forwardFrom) {
+        if (message.talker().id === forwardFrom && message.listener()?.id === forwardFrom) {
           await forwardMessage(bot, message);
         }
 
