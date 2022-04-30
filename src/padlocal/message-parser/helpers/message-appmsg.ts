@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import { xmlToJson } from "../../utils/xml-to-json";
 
 interface AppMsgXmlSchema {
@@ -98,8 +97,8 @@ export interface AppMessagePayload {
   refermsg?: ReferMsgPayload;
 }
 
-export async function appMessageParser(message: Message.AsObject): Promise<AppMessagePayload> {
-  const appMsgXml: AppMsgXmlSchema = await xmlToJson(message.content);
+export async function appMessageParser(messageContent: string): Promise<AppMessagePayload> {
+  const appMsgXml: AppMsgXmlSchema = await xmlToJson(messageContent);
   const { title, des, url, thumburl, type, md5, recorditem } = appMsgXml.msg.appmsg;
 
   let appattach: AppAttachPayload | undefined;

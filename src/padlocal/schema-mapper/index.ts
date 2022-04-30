@@ -1,17 +1,18 @@
 /* eslint-disable sort-keys */
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import {
-  type ChatRoomMember,
-  Contact,
-  type Message,
-} from "padlocal-client-ts/dist/proto/padlocal_pb";
+import { type ChatRoomMember, Contact, Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
 import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
 import { convertMessageType } from "../message-parser/helpers/message";
-import { appMessageParser, AppMessageType } from "../message-parser/helpers/message-appmsg";
-import type { WechatMessageType } from "../message-parser/WechatMessageType";
+import {
+  appMessageParser,
+  AppMessagePayload,
+  AppMessageType,
+  ReferMsgPayload
+} from "../message-parser/helpers/message-appmsg";
+import { WechatMessageType } from "../message-parser/WechatMessageType";
 import { parseMessagePatPayload } from "../message-parser/helpers/message-pat";
 
 const PRE = "[SchemaMapper]";
@@ -175,13 +176,52 @@ export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObj
   };
 }
 
+async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPPET.payloads.Message) {
+  let referMessageContent = "";
+
+  const referMessagePayload: ReferMsgPayload = appPayload.refermsg!;
+  const referMessageType = parseInt(referMessagePayload.type) as WechatMessageType;
+  switch (referMessageType) {
+    case WechatMessageType.Text:
+      referMessageContent = referMessagePayload.content;
+      break;
+    case WechatMessageType.Image:
+      referMessageContent = "图片";
+      break;
+
+    case WechatMessageType.Video:
+      referMessageContent = "视频";
+      break;
+
+    case WechatMessageType.Emoticon:
+      referMessageContent = "动画表情";
+      break;
+
+    case WechatMessageType.Location:
+      referMessageContent = "位置";
+      break;
+
+    case WechatMessageType.App:
+      const referMessageAppPayload = await appMessageParser(referMessagePayload.content);
+      referMessageContent = referMessageAppPayload.title;
+      break;
+
+    default:
+      referMessageContent = "未知消息";
+        break;
+  }
+
+  payload.type = PUPPET.types.Message.Text;
+  payload.text = `${appPayload.title}\n「${referMessagePayload.displayname}：${referMessageContent}」`;
+}
+
 async function _adjustMessageByAppMsg(message: Message.AsObject, payload: PUPPET.payloads.Message) {
   if (payload.type !== PUPPET.types.Message.Attachment) {
     return;
   }
 
   try {
-    const appPayload = await appMessageParser(message);
+    const appPayload = await appMessageParser(message.content);
     switch (appPayload.type) {
       case AppMessageType.Text:
         payload.type = PUPPET.types.Message.Text;
@@ -221,10 +261,7 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: PUPPET
         payload.text = appPayload.title;
         break;
       case AppMessageType.ReferMsg:
-        payload.type = PUPPET.types.Message.Text;
-        payload.text = `「${appPayload.refermsg!.displayname}：${
-          appPayload.refermsg!.content
-        }」\n- - - - - - - - - - - - - - - -\n${appPayload.title}`;
+        await _processReferMessage(appPayload, payload);
         break;
       default:
         payload.type = PUPPET.types.Message.Unknown;

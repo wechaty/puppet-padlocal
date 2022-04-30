@@ -11,7 +11,7 @@ const ROOM_OTHER_INVITE_LIST_EN = [/"(.+)" invited you to join the group chat "(
 export default async(_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
   let appMsgPayload: AppMessagePayload;
   try {
-    appMsgPayload = await appMessageParser(message);
+    appMsgPayload = await appMessageParser(message.content);
   } catch (e) {
     return null;
   }

@@ -663,7 +663,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         return videoFileBox;
       }
       case PUPPET.types.Message.Attachment: {
-        const appMsg = await appMessageParser(messagePayload);
+        const appMsg = await appMessageParser(messagePayload.content);
         const fileData = await this._client!.api.getMessageAttach(message.text!, messagePayload.tousername);
         const binaryFileBox = FileBox.fromBuffer(fileData, appMsg.title);
         // Huan(202201): should set mediaType according to the appMsg.title (the attachment name)
@@ -688,7 +688,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         return FileBox.fromBuffer(thumbData, `message-${messageId}-miniprogram-thumb.jpg`);
       }
       case PUPPET.types.Message.Url: {
-        const appPayload = await appMessageParser(messagePayload);
+        const appPayload = await appMessageParser(messagePayload.content);
 
         if (appPayload.thumburl) {
           return FileBox.fromUrl(appPayload.thumburl);
@@ -730,7 +730,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
 
     // FIXME: thumb may not in appPayload.thumburl, but in appPayload.appAttachPayload
-    const appPayload = await appMessageParser(rawPayload);
+    const appPayload = await appMessageParser(rawPayload.content);
     return {
       description: appPayload.des,
       thumbnailUrl: appPayload.thumburl,
