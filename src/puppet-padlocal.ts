@@ -241,7 +241,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
     await super.login(userId);
 
-    const oldContact = await this._cacheMgr.getContact(this.id!);
+    const oldContact = await this._cacheMgr.getContact(this.currentUserId!);
     if (!oldContact) {
       await this._updateContactCache(this._client!.selfContact!.toObject());
     }
@@ -282,13 +282,13 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * logout account and stop the bot
    */
   override async logout(): Promise<void> {
-    if (!this.id) {
+    if (!this.currentUserId) {
       throw new Error("logout before login?");
     }
 
     await this._client!.api.logout();
 
-    this.emit("logout", { contactId: this.id, data: "logout by self" });
+    this.emit("logout", { contactId: this.currentUserId, data: "logout by self" });
 
     await this._stopClient(true);
   }
@@ -315,7 +315,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   override async contactSelfQRCode(): Promise<string> {
     const response = await this._client!.api.getContactQRCode(this._client!.selfContact!.getUsername(), 1);
 
-    const fileBox = FileBox.fromBuffer(Buffer.from(response.getQrcode()), `qr-${this.id}.jpg`);
+    const fileBox = FileBox.fromBuffer(Buffer.from(response.getQrcode()), `qr-${this.currentUserId}.jpg`);
     return fileBox.toQRCode();
   }
 
@@ -769,7 +769,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._onSendMessage(
       new Message()
         .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Contact message, use text instead.
-        .setFromusername(this.id!)
+        .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
         .setContent(pushContent)
         .setPushcontent(pushContent),
@@ -791,7 +791,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       await this._onSendMessage(
         new Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Image message, use text instead.
-          .setFromusername(this.id!)
+          .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
           .setContent(pushContent)
           .setPushcontent(pushContent),
@@ -817,7 +817,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       await this._onSendMessage(
         new Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Voice message, use text instead.
-          .setFromusername(this.id!)
+          .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
           .setContent(pushContent)
           .setPushcontent(pushContent),
@@ -838,7 +838,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       await this._onSendMessage(
         new Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Video message, use text instead.
-          .setFromusername(this.id!)
+          .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
           .setContent(pushContent)
           .setPushcontent(pushContent),
@@ -871,7 +871,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       await this._onSendMessage(
         new Message()
           .setType(WechatMessageType.Emoticon)
-          .setFromusername(this.id!)
+          .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
           .setContent(content)
           .setPushcontent(pushContent),
@@ -893,7 +893,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       await this._onSendMessage(
         new Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal File message, use text instead.
-          .setFromusername(this.id!)
+          .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
           .setContent(pushContent)
           .setPushcontent(pushContent),
@@ -953,7 +953,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._onSendMessage(
       new Message()
         .setType(WechatMessageType.App)
-        .setFromusername(this.id!)
+        .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
         .setContent(response.getMsgcontent())
         .setPushcontent(pushContent),
@@ -977,7 +977,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._onSendMessage(
       new Message()
         .setType(WechatMessageType.Text)
-        .setFromusername(this.id!)
+        .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
         .setContent(text)
         .setPushcontent(pushContent),
@@ -1005,7 +1005,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this._onSendMessage(
       new Message()
         .setType(WechatMessageType.App)
-        .setFromusername(this.id!)
+        .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
         .setContent(response.getMsgcontent())
         .setPushcontent(pushContent),
@@ -1083,7 +1083,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         await this._onSendMessage(
           new Message()
             .setType(WechatMessageType.App)
-            .setFromusername(this.id!)
+            .setFromusername(this.currentUserId!)
             .setTousername(toUserName)
             .setContent(response.getMsgcontent())
             .setPushcontent(pushContent),
@@ -1139,7 +1139,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   override async roomQRCode(roomId: string): Promise<string> {
     const res = await this._client!.api.getChatRoomQrCode(roomId);
 
-    const fileBox = FileBox.fromBuffer(Buffer.from(res.getQrcode()), `qr-${this.id}.jpg`);
+    const fileBox = FileBox.fromBuffer(Buffer.from(res.getQrcode()), `qr-${this.currentUserId}.jpg`);
     return fileBox.toQRCode();
   }
 
@@ -1505,8 +1505,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
     this._client.on("kickout", this.wrapAsync(
       async(_detail: KickOutEvent) => {
-        if (this.id) {
-          this.emit("logout", { contactId: this.id, data: _detail.errorMessage });
+        if (this.currentUserId) {
+          this.emit("logout", { contactId: this.currentUserId, data: _detail.errorMessage });
         }
 
         await this._stopClient(true);
