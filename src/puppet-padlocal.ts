@@ -38,6 +38,9 @@ import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType.j
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
+import { packageJson } from "./package-json.js";
+
+const VERSION = packageJson.version || "0.0.0";
 
 export type PuppetPadlocalOptions = PUPPET.PuppetOptions & {
   serverCAFilePath?: string;
@@ -1530,7 +1533,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       ============================================================
        Welcome to Wechaty PadLocal puppet!
 
-       - wechaty-puppet-padlocal version: ${this.version()}
+       - puppet-padlocal version: ${VERSION}
        - padlocal-ts-client version: ${this._client.version}
       ============================================================
     `);
@@ -1609,5 +1612,5 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
 }
 
-export { PuppetPadlocal };
+export { PuppetPadlocal, VERSION };
 export default PuppetPadlocal;

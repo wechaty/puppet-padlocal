@@ -32,7 +32,8 @@
     "test:pack": "bash -x scripts/npm-pack-testing.sh",
     "test:unit": "jest",
     "coverage": "jest --coverage",
-    "prepare": "npm run dist",
+    "generate-package-json": "bash ./scripts/generate-package-json.sh",
+    "prepare": "npm-run-all generate-package-json dist",
     "serve": "tsc-watch",
     "demo": "cross-env NODE_OPTIONS=\"--no-warnings --loader=ts-node/esm\" node examples/demo.ts"
   },
