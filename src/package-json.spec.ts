@@ -2,7 +2,7 @@
 
 import { test } from "tstest";
 
-import { packageJson } from "./package-json";
+import { packageJson } from "./package-json.js";
 
 test("Make sure the packageJson is fresh in source code", async t => {
   const keyNum = Object.keys(packageJson).length;

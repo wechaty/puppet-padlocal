@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { xmlToJson } from "../../utils/xml-to-json";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { xmlToJson } from "../../utils/xml-to-json.js";
 
 interface EmotionXmlSchema {
   msg: {
@@ -33,7 +33,7 @@ export interface EmojiMessagePayload {
   gameext?: string;
 }
 
-export async function emotionPayloadParser(message: Message.AsObject): Promise<EmojiMessagePayload> {
+export async function emotionPayloadParser(message: PadLocal.Message.AsObject): Promise<EmojiMessagePayload> {
   const jsonPayload: EmotionXmlSchema = await xmlToJson(message.content);
 
   const len = parseInt(jsonPayload.msg.emoji.$.len, 10) || 0;

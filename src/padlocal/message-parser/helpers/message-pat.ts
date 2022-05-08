@@ -1,6 +1,6 @@
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { xmlToJson } from "../../utils/xml-to-json";
-import { WechatMessageType } from "../WechatMessageType";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { xmlToJson } from "../../utils/xml-to-json.js";
+import { WechatMessageType } from "../WechatMessageType.js";
 
 interface PatXmlSchema {
   sysmsg: {
@@ -23,7 +23,7 @@ export interface PatMessagePayload {
   template: string;
 }
 
-export async function parseMessagePatPayload(message: Message.AsObject): Promise<PatMessagePayload | null> {
+export async function parseMessagePatPayload(message: PadLocal.Message.AsObject): Promise<PatMessagePayload | null> {
   if (message.type !== WechatMessageType.Recalled) {
     return null;
   }

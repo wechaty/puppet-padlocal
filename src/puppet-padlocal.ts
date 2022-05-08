@@ -8,59 +8,40 @@ import {
   FileBoxInterface,
 }                   from "file-box";
 import { log } from "wechaty-puppet";
-
 import { KickOutEvent, PadLocalClient } from "padlocal-client-ts";
-import {
-  AddContactScene,
-  AppMessageLink,
-  AppMessageMiniProgram,
-  ChatRoomMember,
-  Contact,
-  EncryptedFileType,
-  ForwardMessageResponse,
-  ImageType as PadLocalImageType,
-  Label,
-  LoginPolicy,
-  LoginType,
-  Message,
-  MessageRevokeInfo,
-  QRCodeEvent,
-  QRCodeStatus,
-  SendTextMessageResponse,
-  SyncEvent,
-} from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils";
-import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager";
-import { isIMContactId, isRoomId } from "./padlocal/utils/is-type";
+import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
+import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
+import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
 import {
   chatRoomMemberToContact,
   padLocalContactToWechaty,
   padLocalMessageToWechaty,
   padLocalRoomMemberToWechaty,
   padLocalRoomToWechaty,
-} from "./padlocal/schema-mapper";
-import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg";
-import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram";
-import { parseMessage } from "./padlocal/message-parser";
-import { MessageCategory } from "./padlocal/message-parser/message-parser-type";
+} from "./padlocal/schema-mapper/index.js";
+import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg.js";
+import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram.js";
+import { parseMessage } from "./padlocal/message-parser/index.js";
+import { MessageCategory } from "./padlocal/message-parser/message-parser-type.js";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
   emotionPayloadGenerator,
   emotionPayloadParser,
-} from "./padlocal/message-parser/helpers/message-emotion";
-import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils";
-import { CachedPromiseFunc } from "./padlocal/utils/cached-promise";
-import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor";
-import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave";
-import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType";
-import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy";
+} from "./padlocal/message-parser/helpers/message-emotion.js";
+import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
+import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
+import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
+import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave.js";
+import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
+import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
-import { addRunningPuppet, removeRunningPuppet } from "./cleanup";
+import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
 
 export type PuppetPadlocalOptions = PUPPET.PuppetOptions & {
   serverCAFilePath?: string;
-  defaultLoginPolicy?: LoginPolicy;
+  defaultLoginPolicy?: PadLocal.LoginPolicy;
 };
 
 const PRE = "[PuppetPadlocal]";
@@ -123,10 +104,10 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   public async onStart(): Promise<void> {
-    await this._startClient(LoginPolicy.DEFAULT);
+    await this._startClient(PadLocal.LoginPolicy.DEFAULT);
   }
 
-  private async _startClient(loginPolicy: LoginPolicy): Promise<void> {
+  private async _startClient(loginPolicy: PadLocal.LoginPolicy): Promise<void> {
     this._startPuppetHeart();
 
     addRunningPuppet(this);
@@ -142,24 +123,24 @@ class PuppetPadlocal extends PUPPET.Puppet {
       [PUPPET.types.ScanStatus.Timeout]: "Timeout",
     };
 
-    const onQrCodeEvent = async(qrCodeEvent: QRCodeEvent) => {
+    const onQrCodeEvent = async(qrCodeEvent: PadLocal.QRCodeEvent) => {
       let scanStatus: PUPPET.types.ScanStatus = PUPPET.types.ScanStatus.Unknown;
       let qrCodeImageURL: string | undefined;
       switch (qrCodeEvent.getStatus()) {
-        case QRCodeStatus.NEW:
+        case PadLocal.QRCodeStatus.NEW:
           qrCodeImageURL = qrCodeEvent.getImageurl();
           scanStatus = PUPPET.types.ScanStatus.Waiting;
           break;
-        case QRCodeStatus.SCANNED:
+        case PadLocal.QRCodeStatus.SCANNED:
           scanStatus = PUPPET.types.ScanStatus.Scanned;
           break;
-        case QRCodeStatus.CONFIRMED:
+        case PadLocal.QRCodeStatus.CONFIRMED:
           scanStatus = PUPPET.types.ScanStatus.Confirmed;
           break;
-        case QRCodeStatus.CANCELLED:
+        case PadLocal.QRCodeStatus.CANCELLED:
           scanStatus = PUPPET.types.ScanStatus.Cancel;
           break;
-        case QRCodeStatus.EXPIRED:
+        case PadLocal.QRCodeStatus.EXPIRED:
           scanStatus = PUPPET.types.ScanStatus.Timeout;
           break;
       }
@@ -176,17 +157,17 @@ class PuppetPadlocal extends PUPPET.Puppet {
     };
 
     const LoginTypeName = {
-      [LoginType.QRLOGIN]: "QrLogin",
-      [LoginType.AUTOLOGIN]: "AutoLogin",
-      [LoginType.ONECLICKLOGIN]: "OneClickLogin",
+      [PadLocal.LoginType.QRLOGIN]: "QrLogin",
+      [PadLocal.LoginType.AUTOLOGIN]: "AutoLogin",
+      [PadLocal.LoginType.ONECLICKLOGIN]: "OneClickLogin",
     };
 
-    if (loginPolicy === LoginPolicy.DEFAULT && this.options.defaultLoginPolicy !== undefined) {
+    if (loginPolicy === PadLocal.LoginPolicy.DEFAULT && this.options.defaultLoginPolicy !== undefined) {
       loginPolicy = this.options.defaultLoginPolicy;
     }
 
     this._client!.api.login(loginPolicy, {
-      onLoginStart: (loginType: LoginType) => {
+      onLoginStart: (loginType: PadLocal.LoginType) => {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
       },
 
@@ -202,7 +183,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       },
 
       // Will sync message and contact after login success, since last time login.
-      onSync: async(syncEvent: SyncEvent) => {
+      onSync: async(syncEvent: PadLocal.SyncEvent) => {
         log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
         for (const contact of syncEvent.getContactList()) {
@@ -273,7 +254,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     if (restart && this._restartStrategy.canRetry()) {
       setTimeout(() => {
         // one-click login after failure is strange, so skip it.
-        this.wrapAsync(this._startClient(LoginPolicy.SKIP_ONE_CLICK));
+        this.wrapAsync(this._startClient(PadLocal.LoginPolicy.SKIP_ONE_CLICK));
       }, this._restartStrategy.nextRetryDelay());
     }
   }
@@ -511,7 +492,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   override async friendshipAdd(contactId: string, option?: PUPPET.types.FriendshipAddOptions): Promise<void> {
     let stranger: string;
     let ticket: string;
-    let addContactScene: AddContactScene;
+    let addContactScene: PadLocal.AddContactScene;
 
     const cachedContactSearch = await this._cacheMgr!.getContactSearch(contactId);
     if (cachedContactSearch) {
@@ -618,7 +599,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageFile(messageId: string): Promise<FileBoxInterface> {
-    const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
+    const messagePayload: PadLocal.Message.AsObject = await this.messageRawPayload(messageId);
     const message: PUPPET.payloads.Message = await this.messageRawPayloadParser(messagePayload);
 
     switch (message.type) {
@@ -706,7 +687,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageImage(messageId: string, imageType: PUPPET.types.Image): Promise<FileBoxInterface> {
-    const messagePayload: Message.AsObject = await this.messageRawPayload(messageId);
+    const messagePayload: PadLocal.Message.AsObject = await this.messageRawPayload(messageId);
     return this._getMessageImageFileBox(messageId, messagePayload, imageType);
   }
 
@@ -745,7 +726,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
   override async messageSendContact(toUserName: string, contactId: string): Promise<string> {
     const contactPayload = await this.contactRawPayload(contactId);
-    const contact = new Contact()
+    const contact = new PadLocal.Contact()
       .setUsername(contactPayload.username)
       .setNickname(contactPayload.nickname)
       .setAvatar(contactPayload.avatar)
@@ -767,8 +748,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
       + contact.getNickname();
 
     await this._onSendMessage(
-      new Message()
-        .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Contact message, use text instead.
+      new PadLocal.Message()
+        .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal PadLocal.Contact message, use text instead.
         .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
         .setContent(pushContent)
@@ -789,7 +770,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: [图片]` : "[图片]";
 
       await this._onSendMessage(
-        new Message()
+        new PadLocal.Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Image message, use text instead.
           .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
@@ -815,7 +796,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: [语音]` : "[语音]";
 
       await this._onSendMessage(
-        new Message()
+        new PadLocal.Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Voice message, use text instead.
           .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
@@ -836,7 +817,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: [视频]` : "[视频]";
 
       await this._onSendMessage(
-        new Message()
+        new PadLocal.Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal Video message, use text instead.
           .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
@@ -869,7 +850,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       const content = emotionPayloadGenerator(emotionPayload);
 
       await this._onSendMessage(
-        new Message()
+        new PadLocal.Message()
           .setType(WechatMessageType.Emoticon)
           .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
@@ -891,7 +872,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: [文件]` : "[文件]";
 
       await this._onSendMessage(
-        new Message()
+        new PadLocal.Message()
           .setType(WechatMessageType.Text) // FIXME: difficult to construct a legal File message, use text instead.
           .setFromusername(this.currentUserId!)
           .setTousername(toUserName)
@@ -906,7 +887,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageSendMiniProgram(toUserName: string, mpPayload: PUPPET.payloads.MiniProgram): Promise<string> {
-    const miniProgram = new AppMessageMiniProgram();
+    const miniProgram = new PadLocal.AppMessageMiniProgram();
     mpPayload.appid && miniProgram.setMpappid(mpPayload.appid);
     mpPayload.title && miniProgram.setTitle(mpPayload.title);
     mpPayload.pagePath && miniProgram.setMpapppath(mpPayload.pagePath);
@@ -920,7 +901,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     // 1. cdn url and key
     if (mpPayload.thumbUrl && mpPayload.thumbKey) {
       thumbImageData = await this._client!.api.getEncryptedFile(
-        EncryptedFileType.IMAGE_THUMB,
+        PadLocal.EncryptedFileType.IMAGE_THUMB,
         mpPayload.thumbUrl,
         hexStringToBytes(mpPayload.thumbKey),
       );
@@ -951,7 +932,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       : `[小程序] ${mpPayload.title}`;
 
     await this._onSendMessage(
-      new Message()
+      new PadLocal.Message()
         .setType(WechatMessageType.App)
         .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
@@ -965,7 +946,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageSendText(toUserName: string, text: string, mentionIdList?: string[]): Promise<string> {
-    const response: SendTextMessageResponse = await this._client!.api.sendTextMessage(
+    const response: PadLocal.SendTextMessageResponse = await this._client!.api.sendTextMessage(
       genIdempotentId(),
       toUserName,
       text,
@@ -975,7 +956,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     const pushContent = isRoomId(toUserName) ? `${this._client!.selfContact!.getNickname()}: ${text}` : text;
 
     await this._onSendMessage(
-      new Message()
+      new PadLocal.Message()
         .setType(WechatMessageType.Text)
         .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
@@ -989,7 +970,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageSendUrl(toUserName: string, linkPayload: PUPPET.payloads.UrlLink): Promise<string> {
-    const appMessageLink = new AppMessageLink();
+    const appMessageLink = new PadLocal.AppMessageLink();
 
     appMessageLink.setTitle(linkPayload.title).setUrl(linkPayload.url);
     linkPayload.description && appMessageLink.setDescription(linkPayload.description);
@@ -1003,7 +984,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       : `[链接] ${linkPayload.title}`;
 
     await this._onSendMessage(
-      new Message()
+      new PadLocal.Message()
         .setType(WechatMessageType.App)
         .setFromusername(this.currentUserId!)
         .setTousername(toUserName)
@@ -1024,7 +1005,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       messageId,
       message.fromusername,
       message.tousername,
-      new MessageRevokeInfo()
+      new PadLocal.MessageRevokeInfo()
         .setClientmsgid(messageRevokeInfo.clientmsgid)
         .setNewclientmsgid(messageRevokeInfo.newclientmsgid)
         .setCreatetime(messageRevokeInfo.createtime),
@@ -1062,7 +1043,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       case PUPPET.types.Message.Attachment:
       case PUPPET.types.Message.MiniProgram:
       case PUPPET.types.Message.Url: {
-        const response: ForwardMessageResponse = await this._client!.api.forwardMessage(
+        const response: PadLocal.ForwardMessageResponse = await this._client!.api.forwardMessage(
           genIdempotentId(),
           toUserName,
           messagePayload.content,
@@ -1081,7 +1062,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         }
 
         await this._onSendMessage(
-          new Message()
+          new PadLocal.Message()
             .setType(WechatMessageType.App)
             .setFromusername(this.currentUserId!)
             .setTousername(toUserName)
@@ -1177,11 +1158,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * RawPayload section
    ***************************************************************************/
 
-  override async contactRawPayloadParser(payload: Contact.AsObject): Promise<PUPPET.payloads.Contact> {
+  override async contactRawPayloadParser(payload: PadLocal.Contact.AsObject): Promise<PUPPET.payloads.Contact> {
     return padLocalContactToWechaty(payload);
   }
 
-  override async contactRawPayload(id: string): Promise<Contact.AsObject> {
+  override async contactRawPayload(id: string): Promise<PadLocal.Contact.AsObject> {
     if (id.startsWith(SEARCH_CONTACT_PREFIX)) {
       const searchContact = await this._cacheMgr?.getContactSearch(id);
       return searchContact!.contact!;
@@ -1199,11 +1180,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async messageRawPayloadParser(payload: Message.AsObject): Promise<PUPPET.payloads.Message> {
+  override async messageRawPayloadParser(payload: PadLocal.Message.AsObject): Promise<PUPPET.payloads.Message> {
     return padLocalMessageToWechaty(this, payload);
   }
 
-  override async messageRawPayload(id: string): Promise<Message.AsObject> {
+  override async messageRawPayload(id: string): Promise<PadLocal.Message.AsObject> {
     const ret = await this._cacheMgr!.getMessage(id);
 
     if (!ret) {
@@ -1213,11 +1194,11 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async roomRawPayloadParser(payload: Contact.AsObject): Promise<PUPPET.payloads.Room> {
+  override async roomRawPayloadParser(payload: PadLocal.Contact.AsObject): Promise<PUPPET.payloads.Room> {
     return padLocalRoomToWechaty(payload);
   }
 
-  override async roomRawPayload(id: string): Promise<Contact.AsObject> {
+  override async roomRawPayload(id: string): Promise<PadLocal.Contact.AsObject> {
     let ret = await this._cacheMgr!.getRoom(id);
 
     if (!ret) {
@@ -1228,12 +1209,12 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  override async roomMemberRawPayload(roomId: string, contactId: string): Promise<ChatRoomMember.AsObject> {
+  override async roomMemberRawPayload(roomId: string, contactId: string): Promise<PadLocal.ChatRoomMember.AsObject> {
     const roomMemberMap = await this._getRoomMemberList(roomId);
     return roomMemberMap[contactId]!;
   }
 
-  override async roomMemberRawPayloadParser(rawPayload: ChatRoomMember.AsObject): Promise<PUPPET.payloads.RoomMember> {
+  override async roomMemberRawPayloadParser(rawPayload: PadLocal.ChatRoomMember.AsObject): Promise<PUPPET.payloads.RoomMember> {
     return padLocalRoomMemberToWechaty(rawPayload);
   }
 
@@ -1280,7 +1261,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
 
     await this.client!.api.syncContact({
-      onSync: (contactList: Contact[]) => {
+      onSync: (contactList: PadLocal.Contact[]) => {
         this.wrapAsync(
           this._onPushSerialExecutor.execute(async() => {
             for (const contact of contactList) {
@@ -1296,7 +1277,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * private section
    ***************************************************************************/
 
-  private async _findTagWithName(tagName: string, addIfNotExist?: boolean): Promise<Label | null> {
+  private async _findTagWithName(tagName: string, addIfNotExist?: boolean): Promise<PadLocal.Label | null> {
     let labelList = (await this._getTagList()).labelList;
     let ret = labelList.find((l) => l.getName() === tagName);
     if (!ret) {
@@ -1308,7 +1289,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     // add new label
     if (!ret && addIfNotExist) {
       const newLabelId = await this._client!.api.addLabel(tagName);
-      ret = new Label().setId(newLabelId).setName(tagName);
+      ret = new PadLocal.Label().setId(newLabelId).setName(tagName);
 
       // refresh label list;
       await this._getTagList(true);
@@ -1317,7 +1298,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret || null;
   }
 
-  private async _getTagList(force?: boolean): Promise<{ labelList: Label[]; fromCache: boolean }> {
+  private async _getTagList(force?: boolean): Promise<{ labelList: PadLocal.Label[]; fromCache: boolean }> {
     let labelList = this._cacheMgr!.getLabelList();
     let fromCache = true;
 
@@ -1360,7 +1341,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     return ret;
   }
 
-  private async _updateContactCache(contact: Contact.AsObject): Promise<void> {
+  private async _updateContactCache(contact: PadLocal.Contact.AsObject): Promise<void> {
     if (!contact.username) {
       log.warn(PRE, `username is required for contact: ${JSON.stringify(contact)}`);
       return;
@@ -1418,7 +1399,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this.dirtyPayload(PUPPET.types.Payload.RoomMember, roomId);
   }
 
-  private async _onPushContact(contact: Contact): Promise<void> {
+  private async _onPushContact(contact: PadLocal.Contact): Promise<void> {
     log.silly(PRE, `on push contact: ${JSON.stringify(contact.toObject())}`);
 
     await this._updateContactCache(contact.toObject());
@@ -1432,7 +1413,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _onPushMessage(message: Message): Promise<void> {
+  private async _onPushMessage(message: PadLocal.Message): Promise<void> {
     const messageId = message.getId();
 
     log.silly(PRE, `on push original message: ${JSON.stringify(message.toObject())}`);
@@ -1443,7 +1424,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       return;
     }
 
-    const messageObj: Message.AsObject = message.toObject();
+    const messageObj: PadLocal.Message.AsObject = message.toObject();
     await this._cacheMgr!.setMessage(message.getId(), messageObj);
 
     const parseRet = await parseMessage(this, messageObj);
@@ -1492,7 +1473,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _onSendMessage(partialMessage: Message, messageId: string, messageRevokeInfo: MessageRevokeInfo) {
+  private async _onSendMessage(partialMessage: PadLocal.Message, messageId: string, messageRevokeInfo: PadLocal.MessageRevokeInfo) {
     partialMessage.setId(messageId);
     partialMessage.setCreatetime(messageRevokeInfo.getCreatetime());
 
@@ -1521,7 +1502,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }),
     );
     this._client.on("message", this.wrapAsync(
-      async(messageList: Message[]) => {
+      async(messageList: PadLocal.Message[]) => {
         await this._onPushSerialExecutor.execute(async() => {
           for (const message of messageList) {
             // handle message one by one
@@ -1532,7 +1513,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     ));
 
     this._client.on("contact", this.wrapAsync(
-      async(contactList: Contact[]) => {
+      async(contactList: PadLocal.Contact[]) => {
         await this._onPushSerialExecutor.execute(async() => {
           for (const contact of contactList) {
             await this._onPushContact(contact);
@@ -1556,7 +1537,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
   }
 
-  private async _refreshContact(userName: string, ticket?: string): Promise<Contact> {
+  private async _refreshContact(userName: string, ticket?: string): Promise<PadLocal.Contact> {
     const contact = await this._client!.api.getContact(userName, ticket);
 
     // may return contact with empty payload, empty username, nickname, etc.
@@ -1590,7 +1571,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     this._heartBeatTimer = undefined;
   }
 
-  private async _getMessageImageFileBox(messageId: string, messagePayload: Message.AsObject, imageType: PUPPET.types.Image) {
+  private async _getMessageImageFileBox(messageId: string, messagePayload: PadLocal.Message.AsObject, imageType: PUPPET.types.Image) {
     const message: PUPPET.payloads.Message = await this.messageRawPayloadParser(messagePayload);
 
     if (message.type !== PUPPET.types.Message.Image) {
@@ -1604,20 +1585,20 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }
     }
 
-    let pbImageType: PadLocalImageType;
+    let pbImageType: PadLocal.ImageType;
     if (imageType === PUPPET.types.Image.Thumbnail) {
-      pbImageType = PadLocalImageType.THUMB;
+      pbImageType = PadLocal.ImageType.THUMB;
     } else if (imageType === PUPPET.types.Image.HD) {
-      pbImageType = PadLocalImageType.NORMAL;
+      pbImageType = PadLocal.ImageType.NORMAL;
     } else {
-      pbImageType = PadLocalImageType.HD;
+      pbImageType = PadLocal.ImageType.HD;
     }
     const ret = await this._client!.api.getMessageImage(messagePayload.content, messagePayload.tousername, pbImageType);
 
     let imageNameSuffix: string;
-    if (ret.imageType === PadLocalImageType.THUMB) {
+    if (ret.imageType === PadLocal.ImageType.THUMB) {
       imageNameSuffix = "thumb";
-    } else if (ret.imageType === PadLocalImageType.HD) {
+    } else if (ret.imageType === PadLocal.ImageType.HD) {
       imageNameSuffix = "hd";
     } else {
       imageNameSuffix = "normal";

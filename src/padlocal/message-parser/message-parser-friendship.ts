@@ -1,10 +1,10 @@
 /* eslint-disable sort-keys */
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
-import { isContactId, isIMContactId } from "../utils/is-type";
-import { xmlToJson } from "../utils/xml-to-json";
-import type { MessageParserRetType } from "./message-parser";
-import { WechatMessageType } from "./WechatMessageType";
+import { isContactId, isIMContactId } from "../utils/is-type.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
+import type { MessageParserRetType } from "./message-parser.js";
+import { WechatMessageType } from "./WechatMessageType.js";
 
 const FRIENDSHIP_CONFIRM_REGEX_LIST = [
   /^You have added (.+) as your WeChat contact. Start chatting!$/,
@@ -36,19 +36,19 @@ interface ReceiveXmlSchema {
   };
 }
 
-const isConfirm = (message: Message.AsObject): boolean => {
+const isConfirm = (message: PadLocal.Message.AsObject): boolean => {
   return FRIENDSHIP_CONFIRM_REGEX_LIST.some((regexp) => {
     return !!message.content.match(regexp);
   });
 };
 
-const isNeedVerify = (message: Message.AsObject): boolean => {
+const isNeedVerify = (message: PadLocal.Message.AsObject): boolean => {
   return FRIENDSHIP_VERIFY_REGEX_LIST.some((regexp) => {
     return !!message.content.match(regexp);
   });
 };
 
-const isReceive = async(message: Message.AsObject): Promise<ReceiveXmlSchema | null> => {
+const isReceive = async(message: PadLocal.Message.AsObject): Promise<ReceiveXmlSchema | null> => {
   if (message.type !== WechatMessageType.VerifyMsg && message.type !== WechatMessageType.VerifyMsgEnterprise) {
     return null;
   }
@@ -68,7 +68,7 @@ const isReceive = async(message: Message.AsObject): Promise<ReceiveXmlSchema | n
   return null;
 };
 
-export default async(_puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
   if (isConfirm(message)) {
     return {
       contactId: message.fromusername,

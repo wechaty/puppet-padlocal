@@ -4,10 +4,10 @@
 
 import * as PUPPET from "wechaty-puppet";
 import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
-import PuppetPadlocal from "../src/puppet-padlocal";
+import PuppetPadlocal from "../src/puppet-padlocal.js";
 import config from "config";
 import QRCode from "qrcode-terminal";
-import { isContactId } from "../src/padlocal/utils/is-type";
+import { isContactId } from "../src/padlocal/utils/is-type.js";
 
 // log.level("silly");
 

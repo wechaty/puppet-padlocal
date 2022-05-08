@@ -1,6 +1,6 @@
 import * as PUPPET from "wechaty-puppet";
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { WechatMessageType } from "../WechatMessageType";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { WechatMessageType } from "../WechatMessageType.js";
 
 export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET.types.Message {
   let type: PUPPET.types.Message;
@@ -60,7 +60,7 @@ export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET
   return type;
 }
 
-export function getMessageFileName(message: Message.AsObject, messageType: PUPPET.types.Message): string {
+export function getMessageFileName(message: PadLocal.Message.AsObject, messageType: PUPPET.types.Message): string {
   const msgId = message.id;
 
   if (messageType === PUPPET.types.Message.Audio) {

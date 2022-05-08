@@ -2,8 +2,8 @@
 /* eslint-disable no-case-declarations */
 import config from "config";
 import { Contact, Friendship, log, Message, Room, RoomInvitation, Wechaty } from "wechaty";
-import { prepareSingedOnBot } from "./wechaty-common";
-import { isContactId } from "../src/padlocal/utils/is-type";
+import { prepareSingedOnBot } from "./wechaty-common.js";
+import { isContactId } from "../src/padlocal/utils/is-type.js";
 import * as PUPPET from "wechaty-puppet";
 
 const LOGPRE = "TestBot";

@@ -1,10 +1,10 @@
 import config from "config";
 import { Contact, Message, impls, Wechaty } from "wechaty";
 import { FileBox } from "file-box";
-import { prepareSingedOnBot } from "./wechaty-common";
+import { prepareSingedOnBot } from "./wechaty-common.js";
 import * as PUPPET from "wechaty-puppet";
-import type { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion";
-import type PuppetPadlocal from "../src/puppet-padlocal";
+import type { EmojiMessagePayload } from "../src/padlocal/message-parser/helpers/message-emotion.js";
+import type PuppetPadlocal from "../src/puppet-padlocal.js";
 
 let bot: Wechaty;
 

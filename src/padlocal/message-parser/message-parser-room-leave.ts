@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
-import type { RoomXmlSchema } from "./helpers/message-room";
-import { isRoomId } from "../utils/is-type";
-import { getUserName } from "../utils/get-xml-label";
-import { xmlToJson } from "../utils/xml-to-json";
-import type { MessageParserRetType } from "./message-parser";
+import type { RoomXmlSchema } from "./helpers/message-room.js";
+import { isRoomId } from "../utils/is-type.js";
+import { getUserName } from "../utils/get-xml-label.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
+import type { MessageParserRetType } from "./message-parser.js";
 
 const ROOM_LEAVE_OTHER_REGEX_LIST = [/^(You) removed "(.+)" from the group chat/, /^(你)将"(.+)"移出了群聊/];
 const ROOM_LEAVE_BOT_REGEX_LIST = [/^(You) were removed from the group chat by "([^"]+)"/, /^(你)被"([^"]+?)"移出群聊/];
@@ -41,7 +41,7 @@ export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolea
   return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
-export default async(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;

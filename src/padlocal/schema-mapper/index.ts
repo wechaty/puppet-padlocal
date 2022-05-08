@@ -1,23 +1,23 @@
 /* eslint-disable sort-keys */
 /* eslint-disable brace-style */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { type ChatRoomMember, Contact, Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type";
-import { convertMessageType } from "../message-parser/helpers/message";
+import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type.js";
+import { convertMessageType } from "../message-parser/helpers/message.js";
 import {
   appMessageParser,
   AppMessagePayload,
   AppMessageType,
   ReferMsgPayload
-} from "../message-parser/helpers/message-appmsg";
-import { WechatMessageType } from "../message-parser/WechatMessageType";
-import { parseMessagePatPayload } from "../message-parser/helpers/message-pat";
+} from "../message-parser/helpers/message-appmsg.js";
+import { WechatMessageType } from "../message-parser/WechatMessageType.js";
+import { parseMessagePatPayload } from "../message-parser/helpers/message-pat.js";
 
 const PRE = "[SchemaMapper]";
 
-export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: Message.AsObject): Promise<PUPPET.payloads.Message> {
+export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: PadLocal.Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = padLocalMessage.type as WechatMessageType;
   const type = convertMessageType(wechatMessageType);
 
@@ -138,7 +138,7 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
   return message;
 }
 
-export function padLocalContactToWechaty(contact: Contact.AsObject): PUPPET.payloads.Contact {
+export function padLocalContactToWechaty(contact: PadLocal.Contact.AsObject): PUPPET.payloads.Contact {
   return {
     id: contact.username,
     gender: contact.gender,
@@ -155,7 +155,7 @@ export function padLocalContactToWechaty(contact: Contact.AsObject): PUPPET.payl
   };
 }
 
-export function padLocalRoomToWechaty(contact: Contact.AsObject): PUPPET.payloads.Room {
+export function padLocalRoomToWechaty(contact: PadLocal.Contact.AsObject): PUPPET.payloads.Room {
   return {
     adminIdList: [],
     avatar: contact.avatar,
@@ -166,7 +166,7 @@ export function padLocalRoomToWechaty(contact: Contact.AsObject): PUPPET.payload
   };
 }
 
-export function padLocalRoomMemberToWechaty(chatRoomMember: ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
+export function padLocalRoomMemberToWechaty(chatRoomMember: PadLocal.ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
   return {
     id: chatRoomMember.username,
     roomAlias: chatRoomMember.displayname,
@@ -215,7 +215,7 @@ async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPP
   payload.text = `${appPayload.title}\n「${referMessagePayload.displayname}：${referMessageContent}」`;
 }
 
-async function _adjustMessageByAppMsg(message: Message.AsObject, payload: PUPPET.payloads.Message) {
+async function _adjustMessageByAppMsg(message: PadLocal.Message.AsObject, payload: PUPPET.payloads.Message) {
   if (payload.type !== PUPPET.types.Message.Attachment) {
     return;
   }
@@ -272,8 +272,8 @@ async function _adjustMessageByAppMsg(message: Message.AsObject, payload: PUPPET
   }
 }
 
-export function chatRoomMemberToContact(chatRoomMember: ChatRoomMember): Contact {
-  return new Contact()
+export function chatRoomMemberToContact(chatRoomMember: PadLocal.ChatRoomMember): PadLocal.Contact {
+  return new PadLocal.Contact()
     .setUsername(chatRoomMember.getUsername())
     .setNickname(chatRoomMember.getNickname())
     .setAvatar(chatRoomMember.getAvatar())

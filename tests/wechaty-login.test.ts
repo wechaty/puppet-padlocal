@@ -1,4 +1,4 @@
-import { prepareSingedOnBot } from "./wechaty-common";
+import { prepareSingedOnBot } from "./wechaty-common.js";
 
 test("login", async() => {
   const bot = await prepareSingedOnBot();

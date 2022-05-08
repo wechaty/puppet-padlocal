@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import type { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
-import type { RoomXmlSchema } from "./helpers/message-room";
-import { isRoomId } from "../utils/is-type";
-import { xmlToJson } from "../utils/xml-to-json";
-import { getNickName, getUserName } from "../utils/get-xml-label";
-import type { MessageParserRetType } from "./message-parser";
+import type { RoomXmlSchema } from "./helpers/message-room.js";
+import { isRoomId } from "../utils/is-type.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
+import { getNickName, getUserName } from "../utils/get-xml-label.js";
+import type { MessageParserRetType } from "./message-parser.js";
 
 const ROOM_TOPIC_OTHER_REGEX_LIST = [/^"(.+)" changed the group name to "(.+)"$/, /^"(.+)"修改群名为“(.+)”$/];
 const ROOM_TOPIC_YOU_REGEX_LIST = [/^(You) changed the group name to "(.+)"$/, /^(你)修改群名为“(.+)”$/];
 
-export default async(puppet: PUPPET.Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
