@@ -263,8 +263,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
    * logout account and stop the bot
    */
   override async logout(): Promise<void> {
-    if (!this.currentUserId) {
-      throw new Error("logout before login?");
+    if (!this.isLoggedIn) {
+      return;
     }
 
     await this._client!.api.logout();

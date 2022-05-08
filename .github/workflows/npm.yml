@@ -48,6 +48,8 @@ jobs:
 
       - name: Pack Testing
         run: ./scripts/npm-pack-testing.sh
+        env:
+          NODE_PADLOCAL_TOKEN: ${{ secrets.PADLOCAL_TOKEN }}
 
   publish:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/v'))

@@ -28,7 +28,7 @@
     "lint:md": "markdownlint README.md",
     "lint:ts": "tsc --isolatedModules --noEmit",
     "lint:es": "eslint \"src/**/*.ts\" \"tests/**/*.test.ts\" --ignore-pattern tests/fixtures/",
-    "test": "npm-run-all lint test:unit",
+    "test": "npm-run-all lint",
     "test:pack": "bash -x scripts/npm-pack-testing.sh",
     "test:unit": "jest",
     "coverage": "jest --coverage",
