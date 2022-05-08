@@ -1,6 +1,3 @@
-/* eslint-disable sort-keys */
-/* eslint-disable brace-style */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
@@ -10,7 +7,7 @@ import {
   appMessageParser,
   AppMessagePayload,
   AppMessageType,
-  ReferMsgPayload
+  ReferMsgPayload,
 } from "../message-parser/helpers/message-appmsg.js";
 import { WechatMessageType } from "../message-parser/WechatMessageType.js";
 import { parseMessagePatPayload } from "../message-parser/helpers/message-pat.js";
@@ -30,8 +27,9 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
   let listenerId: undefined | string;
   let text: string = padLocalMessage.content;
 
-  // room message sent by others
   if (isRoomId(padLocalMessage.fromusername) || isIMRoomId(padLocalMessage.fromusername)) {
+    // room message sent by others
+
     roomId = padLocalMessage.fromusername;
 
     // text:    "wxid_xxxx:\nnihao"
@@ -46,32 +44,31 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
       if (isContactId(takerIdPrefix) || isIMContactId(takerIdPrefix)) {
         text = padLocalMessage.content.slice(separatorIndex + 2);
         talkerId = takerIdPrefix;
-      }
-      // pat and other system message
-      else if (isRoomId(takerIdPrefix) || isIMRoomId(takerIdPrefix)) {
+      } else if (isRoomId(takerIdPrefix) || isIMRoomId(takerIdPrefix)) {
+        // pat and other system message
+
         text = padLocalMessage.content.slice(separatorIndex + 2);
 
         // extract talkerId for pat message from payload
         const patMessagePayload = await parseMessagePatPayload(padLocalMessage);
         if (patMessagePayload) {
           talkerId = patMessagePayload.fromusername;
-        }
-        else {
+        } else {
           // FIXME: extract talkerId for other 10002 messages
         }
       }
     }
-  }
-  // room message sent by self
-  else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
+  } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
+    // room message sent by self
+
     roomId = padLocalMessage.tousername;
     talkerId = padLocalMessage.fromusername;
 
     const startIndex = padLocalMessage.content.indexOf(":\n");
     text = padLocalMessage.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
-  }
-  // single chat message
-  else {
+  } else {
+    // single chat message
+
     talkerId = padLocalMessage.fromusername;
     listenerId = padLocalMessage.tousername;
   }
@@ -91,14 +88,15 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     talkerId,
     text,
     timestamp: padLocalMessage.createtime,
-    type
+    type,
   };
 
   let message: PUPPET.payloads.Message;
 
-  // room message
   if (roomId) {
-    let mentionIdList: string[] = [];
+    // room message
+
+    let mentionIdList: string[];
     if (padLocalMessage.atList.length === 1 && padLocalMessage.atList[0] === "announcement@all") {
       const roomPayload = await puppet.roomPayload(roomId);
       mentionIdList = roomPayload.memberIdList;
@@ -107,29 +105,26 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     }
 
     const messageRoom: PUPPET.payloads.MessageRoom = {
+      mentionIdList,
       roomId,
-      mentionIdList
     };
 
     message = {
       ...messageBase,
-      ...messageRoom
+      ...messageRoom,
     };
-  }
+  } else if (listenerId) {
+    // normal single chat message
 
-  // normal single chat message
-  else if (listenerId) {
     const messageTo: PUPPET.payloads.MessageTo = {
-      listenerId
+      listenerId,
     };
 
     message = {
       ...messageBase,
-      ...messageTo
+      ...messageTo,
     };
-  }
-
-  else {
+  } else {
     throw new Error("neither toId nor roomId");
   }
 
@@ -140,18 +135,18 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
 
 export function padLocalContactToWechaty(contact: PadLocal.Contact.AsObject): PUPPET.payloads.Contact {
   return {
-    id: contact.username,
-    gender: contact.gender,
-    type: isContactOfficialId(contact.username) ? PUPPET.types.Contact.Official : PUPPET.types.Contact.Individual,
-    name: contact.nickname,
-    avatar: contact.avatar,
     alias: contact.remark,
-    weixin: contact.alias,
+    avatar: contact.avatar,
     city: contact.city,
     friend: !contact.stranger,
+    gender: contact.gender,
+    id: contact.username,
+    name: contact.nickname,
+    phone: contact.phoneList,
     province: contact.province,
     signature: contact.signature,
-    phone: contact.phoneList,
+    type: isContactOfficialId(contact.username) ? PUPPET.types.Contact.Official : PUPPET.types.Contact.Individual,
+    weixin: contact.alias,
   };
 }
 
@@ -168,16 +163,16 @@ export function padLocalRoomToWechaty(contact: PadLocal.Contact.AsObject): PUPPE
 
 export function padLocalRoomMemberToWechaty(chatRoomMember: PadLocal.ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
   return {
-    id: chatRoomMember.username,
-    roomAlias: chatRoomMember.displayname,
-    inviterId: chatRoomMember.inviterusername,
     avatar: chatRoomMember.avatar,
+    id: chatRoomMember.username,
+    inviterId: chatRoomMember.inviterusername,
     name: chatRoomMember.nickname,
+    roomAlias: chatRoomMember.displayname,
   };
 }
 
 async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPPET.payloads.Message) {
-  let referMessageContent = "";
+  let referMessageContent: string;
 
   const referMessagePayload: ReferMsgPayload = appPayload.refermsg!;
   const referMessageType = parseInt(referMessagePayload.type) as WechatMessageType;
@@ -201,14 +196,15 @@ async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPP
       referMessageContent = "位置";
       break;
 
-    case WechatMessageType.App:
+    case WechatMessageType.App: {
       const referMessageAppPayload = await appMessageParser(referMessagePayload.content);
       referMessageContent = referMessageAppPayload.title;
       break;
+    }
 
     default:
       referMessageContent = "未知消息";
-        break;
+      break;
   }
 
   payload.type = PUPPET.types.Message.Text;

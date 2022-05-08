@@ -1,4 +1,3 @@
-/* eslint-disable sort-keys */
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { isContactId, isIMContactId } from "../utils/is-type.js";
@@ -91,14 +90,14 @@ export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject)
         hello: verifyXml.msg.$.content,
         id: message.id,
         scene: parseInt(verifyXml.msg.$.scene, 10),
+        shareCardContactId: verifyXml.msg.$.sharecardusername,
+        shareCardNickName: verifyXml.msg.$.sharecardnickname,
+        sourceContactId: verifyXml.msg.$.sourceusername,
+        sourceNickName: verifyXml.msg.$.sourcenickname,
         stranger: verifyXml.msg.$.encryptusername,
         ticket: verifyXml.msg.$.ticket,
         timestamp: message.createtime,
         type: PUPPET.types.Friendship.Receive,
-        sourceNickName: verifyXml.msg.$.sourcenickname,
-        sourceContactId: verifyXml.msg.$.sourceusername,
-        shareCardNickName: verifyXml.msg.$.sharecardnickname,
-        shareCardContactId: verifyXml.msg.$.sharecardusername,
       } as PUPPET.payloads.FriendshipReceive;
     }
 

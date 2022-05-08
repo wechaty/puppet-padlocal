@@ -1,4 +1,3 @@
-/* eslint-disable sort-keys */
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
@@ -6,7 +5,7 @@ import LRU from "lru-cache";
 
 import type * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import {FlashStore} from "flash-store";
+import { FlashStore } from "flash-store";
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 
 const PRE = "[CacheManager]";
@@ -54,30 +53,27 @@ export class CacheManager {
     }
 
     this._messageCache = new LRU<string, PadLocal.Message.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
 
     this._messageRevokeCache = new LRU<string, PadLocal.MessageRevokeInfo.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
 
     this._contactCache = new FlashStore(path.join(baseDir, "contact-raw-payload"));
     this._contactSearchCache = new LRU<string, PadLocal.SearchContactResponse.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
     this._contactStrangerAliasCache = new FlashStore(path.join(baseDir, "contact-stranger-alias"));

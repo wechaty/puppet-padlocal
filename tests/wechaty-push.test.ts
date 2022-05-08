@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable no-case-declarations */
 import config from "config";
 import { Contact, Friendship, log, Message, Room, RoomInvitation, Wechaty } from "wechaty";
 import { prepareSingedOnBot } from "./wechaty-common.js";
@@ -24,7 +22,7 @@ test(
           break;
 
         case PUPPET.types.Message.Attachment:
-        case PUPPET.types.Message.Audio:
+        case PUPPET.types.Message.Audio: {
           const attachFile = await message.toFileBox();
           expect(attachFile).toBeTruthy();
 
@@ -34,8 +32,9 @@ test(
           log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
 
           break;
+        }
 
-        case PUPPET.types.Message.Video:
+        case PUPPET.types.Message.Video: {
           const videoFile = await message.toFileBox();
           expect(videoFile).toBeTruthy();
 
@@ -45,8 +44,9 @@ test(
           log.info(LOGPRE, `get message video: ${videoData.length}`);
 
           break;
+        }
 
-        case PUPPET.types.Message.Emoticon:
+        case PUPPET.types.Message.Emoticon: {
           const emotionFile = await message.toFileBox();
           expect(emotionFile).toBeTruthy();
 
@@ -59,35 +59,37 @@ test(
           log.info(LOGPRE, `get message emotion: ${emotionBuffer.length}`);
 
           break;
+        }
 
-        case PUPPET.types.Message.Image:
+        case PUPPET.types.Message.Image: {
           const messageImage = await message.toImage();
           expect(messageImage).toBeTruthy();
 
           const thumbImage = await messageImage.thumbnail();
           expect(thumbImage).toBeTruthy();
           const thumbImageData = await thumbImage.toBuffer();
-          expect(thumbImageData && thumbImageData.length).toBeTruthy();
+          expect(thumbImageData.length).toBeTruthy();
 
           log.info(LOGPRE, `get message image, thumb: ${thumbImageData.length}`);
 
           const artworkImage = await messageImage.artwork();
           expect(artworkImage).toBeTruthy();
           const artworkImageData = await artworkImage.toBuffer();
-          expect(artworkImageData && artworkImageData.length).toBeTruthy();
+          expect(artworkImageData.length).toBeTruthy();
 
           log.info(LOGPRE, `get message image, artwork: ${artworkImageData.length}`);
 
           const hdImage = await messageImage.hd();
           expect(hdImage).toBeTruthy();
           const hdImageData = await hdImage.toBuffer();
-          expect(hdImageData && hdImageData.length).toBeTruthy();
+          expect(hdImageData.length).toBeTruthy();
 
           log.info(LOGPRE, `get message image, hd: ${hdImageData.length}`);
 
           break;
+        }
 
-        case PUPPET.types.Message.Url:
+        case PUPPET.types.Message.Url: {
           const urlLink = await message.toUrlLink();
           expect(urlLink).toBeTruthy();
           expect(urlLink.title()).toBeTruthy();
@@ -96,13 +98,14 @@ test(
           const urlThumbImage = await message.toFileBox();
           expect(urlThumbImage).toBeTruthy();
           const urlThumbImageData = await urlThumbImage.toBuffer();
-          expect(urlThumbImageData && urlThumbImageData.length).toBeTruthy();
+          expect(urlThumbImageData.length).toBeTruthy();
 
           log.info(LOGPRE, `get message url thumb: ${urlThumbImageData.length}`);
 
           break;
+        }
 
-        case PUPPET.types.Message.MiniProgram:
+        case PUPPET.types.Message.MiniProgram: {
           const miniProgram = await message.toMiniProgram();
 
           log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
@@ -119,6 +122,7 @@ test(
           expect(miniProgram.thumbKey()?.length).toBeGreaterThan(0);
 
           break;
+        }
       }
     };
 

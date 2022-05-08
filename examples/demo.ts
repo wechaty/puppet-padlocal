@@ -1,7 +1,3 @@
-/* eslint-disable promise/always-return */
-/* eslint-disable no-case-declarations */
-/* eslint-disable import/first */
-
 import * as PUPPET from "wechaty-puppet";
 import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
 import PuppetPadlocal from "../src/puppet-padlocal.js";
@@ -25,7 +21,7 @@ async function getMessagePayload(message: Message) {
       break;
 
     case PUPPET.types.Message.Attachment:
-    case PUPPET.types.Message.Audio:
+    case PUPPET.types.Message.Audio: {
       const attachFile = await message.toFileBox();
 
       const dataBuffer = await attachFile.toBuffer();
@@ -33,8 +29,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message audio or attach: ${dataBuffer.length}`);
 
       break;
+    }
 
-    case PUPPET.types.Message.Video:
+    case PUPPET.types.Message.Video: {
       const videoFile = await message.toFileBox();
 
       const videoData = await videoFile.toBuffer();
@@ -42,8 +39,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message video: ${videoData.length}`);
 
       break;
+    }
 
-    case PUPPET.types.Message.Emoticon:
+    case PUPPET.types.Message.Emoticon: {
       const emotionFile = await message.toFileBox();
 
       const emotionJSON = emotionFile.toJSON();
@@ -54,8 +52,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message emotion: ${emotionBuffer.length}`);
 
       break;
+    }
 
-    case PUPPET.types.Message.Image:
+    case PUPPET.types.Message.Image: {
       const messageImage = await message.toImage();
 
       const thumbImage = await messageImage.thumbnail();
@@ -74,8 +73,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message image, artwork: ${artworkImageData.length}`);
 
       break;
+    }
 
-    case PUPPET.types.Message.Url:
+    case PUPPET.types.Message.Url: {
       const urlLink = await message.toUrlLink();
       log.info("TestBot", `get message url: ${JSON.stringify(urlLink)}`);
 
@@ -85,13 +85,15 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message url thumb: ${urlThumbImageData.length}`);
 
       break;
+    }
 
-    case PUPPET.types.Message.MiniProgram:
+    case PUPPET.types.Message.MiniProgram: {
       const miniProgram = await message.toMiniProgram();
 
       log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
 
       break;
+    }
   }
 }
 
@@ -105,7 +107,7 @@ bot
     if (status === ScanStatus.Waiting && qrcode) {
       log.info(
         "TestBot",
-        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`
+        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`,
       );
 
       QRCode.generate(qrcode, { small: true });
@@ -122,7 +124,7 @@ bot
     log.info("TestBot", `${user} logout, reason: ${reason}`);
   })
 
-  .on("message", async (message: Message) => {
+  .on("message", async(message: Message) => {
     log.info("TestBot", `on message: ${message.toString()}`);
 
     const forwardFrom = config.get("test.push.forwardFrom");
@@ -165,5 +167,6 @@ bot
   .start()
   .then(() => {
     log.info("TestBot", "started.");
+    return null;
   })
   .catch(console.error);

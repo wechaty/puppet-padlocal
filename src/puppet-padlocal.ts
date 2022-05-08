@@ -1,7 +1,3 @@
-/* eslint-disable no-case-declarations */
-/* eslint-disable brace-style */
-/* eslint-disable promise/always-return */
-/* eslint-disable sort-keys */
 import * as PUPPET from "wechaty-puppet";
 import {
   FileBox,
@@ -174,16 +170,16 @@ class PuppetPadlocal extends PUPPET.Puppet {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
       },
 
-      onOneClickEvent: onQrCodeEvent,
-
-      onQrCodeEvent,
-
       onLoginSuccess: async(_) => {
         const userName = this._client!.selfContact!.getUsername();
         log.silly(PRE, `login success: ${userName}`);
 
         await this.login(this._client!.selfContact!.getUsername());
       },
+
+      onOneClickEvent: onQrCodeEvent,
+
+      onQrCodeEvent,
 
       // Will sync message and contact after login success, since last time login.
       onSync: async(syncEvent: PadLocal.SyncEvent) => {
@@ -205,6 +201,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
           data: "ready",
         });
 
+        return null;
       })
       .catch(async(_) => {
         await this._stopClient(true);
@@ -627,8 +624,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
         // audioFileBox.mediaType = 'audio/silk'
 
         const options = {
-          attributeNamePrefix: "",
           attrNodeName: "$",
+          attributeNamePrefix: "",
           ignoreAttributes: false,
         };
 
@@ -765,8 +762,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageSendFile(toUserName: string, fileBox: FileBoxInterface): Promise<string> {
-    // image/jpeg, image/png
     if (fileBox.mediaType.startsWith("image/")) {
+      // image/jpeg, image/png
+
       const imageData = await fileBox.toBuffer();
       const response = await this._client!.api.sendImageMessage(genIdempotentId(), toUserName, imageData);
 
@@ -784,10 +782,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
       );
 
       return response.getMsgid();
-    }
+    } else if (fileBox.mediaType === "audio/silk") {
+      // audio/silk
 
-    // audio/silk
-    else if (fileBox.mediaType === "audio/silk") {
       const audioData = await fileBox.toBuffer();
       const response = await this._client!.api.sendVoiceMessage(
         genIdempotentId(),
@@ -810,10 +807,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
       );
 
       return response.getMsgid();
-    }
+    } else if (fileBox.mediaType.startsWith("video/")) {
+      // video/mp4
 
-    // video/mp4
-    else if (fileBox.mediaType.startsWith("video/")) {
       const videoData = await fileBox.toBuffer();
       const response = await this._client!.api.sendVideoMessage(genIdempotentId(), toUserName, videoData);
 
@@ -831,10 +827,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
       );
 
       return response.getMsgid();
-    }
+    } else if (fileBox.mediaType === "emoticon") {
+      // emotion
 
-    // emotion
-    else if (fileBox.mediaType === "emoticon") {
       const emotionPayload: EmojiMessagePayload = fileBox.metadata as EmojiMessagePayload;
 
       const response = await this._client!.api.sendMessageEmoji(
@@ -864,11 +859,10 @@ class PuppetPadlocal extends PUPPET.Puppet {
       );
 
       return response.getMsgid();
-    }
+    } else {
+      // try to send any other type as binary fileBox
+      // application/octet-stream
 
-    // try to send any other type as binary fileBox
-    // application/octet-stream
-    else {
       const fileData = await fileBox.toBuffer();
       const response = await this._client!.api.sendFileMessage(genIdempotentId(), toUserName, fileData, fileBox.name);
 
@@ -901,17 +895,17 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
     let thumbImageData: Bytes | null = null;
 
-    // 1. cdn url and key
     if (mpPayload.thumbUrl && mpPayload.thumbKey) {
+      // 1. cdn url and key
+
       thumbImageData = await this._client!.api.getEncryptedFile(
         PadLocal.EncryptedFileType.IMAGE_THUMB,
         mpPayload.thumbUrl,
         hexStringToBytes(mpPayload.thumbKey),
       );
-    }
+    } else if (mpPayload.thumbUrl) {
+      // 2. http url
 
-    // 2. http url
-    else if (mpPayload.thumbUrl) {
       const parsedUrl = new nodeUrl.URL(mpPayload.thumbUrl);
       if (parsedUrl.protocol.startsWith("http")) {
         // download the image data
@@ -1312,13 +1306,18 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
 
     return {
-      labelList,
       fromCache,
+      labelList,
     };
   }
 
   private async _getRoomMemberList(roomId: string, force?: boolean): Promise<RoomMemberMap> {
-    let ret = await this._cacheMgr?.getRoomMember(roomId) || {};
+    // FIX: https://github.com/wechaty/puppet-padlocal/issues/115
+    if (!this._cacheMgr) {
+      return {};
+    }
+
+    let ret = await this._cacheMgr!.getRoomMember(roomId);
     if (!ret || force) {
       const resMembers = await this._client!.api.getChatRoomMembers(roomId);
 
@@ -1463,16 +1462,18 @@ class PuppetPadlocal extends PUPPET.Puppet {
         await this._updateRoomMember(roomJoin.roomId);
         break;
       }
-      case MessageCategory.RoomLeave:
+      case MessageCategory.RoomLeave: {
         const roomLeave: PUPPET.payloads.EventRoomLeave = parseRet.payload;
         this.emit("room-leave", roomLeave);
 
         await this._updateRoomMember(roomLeave.roomId);
         break;
-
-      case MessageCategory.RoomTopic:
+      }
+      case MessageCategory.RoomTopic: {
         const roomTopic: PUPPET.payloads.EventRoomTopic = parseRet.payload;
         this.emit("room-topic", roomTopic);
+        break;
+      }
     }
   }
 

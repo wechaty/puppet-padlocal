@@ -36,13 +36,13 @@ export async function parseMessagePatPayload(message: PadLocal.Message.AsObject)
 
   const sysmsgXML = content.substring(sysmsgIndex);
   const patXml: PatXmlSchema = await xmlToJson(sysmsgXML);
-  if (patXml.sysmsg.$.type !== "pat" || !patXml.sysmsg.pat) {
+  if (patXml.sysmsg.$.type !== "pat") {
     return null;
   }
 
   return {
-    fromusername: patXml.sysmsg.pat.fromusername,
     chatusername: patXml.sysmsg.pat.chatusername,
+    fromusername: patXml.sysmsg.pat.fromusername,
     pattedusername: patXml.sysmsg.pat.pattedusername,
     template: patXml.sysmsg.pat.template,
   };
