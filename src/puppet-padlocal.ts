@@ -1,9 +1,6 @@
 import * as PUPPET from "wechaty-puppet";
-import {
-  FileBox,
-  FileBoxInterface,
-}                   from "file-box";
 import { log } from "wechaty-puppet";
+import { FileBox, FileBoxInterface } from "file-box";
 import { KickOutEvent, PadLocalClient } from "padlocal-client-ts";
 import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
@@ -30,7 +27,7 @@ import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave.js";
-import { WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
+import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
@@ -618,11 +615,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
         } else {
           audioData = await this._client!.api.getMessageVoice(messageId, message.text!, messagePayload.tousername);
         }
+        // set mediaType `audio/silk` by default
         const audioFileBox = FileBox.fromBuffer(audioData, `message-${messageId}-audio.sil`);
-        // Huan(202201) `.sil` should set mediaType to `audio/silk`
-        //  @see https://github.com/jshttp/mime-db/blob/4498a3f104ba4080a703f5435b065f982dc3a1b7/src/apache-types.json#L2626-L2627
-        // audioFileBox.mediaType = 'audio/silk'
-
         const options = {
           attrNodeName: "$",
           attributeNamePrefix: "",
@@ -638,26 +632,24 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }
       case PUPPET.types.Message.Video: {
         const videoData = await this._client!.api.getMessageVideo(message.text!, messagePayload.tousername);
-        const videoFileBox = FileBox.fromBuffer(videoData, `message-${messageId}-video.mp4`);
-        // Huan(202201): `.mp4` should set mediaType `video/mp4` by default
-        // videoFileBox.mediaType = 'video/mp4'
-        return videoFileBox;
+        // set mediaType `video/mp4` by default
+        return FileBox.fromBuffer(videoData, `message-${messageId}-video.mp4`);
       }
       case PUPPET.types.Message.Attachment: {
         const appMsg = await appMessageParser(messagePayload.content);
         const fileData = await this._client!.api.getMessageAttach(message.text!, messagePayload.tousername);
-        const binaryFileBox = FileBox.fromBuffer(fileData, appMsg.title);
-        // Huan(202201): should set mediaType according to the appMsg.title (the attachment name)
-        // binaryFileBox.mediaType = 'application/octet-stream'
-        return binaryFileBox;
+        // should set mediaType according to the appMsg.title (the attachment name)
+        // https://github.com/jshttp/mime-db/blob/4498a3f104ba4080a703f5435b065f982dc3a1b7/src/apache-types.json
+        return FileBox.fromBuffer(fileData, appMsg.title);
       }
       case PUPPET.types.Message.Emoticon: {
         const emotionPayload = await emotionPayloadParser(messagePayload);
-        const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, { name: `message-${messageId}-emotion.jpg` });
+        const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, { name: `message-${messageId}-emoticon.jpg` });
 
-        emoticonBox.metadata = emotionPayload
-        // Huan(202201) FIXME: remove any
-        ;(emoticonBox.mediaType as any) = "emoticon";
+        emoticonBox.metadata = {
+          payload: emotionPayload,
+          type: "emoticon",
+        };
 
         return emoticonBox;
       }
@@ -762,7 +754,41 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   override async messageSendFile(toUserName: string, fileBox: FileBoxInterface): Promise<string> {
-    if (fileBox.mediaType.startsWith("image/")) {
+    const metadata: FileBoxMetadataMessage = fileBox.metadata as FileBoxMetadataMessage;
+    if (metadata.type === "emoticon") {
+      // emoticon
+      // mediaType will be image/jpeg, so can't judge emoticon message with mediaType
+
+      const emotionPayload: EmojiMessagePayload = metadata.payload;
+
+      const response = await this._client!.api.sendMessageEmoji(
+        genIdempotentId(),
+        toUserName,
+        emotionPayload.md5,
+        emotionPayload.len,
+        emotionPayload.type,
+        emotionPayload.gameext,
+      );
+
+      const pushContent = isRoomId(toUserName)
+        ? `${this._client!.selfContact!.getNickname()}: [动画表情]`
+        : "[动画表情]";
+
+      const content = emotionPayloadGenerator(emotionPayload);
+
+      await this._onSendMessage(
+        new PadLocal.Message()
+          .setType(WechatMessageType.Emoticon)
+          .setFromusername(this.currentUserId!)
+          .setTousername(toUserName)
+          .setContent(content)
+          .setPushcontent(pushContent),
+        response.getMsgid(),
+        response.getMessagerevokeinfo()!,
+      );
+
+      return response.getMsgid();
+    } else if (fileBox.mediaType.startsWith("image/")) {
       // image/jpeg, image/png
 
       const imageData = await fileBox.toBuffer();
@@ -827,41 +853,12 @@ class PuppetPadlocal extends PUPPET.Puppet {
       );
 
       return response.getMsgid();
-    } else if (fileBox.mediaType === "emoticon") {
-      // emotion
-
-      const emotionPayload: EmojiMessagePayload = fileBox.metadata as EmojiMessagePayload;
-
-      const response = await this._client!.api.sendMessageEmoji(
-        genIdempotentId(),
-        toUserName,
-        emotionPayload.md5,
-        emotionPayload.len,
-        emotionPayload.type,
-        emotionPayload.gameext,
-      );
-
-      const pushContent = isRoomId(toUserName)
-        ? `${this._client!.selfContact!.getNickname()}: [动画表情]`
-        : "[动画表情]";
-
-      const content = emotionPayloadGenerator(emotionPayload);
-
-      await this._onSendMessage(
-        new PadLocal.Message()
-          .setType(WechatMessageType.Emoticon)
-          .setFromusername(this.currentUserId!)
-          .setTousername(toUserName)
-          .setContent(content)
-          .setPushcontent(pushContent),
-        response.getMsgid(),
-        response.getMessagerevokeinfo()!,
-      );
-
-      return response.getMsgid();
     } else {
-      // try to send any other type as binary fileBox
-      // application/octet-stream
+      /**
+       * try to send any other type as binary fileBox, such as:
+       * - application/octet-stream
+       * - application/pdf
+       */
 
       const fileData = await fileBox.toBuffer();
       const response = await this._client!.api.sendFileMessage(genIdempotentId(), toUserName, fileData, fileBox.name);
