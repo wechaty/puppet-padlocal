@@ -23,7 +23,7 @@ async function testGetBotQRCode() {
       // wait for 10 seconds to get QR code
       const timeout = setTimeout(() => {
         reject("Get QRCode timeout");
-      }, 10000);
+      }, 60000);
 
       bot.on("scan", (qrcode: string, status: ScanStatus) => {
         if (status === ScanStatus.Waiting && qrcode) {
