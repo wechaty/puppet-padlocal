@@ -50,7 +50,7 @@ export function isStrangerV2(strangerId?: string): boolean {
   return /^v2_/i.test(strangerId);
 }
 
-export function isPayload(payload: object): boolean {
+export function isPayload(payload?: object): boolean {
   if (payload && Object.keys(payload).length > 0) {
     return true;
   }

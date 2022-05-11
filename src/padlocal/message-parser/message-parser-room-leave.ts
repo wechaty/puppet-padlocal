@@ -1,15 +1,16 @@
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { EventRoomLeavePayload, Puppet, YOU } from "wechaty-puppet";
-import { RoomXmlSchema } from "./helpers/message-room";
-import { isRoomId } from "../utils/is-type";
-import { getUserName } from "../utils/get-xml-label";
-import { xmlToJson } from "../utils/xml-to-json";
-import { MessageParserRetType } from "./message-parser";
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import * as PUPPET from "wechaty-puppet";
+import type { RoomXmlSchema } from "./helpers/message-room.js";
+import { isRoomId } from "../utils/is-type.js";
+import { getUserName } from "../utils/get-xml-label.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
+import type { MessageParserRetType } from "./message-parser.js";
 
 const ROOM_LEAVE_OTHER_REGEX_LIST = [/^(You) removed "(.+)" from the group chat/, /^(你)将"(.+)"移出了群聊/];
 const ROOM_LEAVE_BOT_REGEX_LIST = [/^(You) were removed from the group chat by "([^"]+)"/, /^(你)被"([^"]+?)"移出群聊/];
 
-const roomLeaveDebounceMap: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();
+const roomLeaveDebounceMap: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const DEBOUNCE_TIMEOUT = 3600 * 1000; // 1 hour
 
 function roomLeaveDebounceKey(roomId: string, removeeId: string) {
@@ -40,7 +41,7 @@ export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolea
   return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
-export default async (puppet: Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
@@ -75,12 +76,12 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
   let removerId: string;
 
   if (matchesForOther) {
-    removerId = (await puppet.roomMemberSearch(roomId, YOU))[0];
-    const leaverName = matchesForOther[2];
+    removerId = (await puppet.roomMemberSearch(roomId, PUPPET.types.YOU))[0]!;
+    const leaverName = matchesForOther[2]!;
     leaverId = getUserName([linkList], leaverName);
   } else if (matchesForBot) {
-    removerId = matchesForBot[2];
-    leaverId = (await puppet.roomMemberSearch(roomId, YOU))[0];
+    removerId = matchesForBot[2]!;
+    leaverId = (await puppet.roomMemberSearch(roomId, PUPPET.types.YOU))[0]!;
   } else {
     throw new Error("for typescript type checking, will never go here");
   }
@@ -92,5 +93,5 @@ export default async (puppet: Puppet, message: Message.AsObject): Promise<Messag
     removerId,
     roomId,
     timestamp: message.createtime,
-  } as EventRoomLeavePayload;
+  } as PUPPET.payloads.EventRoomLeave;
 };

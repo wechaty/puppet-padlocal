@@ -1,10 +1,9 @@
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { Puppet, FriendshipPayloadConfirm, FriendshipPayloadVerify, FriendshipType } from "wechaty-puppet";
-import { FriendshipPayloadReceive } from "wechaty-puppet/src/schemas/friendship";
-import { isContactId, isIMContactId } from "../utils/is-type";
-import { xmlToJson } from "../utils/xml-to-json";
-import { MessageParserRetType } from "./message-parser";
-import { WechatMessageType } from "./WechatMessageType";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import * as PUPPET from "wechaty-puppet";
+import { isContactId, isIMContactId } from "../utils/is-type.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
+import type { MessageParserRetType } from "./message-parser.js";
+import { WechatMessageType } from "./WechatMessageType.js";
 
 const FRIENDSHIP_CONFIRM_REGEX_LIST = [
   /^You have added (.+) as your WeChat contact. Start chatting!$/,
@@ -36,19 +35,19 @@ interface ReceiveXmlSchema {
   };
 }
 
-const isConfirm = (message: Message.AsObject): boolean => {
+const isConfirm = (message: PadLocal.Message.AsObject): boolean => {
   return FRIENDSHIP_CONFIRM_REGEX_LIST.some((regexp) => {
     return !!message.content.match(regexp);
   });
 };
 
-const isNeedVerify = (message: Message.AsObject): boolean => {
+const isNeedVerify = (message: PadLocal.Message.AsObject): boolean => {
   return FRIENDSHIP_VERIFY_REGEX_LIST.some((regexp) => {
     return !!message.content.match(regexp);
   });
 };
 
-const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | null> => {
+const isReceive = async(message: PadLocal.Message.AsObject): Promise<ReceiveXmlSchema | null> => {
   if (message.type !== WechatMessageType.VerifyMsg && message.type !== WechatMessageType.VerifyMsgEnterprise) {
     return null;
   }
@@ -68,21 +67,21 @@ const isReceive = async (message: Message.AsObject): Promise<ReceiveXmlSchema | 
   return null;
 };
 
-export default async (_puppet: Puppet, message: Message.AsObject): Promise<MessageParserRetType> => {
+export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
   if (isConfirm(message)) {
     return {
       contactId: message.fromusername,
       id: message.id,
       timestamp: message.createtime,
-      type: FriendshipType.Confirm,
-    } as FriendshipPayloadConfirm;
+      type: PUPPET.types.Friendship.Confirm,
+    } as PUPPET.payloads.FriendshipConfirm;
   } else if (isNeedVerify(message)) {
     return {
       contactId: message.fromusername,
       id: message.id,
       timestamp: message.createtime,
-      type: FriendshipType.Verify,
-    } as FriendshipPayloadVerify;
+      type: PUPPET.types.Friendship.Verify,
+    } as PUPPET.payloads.FriendshipVerify;
   } else {
     const verifyXml = await isReceive(message);
     if (verifyXml) {
@@ -91,15 +90,15 @@ export default async (_puppet: Puppet, message: Message.AsObject): Promise<Messa
         hello: verifyXml.msg.$.content,
         id: message.id,
         scene: parseInt(verifyXml.msg.$.scene, 10),
+        shareCardContactId: verifyXml.msg.$.sharecardusername,
+        shareCardNickName: verifyXml.msg.$.sharecardnickname,
+        sourceContactId: verifyXml.msg.$.sourceusername,
+        sourceNickName: verifyXml.msg.$.sourcenickname,
         stranger: verifyXml.msg.$.encryptusername,
         ticket: verifyXml.msg.$.ticket,
         timestamp: message.createtime,
-        type: FriendshipType.Receive,
-        sourceNickName: verifyXml.msg.$.sourcenickname,
-        sourceContactId: verifyXml.msg.$.sourceusername,
-        shareCardNickName: verifyXml.msg.$.sharecardnickname,
-        shareCardContactId: verifyXml.msg.$.sharecardusername,
-      } as FriendshipPayloadReceive;
+        type: PUPPET.types.Friendship.Receive,
+      } as PUPPET.payloads.FriendshipReceive;
     }
 
     return null;

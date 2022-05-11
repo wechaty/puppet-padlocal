@@ -3,35 +3,30 @@ import os from "os";
 import path from "path";
 import LRU from "lru-cache";
 
-import { log, FriendshipPayload, RoomInvitationPayload } from "wechaty-puppet";
-import FlashStoreSync from "flash-store";
-import {
-  ChatRoomMember,
-  Contact,
-  Label,
-  Message,
-  MessageRevokeInfo,
-  SearchContactResponse,
-} from "padlocal-client-ts/dist/proto/padlocal_pb";
+import type * as PUPPET from "wechaty-puppet";
+import { log } from "wechaty-puppet";
+import { FlashStore } from "flash-store";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 
 const PRE = "[CacheManager]";
 
-export type RoomMemberMap = { [contactId: string]: ChatRoomMember.AsObject };
+export type RoomMemberMap = { [contactId: string]: PadLocal.ChatRoomMember.AsObject };
 
 export class CacheManager {
+
   private readonly _userName: string;
 
-  private _messageCache?: LRU<string, Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
-  private _messageRevokeCache?: LRU<string, MessageRevokeInfo.AsObject>;
-  private _contactCache?: FlashStoreSync<Contact.AsObject>;
-  private _contactSearchCache?: LRU<string, SearchContactResponse.AsObject>;
-  private _contactStrangerAliasCache?: FlashStoreSync<string>; // set alias before add contact
-  private _roomCache?: FlashStoreSync<Contact.AsObject>;
-  private _roomMemberCache?: FlashStoreSync<RoomMemberMap>;
-  private _roomInvitationCache?: FlashStoreSync<RoomInvitationPayload>;
-  private _friendshipCache?: FlashStoreSync<FriendshipPayload>;
+  private _messageCache?: LRU<string, PadLocal.Message.AsObject>; // because message count may be massive, so we just keep them in memory with LRU and with limited capacity
+  private _messageRevokeCache?: LRU<string, PadLocal.MessageRevokeInfo.AsObject>;
+  private _contactCache?: FlashStore<string, PadLocal.Contact.AsObject>;
+  private _contactSearchCache?: LRU<string, PadLocal.SearchContactResponse.AsObject>;
+  private _contactStrangerAliasCache?: FlashStore<string, string>; // set alias before add contact
+  private _roomCache?: FlashStore<string, PadLocal.Contact.AsObject>;
+  private _roomMemberCache?: FlashStore<string, RoomMemberMap>;
+  private _roomInvitationCache?: FlashStore<string, PUPPET.payloads.RoomInvitation>;
+  private _friendshipCache?: FlashStore<string, PUPPET.payloads.Friendship>;
 
-  private _labelList?: Label[];
+  private _labelList?: PadLocal.Label[];
 
   constructor(userName: string) {
     this._userName = userName;
@@ -49,7 +44,7 @@ export class CacheManager {
       "puppet-padlocal-cache",
       path.sep,
       this._userName,
-      path.sep
+      path.sep,
     );
 
     const baseDirExist = await fs.pathExists(baseDir);
@@ -57,38 +52,35 @@ export class CacheManager {
       await fs.mkdirp(baseDir);
     }
 
-    this._messageCache = new LRU<string, Message.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
+    this._messageCache = new LRU<string, PadLocal.Message.AsObject>({
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
 
-    this._messageRevokeCache = new LRU<string, MessageRevokeInfo.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
+    this._messageRevokeCache = new LRU<string, PadLocal.MessageRevokeInfo.AsObject>({
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
 
-    this._contactCache = new FlashStoreSync(path.join(baseDir, "contact-raw-payload"));
-    this._contactSearchCache = new LRU<string, SearchContactResponse.AsObject>({
-      max: 1000,
-      // length: function (n) { return n * 2},
+    this._contactCache = new FlashStore(path.join(baseDir, "contact-raw-payload"));
+    this._contactSearchCache = new LRU<string, PadLocal.SearchContactResponse.AsObject>({
       dispose(key: string, val: any) {
         log.silly(PRE, "constructor() lruOptions.dispose(%s, %s)", key, JSON.stringify(val));
       },
+      max: 1000,
       maxAge: 1000 * 60 * 60,
     });
-    this._contactStrangerAliasCache = new FlashStoreSync(path.join(baseDir, "contact-stranger-alias"));
-    this._roomCache = new FlashStoreSync(path.join(baseDir, "room-raw-payload"));
-    this._roomMemberCache = new FlashStoreSync(path.join(baseDir, "room-member-raw-payload"));
-    this._roomInvitationCache = new FlashStoreSync(path.join(baseDir, "room-invitation-raw-payload"));
-    this._friendshipCache = new FlashStoreSync(path.join(baseDir, "friendship-raw-payload"));
+    this._contactStrangerAliasCache = new FlashStore(path.join(baseDir, "contact-stranger-alias"));
+    this._roomCache = new FlashStore(path.join(baseDir, "room-raw-payload"));
+    this._roomMemberCache = new FlashStore(path.join(baseDir, "room-member-raw-payload"));
+    this._roomInvitationCache = new FlashStore(path.join(baseDir, "room-invitation-raw-payload"));
+    this._friendshipCache = new FlashStore(path.join(baseDir, "friendship-raw-payload"));
 
     const contactTotal = await this._contactCache.size;
 
@@ -99,13 +91,13 @@ export class CacheManager {
     log.silly(PRE, "close()");
 
     if (
-      this._contactCache &&
-      this._contactStrangerAliasCache &&
-      this._roomMemberCache &&
-      this._roomCache &&
-      this._friendshipCache &&
-      this._roomInvitationCache &&
-      this._messageCache
+      this._contactCache
+      && this._contactStrangerAliasCache
+      && this._roomMemberCache
+      && this._roomCache
+      && this._friendshipCache
+      && this._roomInvitationCache
+      && this._messageCache
     ) {
       log.silly(PRE, "close() closing caches ...");
 
@@ -137,11 +129,11 @@ export class CacheManager {
    * Message Section
    * --------------------------------
    */
-  public async getMessage(messageId: string): Promise<Message.AsObject | undefined> {
+  public async getMessage(messageId: string): Promise<PadLocal.Message.AsObject | undefined> {
     return this._messageCache!.get(messageId);
   }
 
-  public async setMessage(messageId: string, payload: Message.AsObject): Promise<void> {
+  public async setMessage(messageId: string, payload: PadLocal.Message.AsObject): Promise<void> {
     await this._messageCache!.set(messageId, payload);
   }
 
@@ -149,11 +141,11 @@ export class CacheManager {
     return this._messageCache!.has(messageId);
   }
 
-  public async getMessageRevokeInfo(messageId: string): Promise<MessageRevokeInfo.AsObject | undefined> {
+  public async getMessageRevokeInfo(messageId: string): Promise<PadLocal.MessageRevokeInfo.AsObject | undefined> {
     return this._messageRevokeCache!.get(messageId);
   }
 
-  public async setMessageRevokeInfo(messageId: string, messageSendResult: MessageRevokeInfo.AsObject): Promise<void> {
+  public async setMessageRevokeInfo(messageId: string, messageSendResult: PadLocal.MessageRevokeInfo.AsObject): Promise<void> {
     await this._messageRevokeCache!.set(messageId, messageSendResult);
   }
 
@@ -162,11 +154,11 @@ export class CacheManager {
    * Contact Section
    * --------------------------------
    */
-  public async getContact(contactId: string): Promise<Contact.AsObject | undefined> {
+  public async getContact(contactId: string): Promise<PadLocal.Contact.AsObject | undefined> {
     return this._contactCache!.get(contactId);
   }
 
-  public async setContact(contactId: string, payload: Contact.AsObject): Promise<void> {
+  public async setContact(contactId: string, payload: PadLocal.Contact.AsObject): Promise<void> {
     await this._contactCache!.set(contactId, payload);
   }
 
@@ -183,8 +175,8 @@ export class CacheManager {
     return result;
   }
 
-  public async getAllContacts(): Promise<Contact.AsObject[]> {
-    const result: Contact.AsObject[] = [];
+  public async getAllContacts(): Promise<PadLocal.Contact.AsObject[]> {
+    const result: PadLocal.Contact.AsObject[] = [];
     for await (const value of this._contactCache!.values()) {
       result.push(value);
     }
@@ -203,11 +195,11 @@ export class CacheManager {
    * contact search
    */
 
-  public async getContactSearch(id: string): Promise<SearchContactResponse.AsObject | undefined> {
+  public async getContactSearch(id: string): Promise<PadLocal.SearchContactResponse.AsObject | undefined> {
     return this._contactSearchCache!.get(id);
   }
 
-  public async setContactSearch(id: string, payload: SearchContactResponse.AsObject): Promise<void> {
+  public async setContactSearch(id: string, payload: PadLocal.SearchContactResponse.AsObject): Promise<void> {
     await this._contactSearchCache!.set(id, payload);
   }
 
@@ -232,11 +224,11 @@ export class CacheManager {
    * Room Section
    * --------------------------------
    */
-  public async getRoom(roomId: string): Promise<Contact.AsObject | undefined> {
+  public async getRoom(roomId: string): Promise<PadLocal.Contact.AsObject | undefined> {
     return this._roomCache!.get(roomId);
   }
 
-  public async setRoom(roomId: string, payload: Contact.AsObject): Promise<void> {
+  public async setRoom(roomId: string, payload: PadLocal.Contact.AsObject): Promise<void> {
     await this._roomCache!.set(roomId, payload);
   }
 
@@ -259,6 +251,7 @@ export class CacheManager {
   public async hasRoom(roomId: string): Promise<boolean> {
     return this._roomCache!.has(roomId);
   }
+
   /**
    * -------------------------------
    * Room Member Section
@@ -281,11 +274,11 @@ export class CacheManager {
    * Room Invitation Section
    * -------------------------------
    */
-  public async getRoomInvitation(messageId: string): Promise<RoomInvitationPayload | undefined> {
+  public async getRoomInvitation(messageId: string): Promise<PUPPET.payloads.RoomInvitation | undefined> {
     return this._roomInvitationCache!.get(messageId);
   }
 
-  public async setRoomInvitation(messageId: string, payload: RoomInvitationPayload): Promise<void> {
+  public async setRoomInvitation(messageId: string, payload: PUPPET.payloads.RoomInvitation): Promise<void> {
     await this._roomInvitationCache!.set(messageId, payload);
   }
 
@@ -298,19 +291,20 @@ export class CacheManager {
    * Friendship Cache Section
    * --------------------------------
    */
-  public async getFriendshipRawPayload(id: string): Promise<FriendshipPayload | undefined> {
+  public async getFriendshipRawPayload(id: string): Promise<PUPPET.payloads.Friendship | undefined> {
     return this._friendshipCache!.get(id);
   }
 
-  public async setFriendshipRawPayload(id: string, payload: FriendshipPayload) {
+  public async setFriendshipRawPayload(id: string, payload: PUPPET.payloads.Friendship) {
     await this._friendshipCache!.set(id, payload);
   }
 
-  public getLabelList(): Label[] | undefined {
+  public getLabelList(): PadLocal.Label[] | undefined {
     return this._labelList;
   }
 
-  public setLabelList(labelList: Label[]): void {
+  public setLabelList(labelList: PadLocal.Label[]): void {
     this._labelList = labelList;
   }
+
 }

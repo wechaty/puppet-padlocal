@@ -1,3 +1,5 @@
+import type { EmojiMessagePayload } from "./helpers/message-emotion.js";
+
 export enum WechatMessageType {
   Text = 1,
   Image = 3,
@@ -23,4 +25,12 @@ export enum WechatMessageType {
   SysNotice = 9999,
   Sys = 10000,
   Recalled = 10002, // NOTIFY 服务通知
+}
+
+export type FileBoxMetadataMessageType = "unknown" | "emoticon";
+export type FileBoxMetadataMessagePayload = EmojiMessagePayload;
+
+export interface FileBoxMetadataMessage {
+  type: FileBoxMetadataMessageType,
+  payload: FileBoxMetadataMessagePayload
 }

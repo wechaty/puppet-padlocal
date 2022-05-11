@@ -1,28 +1,41 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "0.4.2",
+  "version": "1.11.12",
   "description": "Puppet PadLocal for Wechaty",
-  "directories": {
-    "test": "tests"
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/src/mod.js",
+      "require": "./dist/cjs/src/mod.js"
+    }
   },
-  "main": "dist/puppet-padlocal.js",
-  "typings": "dist/puppet-padlocal.d.ts",
-  "files": [
-    "dist/**/*"
-  ],
+  "typings": "./dist/esm/src/mod.d.ts",
   "engines": {
-    "wechaty": ">=0.60.10"
+    "node": ">= 16",
+    "npm": ">=7"
   },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/"
+  ],
   "scripts": {
-    "clean": "rm -fr dist/*",
-    "dist": "npm run clean && tsc",
+    "clean": "shx rm -fr dist/*",
+    "dist": "npm-run-all clean build dist:commonjs",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "dist:commonjs": "jq -n \"{ type: \\\"commonjs\\\" }\" > dist/cjs/package.json",
+    "lint": "npm-run-all lint:es lint:ts lint:md",
     "lint:md": "markdownlint README.md",
-    "lint": "tslint --project tsconfig.json",
-    "test": "jest",
+    "lint:ts": "tsc --isolatedModules --noEmit",
+    "lint:es": "eslint \"src/**/*.ts\" \"tests/**/*.test.ts\" --ignore-pattern tests/fixtures/",
+    "test": "npm-run-all lint",
+    "test:pack": "bash -x scripts/npm-pack-testing.sh",
+    "test:unit": "jest",
     "coverage": "jest --coverage",
-    "prepare": "npm run dist && bash ./scripts/generate-version.sh",
+    "generate-package-json": "bash ./scripts/generate-package-json.sh",
+    "prepare": "npm-run-all dist",
     "serve": "tsc-watch",
-    "demo": "./node_modules/.bin/ts-node examples/demo.ts"
+    "demo": "cross-env NODE_OPTIONS=\"--no-warnings --loader=ts-node/esm\" node examples/demo.ts"
   },
   "repository": {
     "type": "git",
@@ -48,47 +61,54 @@
   },
   "homepage": "https://github.com/padlocal/wechaty-puppet-padlocal#readme",
   "devDependencies": {
-    "@chatie/eslint-config": "^0.12.1",
+    "@chatie/eslint-config": "^1.0.4",
     "@chatie/git-scripts": "^0.6.2",
     "@chatie/semver": "^0.4.7",
-    "@chatie/tsconfig": "^0.13.3",
-    "@types/fs-extra": "^9.0.6",
-    "@types/jest": "^26.0.20",
-    "@types/lru-cache": "^5.1.0",
-    "@types/normalize-package-data": "^2.4.0",
+    "@chatie/tsconfig": "^4.6.2",
+    "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^27.4.0",
+    "@types/lru-cache": "^5.1.1",
+    "@types/normalize-package-data": "^2.4.1",
+    "@types/qrcode-terminal": "^0.12.0",
     "@types/quick-lru": "^3.0.0",
-    "@types/xml2js": "^0.4.8",
-    "config": "^3.3.3",
-    "jest": "^26.6.3",
-    "normalize-package-data": "^3.0.0",
+    "@types/xml2js": "^0.4.9",
+    "config": "^3.3.7",
+    "jest": "^28.0.2",
+    "jest-ts-webcompat-resolver": "^1.0.0",
+    "normalize-package-data": "^3.0.3",
     "pkg-jq": "^0.2.11",
-    "prettier": "^2.2.1",
+    "prettier": "^2.5.1",
     "qrcode-terminal": "^0.12.0",
-    "shx": "^0.3.3",
-    "ts-jest": "^26.5.0",
-    "tsc-watch": "^4.2.9",
-    "tslint-config-prettier": "^1.18.0",
-    "tstest": "^0.4.10",
-    "wechaty": "^0.60.10",
-    "wechaty-puppet": "^0.35.1"
+    "shx": "^0.3.4",
+    "ts-jest": "^28.0.0-next.1",
+    "tsc-watch": "^4.6.0",
+    "tstest": "^1.0.1",
+    "wechaty": "^1.19.10"
   },
   "peerDependencies": {
-    "wechaty-puppet": ">=0.35.1"
+    "wechaty-puppet": "^1.19.6"
   },
   "dependencies": {
-    "@types/config": "0.0.38",
-    "@types/node-cleanup": "^2.1.1",
+    "@types/config": "0.0.41",
+    "@types/node-cleanup": "^2.1.2",
     "fast-xml-parser": "^3.17.6",
-    "flash-store": "^0.20.7",
-    "fs-extra": "^9.1.0",
+    "file-box": "^1.4.14",
+    "flash-store": "^1.0.6",
+    "fs-extra": "^10.0.0",
     "lru-cache": "^6.0.0",
     "node-cleanup": "^2.1.2",
     "padlocal-client-ts": "^0.4.1",
-    "quick-lru": "^6.0.0",
-    "state-switch": "^0.6.18",
+    "quick-lru": "^6.0.2",
+    "state-switch": "^1.6.3",
     "xml2js": "^0.4.23"
   },
-  "jest": {
-    "testTimeout": 15000
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
+  "git": {
+    "scripts": {
+      "pre-push": "npx git-scripts-pre-push"
+    }
   }
 }

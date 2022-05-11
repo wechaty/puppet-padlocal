@@ -1,29 +1,29 @@
-import { prepareSingedOnBot } from "./wechaty-common";
+import { prepareSingedOnBot } from "./wechaty-common.js";
 
-test("login", async () => {
+test("login", async() => {
   const bot = await prepareSingedOnBot();
 
-  expect(bot.logonoff()).toBeTruthy();
+  expect(bot.isLoggedIn).toBeTruthy();
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   await bot.stop();
 
-  expect(bot.logonoff()).toBeFalsy();
+  expect(bot.isLoggedIn).toBeFalsy();
 }, 300000); // 5 min
 
 test(
   "logout",
-  async () => {
+  async() => {
     const bot = await prepareSingedOnBot();
 
-    expect(bot.logonoff()).toBeTruthy();
+    expect(bot.isLoggedIn).toBeTruthy();
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     await bot.logout();
 
-    expect(bot.logonoff()).toBeFalsy();
+    expect(bot.isLoggedIn).toBeFalsy();
   },
-  60 * 1000
+  60 * 1000,
 );

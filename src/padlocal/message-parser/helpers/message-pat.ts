@@ -1,5 +1,6 @@
-import { Message } from "padlocal-client-ts/dist/proto/padlocal_pb";
-import { xmlToJson } from "../../utils/xml-to-json";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { xmlToJson } from "../../utils/xml-to-json.js";
+import { WechatMessageType } from "../WechatMessageType.js";
 
 interface PatXmlSchema {
   sysmsg: {
@@ -16,41 +17,32 @@ interface PatXmlSchema {
 }
 
 export interface PatMessagePayload {
-  chatroom: string;
   fromusername: string;
   chatusername: string;
   pattedusername: string;
   template: string;
 }
 
-export async function isPatMessage(message: Message.AsObject) {
-  const content = message.content.trim();
-  const parts = content.split(":");
-  if (parts.length < 1) {
-    return false;
+export async function parseMessagePatPayload(message: PadLocal.Message.AsObject): Promise<PatMessagePayload | null> {
+  if (message.type !== WechatMessageType.Recalled) {
+    return null;
   }
 
-  const xml = parts[1];
-  if (!xml) {
-    return false;
+  const content = message.content.trim();
+  const sysmsgIndex = content.indexOf("<sysmsg");
+  if (sysmsgIndex === -1) {
+    return null;
   }
 
-  const patXml: PatXmlSchema = await xmlToJson(xml);
-  return patXml.sysmsg.$.type === "pat";
-}
-
-export async function patMessageParser(message: Message.AsObject): Promise<PatMessagePayload> {
-  const content = message.content.trim();
-  const parts = content.split(":");
-  const chatroom = parts[0];
-  const xml = parts[1];
-
-  const patXml: PatXmlSchema = await xmlToJson(xml);
+  const sysmsgXML = content.substring(sysmsgIndex);
+  const patXml: PatXmlSchema = await xmlToJson(sysmsgXML);
+  if (patXml.sysmsg.$.type !== "pat") {
+    return null;
+  }
 
   return {
-    chatroom,
-    fromusername: patXml.sysmsg.pat.fromusername,
     chatusername: patXml.sysmsg.pat.chatusername,
+    fromusername: patXml.sysmsg.pat.fromusername,
     pattedusername: patXml.sysmsg.pat.pattedusername,
     template: patXml.sysmsg.pat.template,
   };

@@ -1,3 +1,8 @@
+
+#
+# Huan(202201) deprecated: use `wechaty gateway` instead
+#
+
 if [ -z "$1" ]; then
   >&2 echo -e "Missing argument.\nUsage: $0 <__padlocal_token__>"
   exit 1

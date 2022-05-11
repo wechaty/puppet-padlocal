@@ -1,5 +1,4 @@
-import { VERSION } from "./version";
-import { PuppetPadlocal } from "./puppet-padlocal";
+import { PuppetPadlocal, VERSION } from "./puppet-padlocal.js";
 
 export { VERSION, PuppetPadlocal };
 export default PuppetPadlocal;

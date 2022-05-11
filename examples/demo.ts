@@ -1,13 +1,9 @@
-// read config from local-test.json
-process.env.NODE_CONFIG_ENV = "test";
-
-import { MessageType } from "wechaty-puppet";
-import { Contact, log, Message, ScanStatus, Wechaty } from "wechaty";
-import PuppetPadlocal from "../src/puppet-padlocal";
+import * as PUPPET from "wechaty-puppet";
+import { Contact, log, Message, ScanStatus, WechatyBuilder } from "wechaty";
+import PuppetPadlocal from "../src/puppet-padlocal.js";
 import config from "config";
 import QRCode from "qrcode-terminal";
-import { FileBoxJsonObjectUrl } from "file-box/src/file-box.type";
-import { isContactId } from "../src/padlocal/utils/is-type";
+import { isContactId } from "../src/padlocal/utils/is-type.js";
 
 // log.level("silly");
 
@@ -18,14 +14,14 @@ async function getMessagePayload(message: Message) {
   const recallUserId: string = config.get("test.push.recallUserId");
 
   switch (message.type()) {
-    case MessageType.Text:
-      if (message.talker()?.id === recallUserId && message.text()!.indexOf("recall") !== -1) {
+    case PUPPET.types.Message.Text:
+      if (message.talker().id === recallUserId && message.text()!.indexOf("recall") !== -1) {
         await message.recall();
       }
       break;
 
-    case MessageType.Attachment:
-    case MessageType.Audio:
+    case PUPPET.types.Message.Attachment:
+    case PUPPET.types.Message.Audio: {
       const attachFile = await message.toFileBox();
 
       const dataBuffer = await attachFile.toBuffer();
@@ -33,8 +29,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message audio or attach: ${dataBuffer.length}`);
 
       break;
+    }
 
-    case MessageType.Video:
+    case PUPPET.types.Message.Video: {
       const videoFile = await message.toFileBox();
 
       const videoData = await videoFile.toBuffer();
@@ -42,11 +39,12 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message video: ${videoData.length}`);
 
       break;
+    }
 
-    case MessageType.Emoticon:
+    case PUPPET.types.Message.Emoticon: {
       const emotionFile = await message.toFileBox();
 
-      const emotionJSON = emotionFile.toJSON() as FileBoxJsonObjectUrl;
+      const emotionJSON = emotionFile.toJSON();
       log.info("TestBot", `get message emotion json: ${JSON.stringify(emotionJSON)}`);
 
       const emotionBuffer: Buffer = await emotionFile.toBuffer();
@@ -54,8 +52,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message emotion: ${emotionBuffer.length}`);
 
       break;
+    }
 
-    case MessageType.Image:
+    case PUPPET.types.Message.Image: {
       const messageImage = await message.toImage();
 
       const thumbImage = await messageImage.thumbnail();
@@ -74,8 +73,9 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message image, artwork: ${artworkImageData.length}`);
 
       break;
+    }
 
-    case MessageType.Url:
+    case PUPPET.types.Message.Url: {
       const urlLink = await message.toUrlLink();
       log.info("TestBot", `get message url: ${JSON.stringify(urlLink)}`);
 
@@ -85,26 +85,29 @@ async function getMessagePayload(message: Message) {
       log.info("TestBot", `get message url thumb: ${urlThumbImageData.length}`);
 
       break;
+    }
 
-    case MessageType.MiniProgram:
+    case PUPPET.types.Message.MiniProgram: {
       const miniProgram = await message.toMiniProgram();
 
       log.info(`MiniProgramPayload: ${JSON.stringify(miniProgram)}`);
 
       break;
+    }
   }
 }
 
-const bot = new Wechaty({
+const bot = WechatyBuilder.build({
   name: "TestBot",
   puppet,
-})
+});
 
+bot
   .on("scan", (qrcode: string, status: ScanStatus) => {
     if (status === ScanStatus.Waiting && qrcode) {
       log.info(
         "TestBot",
-        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`
+        `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`,
       );
 
       QRCode.generate(qrcode, { small: true });
@@ -117,25 +120,25 @@ const bot = new Wechaty({
     log.info("TestBot", `${user} login`);
   })
 
-  .on("logout", (user: Contact, reason: string) => {
+  .on("logout", (user, reason) => {
     log.info("TestBot", `${user} logout, reason: ${reason}`);
   })
 
-  .on("message", async (message: Message) => {
+  .on("message", async(message: Message) => {
     log.info("TestBot", `on message: ${message.toString()}`);
 
     const forwardFrom = config.get("test.push.forwardFrom");
     const forwardTo: string = config.get("test.push.forwardTo");
 
-    if (message.type() === MessageType.Text) {
+    if (message.type() === PUPPET.types.Message.Text) {
       // ding-dong bot
       if (message.to()?.self() && message.text().indexOf("ding") !== -1) {
         await message.talker().say(message.text().replace("ding", "dong"));
       }
     }
 
-    if (message.talker()?.id === forwardFrom) {
-      if (message.type() === MessageType.Unknown) {
+    if (message.talker().id === forwardFrom && message.listener()?.id === forwardFrom) {
+      if (message.type() === PUPPET.types.Message.Unknown) {
         return;
       }
 
@@ -149,7 +152,7 @@ const bot = new Wechaty({
         const newMessage = await message.forward(to!);
         await getMessagePayload(newMessage as Message);
       } catch (e) {
-        log.error("TestBot", `Error while forwarding message: ${e.stack}`);
+        log.error("TestBot", `Error while forwarding message: ${(e as Error).stack}`);
       }
     }
 
@@ -160,6 +163,10 @@ const bot = new Wechaty({
     log.info("TestBot", `on error: ${error.toString()}`);
   });
 
-bot.start().then(() => {
-  log.info("TestBot", "started.");
-});
+bot
+  .start()
+  .then(() => {
+    log.info("TestBot", "started.");
+    return null;
+  })
+  .catch(console.error);
