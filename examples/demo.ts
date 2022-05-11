@@ -137,7 +137,7 @@ bot
       }
     }
 
-    if (message.talker().id === forwardFrom) {
+    if (message.talker().id === forwardFrom && message.listener()?.id === forwardFrom) {
       if (message.type() === PUPPET.types.Message.Unknown) {
         return;
       }
