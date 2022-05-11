@@ -1,6 +1,6 @@
 {
   "name": "wechaty-puppet-padlocal",
-  "version": "1.11.9",
+  "version": "1.11.10",
   "description": "Puppet PadLocal for Wechaty",
   "type": "module",
   "exports": {
