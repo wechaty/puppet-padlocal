@@ -666,11 +666,17 @@ class PuppetPadlocal extends PUPPET.Puppet {
         if (appPayload.thumburl) {
           return FileBox.fromUrl(appPayload.thumburl);
         } else {
-          const urlThumbData = await this._client!.api.getMessageAttachThumb(
-            messagePayload.content,
-            messagePayload.tousername,
-          );
-          return FileBox.fromBuffer(urlThumbData, `message-${messageId}-url-thumb.jpg`);
+          try {
+            const urlThumbData = await this._client!.api.getMessageAttachThumb(
+              messagePayload.content,
+              messagePayload.tousername,
+            );
+            return FileBox.fromBuffer(urlThumbData, `message-${messageId}-url-thumb.jpg`);
+          } catch (e) {
+            log.error("fail to get thumb for url message:" + messageId);
+            // return trivial placeholder FilBox object
+            return FileBox.fromUrl(appPayload.url);
+          }
         }
       }
       default:
