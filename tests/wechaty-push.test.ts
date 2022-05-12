@@ -201,7 +201,6 @@ test(
       });
     });
 
-    // tslint:disable-next-line:no-empty
     return new Promise(() => {});
   },
   Math.pow(2, 30),
