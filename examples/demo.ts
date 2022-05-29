@@ -5,7 +5,7 @@ import config from "config";
 import QRCode from "qrcode-terminal";
 import { isContactId } from "../src/padlocal/utils/is-type.js";
 
-// PuppetPadlocal.log.level("silly");
+// log.level("silly");
 
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });

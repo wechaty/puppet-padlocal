@@ -1,7 +1,7 @@
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
 import { FileBox, FileBoxInterface } from "file-box";
-import { KickOutEvent, PadLocalClient, log as PadLocalLog } from "padlocal-client-ts";
+import { KickOutEvent, PadLocalClient, Log as PadLocalLog } from "padlocal-client-ts";
 import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
@@ -49,6 +49,7 @@ if (logLevel) {
   log.level(logLevel.toLowerCase() as any);
   log.silly(PRE, "set level to %s", logLevel);
 }
+PadLocalLog.setLogger(log);
 
 class PuppetPadlocal extends PUPPET.Puppet {
 
