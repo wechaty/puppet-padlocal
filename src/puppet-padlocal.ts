@@ -171,10 +171,16 @@ class PuppetPadlocal extends PUPPET.Puppet {
       },
 
       onLoginSuccess: async(_) => {
-        const userName = this._client!.selfContact!.getUsername();
-        log.silly(PRE, `login success: ${userName}`);
+        this.wrapAsync(
+          this._onPushSerialExecutor.execute(async() => {
+            const userName = this._client!.selfContact!.getUsername();
+            log.silly(PRE, `login success: ${userName}`);
 
-        await this.login(this._client!.selfContact!.getUsername());
+            await this.login(this._client!.selfContact!.getUsername());
+
+            log.silly(PRE, "login success: DONE");
+          }),
+        );
       },
 
       onOneClickEvent: onQrCodeEvent,
@@ -183,15 +189,20 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
       // Will sync message and contact after login success, since last time login.
       onSync: async(syncEvent: PadLocal.SyncEvent) => {
-        log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
-        for (const contact of syncEvent.getContactList()) {
-          await this._onPushContact(contact);
-        }
+        this.wrapAsync(
+          this._onPushSerialExecutor.execute(async() => {
+            log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
-        for (const message of syncEvent.getMessageList()) {
-          await this._onPushMessage(message);
-        }
+            for (const contact of syncEvent.getContactList()) {
+              await this._onPushContact(contact);
+            }
+
+            for (const message of syncEvent.getMessageList()) {
+              await this._onPushMessage(message);
+            }
+          }),
+        );
       },
     })
       .then(() => {
