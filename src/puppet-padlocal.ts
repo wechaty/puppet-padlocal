@@ -1,7 +1,7 @@
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
 import { FileBox, FileBoxInterface } from "file-box";
-import { KickOutEvent, PadLocalClient } from "padlocal-client-ts";
+import { KickOutEvent, PadLocalClient, log as PadLocalLog } from "padlocal-client-ts";
 import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
@@ -51,6 +51,8 @@ if (logLevel) {
 }
 
 class PuppetPadlocal extends PUPPET.Puppet {
+
+  public static log = PadLocalLog;
 
   private _client?: PadLocalClient;
   private _cacheMgr?: CacheManager;
@@ -673,7 +675,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
             );
             return FileBox.fromBuffer(urlThumbData, `message-${messageId}-url-thumb.jpg`);
           } catch (e) {
-            log.error("fail to get thumb for url message:" + messageId);
+            log.warn(`fail to get thumb for url message:${messageId}, payload: ${JSON.stringify(appPayload)}`);
             // return trivial placeholder FilBox object
             return FileBox.fromUrl(appPayload.url);
           }
