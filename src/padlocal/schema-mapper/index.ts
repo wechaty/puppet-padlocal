@@ -1,7 +1,7 @@
 import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import { isContactId, isContactOfficialId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type.js";
+import { isContactOfficialId, isIMRoomId, isRoomId } from "../utils/is-type.js";
 import { convertMessageType } from "../message-parser/helpers/message.js";
 import {
   appMessageParser,
@@ -10,7 +10,10 @@ import {
   ReferMsgPayload,
 } from "../message-parser/helpers/message-appmsg.js";
 import { WechatMessageType } from "../message-parser/WechatMessageType.js";
-import { parseMessagePatPayload } from "../message-parser/helpers/message-pat.js";
+import {
+  fixPayloadForRoomMessageSentByOthers,
+  parseContactFromRoomMessageContent
+} from "../message-parser/helpers/message-room.js";
 
 const PRE = "[SchemaMapper]";
 
@@ -20,7 +23,7 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
 
   /**
    * single chat message: talkerId + listenerId
-   * room message: talkerId + roomId
+   * room message: talkerId + roomId + listenerId(optional)
    */
   let talkerId: string = "";
   let roomId: undefined | string;
@@ -31,32 +34,11 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     // room message sent by others
 
     roomId = padLocalMessage.fromusername;
-
-    // text:    "wxid_xxxx:\nnihao"
-    // appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
-    // pat:     "19850419xxx@chatroom:\n<sysmsg type="pat"><pat><fromusername>xxx</fromusername><chatusername>19850419xxx@chatroom</chatusername><pattedusername>wxid_xxx</pattedusername>...<template><![CDATA["${vagase}" 拍了拍我]]></template></pat></sysmsg>"
-
-    // separator of talkerId and content
-    const separatorIndex = padLocalMessage.content.indexOf(":\n");
-    if (separatorIndex !== -1) {
-      const takerIdPrefix = padLocalMessage.content.slice(0, separatorIndex);
-      // chat message
-      if (isContactId(takerIdPrefix) || isIMContactId(takerIdPrefix)) {
-        text = padLocalMessage.content.slice(separatorIndex + 2);
-        talkerId = takerIdPrefix;
-      } else if (isRoomId(takerIdPrefix) || isIMRoomId(takerIdPrefix)) {
-        // pat and other system message
-
-        text = padLocalMessage.content.slice(separatorIndex + 2);
-
-        // extract talkerId for pat message from payload
-        const patMessagePayload = await parseMessagePatPayload(padLocalMessage);
-        if (patMessagePayload) {
-          talkerId = patMessagePayload.fromusername;
-        } else {
-          // FIXME: extract talkerId for other 10002 messages
-        }
-      }
+    const payload = await fixPayloadForRoomMessageSentByOthers(padLocalMessage);
+    if (payload) {
+      text = payload.text;
+      talkerId = payload.talkerId;
+      listenerId = payload.listenerId;
     }
   } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
     // room message sent by self
@@ -66,22 +48,15 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
 
     const startIndex = padLocalMessage.content.indexOf(":\n");
     text = padLocalMessage.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
+
+    const contactInfo = await parseContactFromRoomMessageContent(padLocalMessage);
+    listenerId = contactInfo?.listenerId;
   } else {
     // single chat message
 
     talkerId = padLocalMessage.fromusername;
     listenerId = padLocalMessage.tousername;
   }
-
-  /**
-   * 7. Set text for quote message
-   */
-  // TODO:
-  /*
-  if (rawPayload.appMsgType === WechatAppMessageType.QuoteMessage) {
-    text = await quotePayloadParser(rawPayload);
-  }
-   */
 
   const messageBase: PUPPET.payloads.MessageBase = {
     id: padLocalMessage.id,
@@ -105,6 +80,7 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     }
 
     const messageRoom: PUPPET.payloads.MessageRoom = {
+      listenerId,
       mentionIdList,
       roomId,
     };

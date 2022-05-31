@@ -160,7 +160,7 @@ bot
   })
 
   .on("error", (error) => {
-    log.info("TestBot", `on error: ${error.toString()}`);
+    log.info("TestBot", `on error: ${error.toString()}\n${error.stack}`);
   });
 
 bot
