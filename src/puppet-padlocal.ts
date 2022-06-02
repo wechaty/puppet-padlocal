@@ -689,7 +689,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
           } catch (e) {
             log.warn(`fail to get thumb for url message:${messageId}, payload: ${JSON.stringify(appPayload)}`);
             // return trivial placeholder FilBox object
-            return FileBox.fromUrl(appPayload.url);
+            return FileBox.fromBuffer(Buffer.from(new ArrayBuffer(0)), `message-${messageId}-url-thumb.jpg`);
           }
         }
       }
