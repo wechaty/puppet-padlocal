@@ -12,7 +12,7 @@ import {
 import { WechatMessageType } from "../message-parser/WechatMessageType.js";
 import {
   fixPayloadForRoomMessageSentByOthers,
-  parseContactFromRoomMessageContent
+  parseContactFromRoomMessageContent,
 } from "../message-parser/helpers/message-room.js";
 
 const PRE = "[SchemaMapper]";

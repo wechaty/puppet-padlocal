@@ -17,7 +17,7 @@ export interface SysmsgTemplateXmlSchema {
           memberlist?: {
             member: [
               {
-                username: string;
+                username?: string;
                 nickname: string;
               }
             ];
@@ -25,7 +25,7 @@ export interface SysmsgTemplateXmlSchema {
           separator?: string;
           title?: string;
           usernamelist?: {
-            username: string;
+            username: string[];
           };
         }
       ];
@@ -34,42 +34,99 @@ export interface SysmsgTemplateXmlSchema {
 }
 
 export interface SysmsgTemplateLinkMember {
-  userName: string,
+  userName?: string,
   nickName: string,
 }
 
+export type SysmsgTemplateLinkProfile = Array<SysmsgTemplateLinkMember>;
+
+export interface SysmsgTemplateLinkRevoke {
+  title: string,
+  userNameList: string[],
+}
+
+export type SysmsgTemplateLinkType = "link_profile" | "link_revoke";
+
+export type SysmsgTemplateLinkPayload = SysmsgTemplateLinkProfile | SysmsgTemplateLinkRevoke;
+
 export interface SysmsgTemplateLink {
   name: string,
-  memberList?: Array<SysmsgTemplateLinkMember>
+  payload: SysmsgTemplateLinkPayload,
+  type: SysmsgTemplateLinkType,
 }
 
 export interface SysmsgTemplateMessagePayload {
   template: string;
-  linkList: Array<SysmsgTemplateLink>;
+  templateLinkList: Array<SysmsgTemplateLink>; // link list is sorted by template variable name order
+}
+
+/**
+ * xmlToJson will return element instead of array if xml node only contains one child.
+ * @param list
+ */
+function toList(list: any): any[] {
+  if (!Array.isArray(list)) {
+    return [list];
+  } else {
+    return list;
+  }
 }
 
 export async function parseSysmsgTemplateMessagePayload(sysmsgTemplateXml: SysmsgTemplateXmlSchema): Promise<SysmsgTemplateMessagePayload> {
-  const linkList = sysmsgTemplateXml.content_template.link_list.link.map(link => {
-    const memberList = link.memberlist?.member.map(member => {
-      return {
-        nickName: member.nickname,
-        userName: member.username,
+  const linkList = toList(sysmsgTemplateXml.content_template.link_list.link);
+
+  const allLinkList = linkList.map((link): SysmsgTemplateLink  => {
+    const type = link.$.type as SysmsgTemplateLinkType;
+    let payload: SysmsgTemplateLinkPayload | undefined;
+
+    if (type === "link_profile") {
+      const memberList = toList(link.memberlist!.member);
+      payload = memberList.map((member: { nickname: string; username?: string; }): SysmsgTemplateLinkMember => {
+        return {
+          nickName: member.nickname,
+          userName: member.username,
+        };
+      });
+    } else if (link.$.type === "link_revoke") {
+      payload = {
+        title: link.title!,
+        userNameList: toList(link.usernamelist!.username),
       };
-    });
+    } else {
+      // handle more link type here
+    }
 
     return {
-      memberList,
       name: link.$.name,
+      payload: payload!,
+      type,
     };
   });
 
+  const template = sysmsgTemplateXml.content_template.template;
+  const matches = [...template.matchAll(/\$(.+?)\$/g)];
+
+  const templateLinkList = matches.map(match => {
+    const linkName = match[1];
+    return allLinkList.filter((link) => link.name === linkName)[0]!;
+  });
+
   return {
-    linkList,
-    template: sysmsgTemplateXml.content_template.template,
+    template,
+    templateLinkList,
   };
 }
 
-export function getLinkWithTemplatePlaceHolderName(payload: SysmsgTemplateMessagePayload, placeHolderName: string) : SysmsgTemplateLink {
-  const links : Array<SysmsgTemplateLink> = payload.linkList.filter(link => placeHolderName.includes(link.name));
-  return links[0]!;
+export type SysmsgTemplateHandler = (templateLinkList: SysmsgTemplateLink[], matchedRegexIndex: number) => Promise<any>;
+
+export async function processTemplateIfMatch(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler) : Promise<any> {
+  for (let i = 0; i < regexList.length; ++i) {
+    const regex = regexList[i]!;
+    const match = sysmsgTemplatePayload.template.match(regex);
+    if (!match) {
+      continue;
+    }
+
+    return await handler(sysmsgTemplatePayload.templateLinkList, i);
+  }
 }

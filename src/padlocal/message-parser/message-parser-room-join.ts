@@ -1,32 +1,37 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import * as PUPPET from "wechaty-puppet";
-import type { RoomXmlSchema } from "./helpers/message-room.js";
+import type * as PUPPET from "wechaty-puppet";
 import { isRoomId } from "../utils/is-type.js";
-import { xmlToJson } from "../utils/xml-to-json.js";
-import { getUserName } from "../utils/get-xml-label.js";
 import type { MessageParserRetType } from "./message-parser.js";
 import { removeRoomLeaveDebounce } from "./message-parser-room-leave.js";
+import { parseSysmsgMessage } from "./helpers/message-sysmsg.js";
+import {
+  processTemplateIfMatch,
+  SysmsgTemplateLinkProfile,
+  SysmsgTemplateMessagePayload,
+} from "./helpers/sysmsg/message-sysmsgtemplate.js";
 
-const ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_ZH = [
+const YOU_INVITE_OTHER_REGEX_LIST = [
   /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
-  /^" ?(.+)"通过扫描你分享的二维码加入群聊/,
-];
-
-const ROOM_JOIN_OTHER_INVITE_BOT_REGEX_LIST_ZH = [
-  /^"([^"]+?)"邀请你加入了群聊，群聊参与人还有：(.+)/,
-  /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
-];
-const ROOM_JOIN_OTHER_INVITE_OTHER_REGEX_LIST_ZH = [/^"(.+)"邀请"(.+)"加入了群聊/];
-const ROOM_JOIN_OTHER_INVITE_OTHER_QRCODE_REGEX_LIST_ZH = [/^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/];
-
-const ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_EN = [
   /^You invited (.+) to the group chat/,
+];
+const OTHER_INVITE_YOU_REGEX_LIST = [
+  /^"([^"]+?)"邀请你加入了群聊，群聊参与人还有：(.+)/,
+  /^(.+) invited you to a group chat with (.+)/,
+];
+const OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST = [
+  /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
+  /^(.+?) invited you and (.+?) to (the|a) group chat/,
+];
+const OTHER_INVITE_OTHER_REGEX_LIST = [
+  /^"(.+)"邀请"(.+)"加入了群聊/,
+  /^(.+?) invited (.+?) to (the|a) group chat/,
+];
+const OTHER_JOIN_VIA_YOUR_QRCODE_REGEX_LIST = [
+  /^" ?(.+)"通过扫描你分享的二维码加入群聊/,
   /^" ?(.+)" joined group chat via the QR code you shared/,
 ];
-const ROOM_JOIN_OTHER_INVITE_BOT_REGEX_LIST_EN = [/^(.+) invited you to a group chat with (.+)/];
-const ROOM_JOIN_OTHER_INVITE_OTHER_REGEX_LIST_EN = [/^(.+?) invited (.+?) to (the|a) group chat/];
-const ROOM_JOIN_OTHER_INVITE_OTHER_QRCODE_REGEX_LIST_EN = [
+const OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST = [
+  /^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/,
   /^"(.+)" joined the group chat via the QR Code shared by "(.+)"/,
 ];
 
@@ -38,141 +43,126 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
 
   const timestamp = message.createtime;
 
-  let content = message.content;
-  const jsonPayload: RoomXmlSchema = await xmlToJson(content);
-  if (!jsonPayload || !jsonPayload.sysmsg || !jsonPayload.sysmsg.sysmsgtemplate) {
+  const sysmsgPayload = await parseSysmsgMessage(message);
+  if (!sysmsgPayload || sysmsgPayload.type !== "sysmsgtemplate") {
     return null;
   }
 
-  content = jsonPayload.sysmsg.sysmsgtemplate.content_template.template;
-  const linkList = jsonPayload.sysmsg.sysmsgtemplate.content_template.link_list.link;
+  const sysmsgTemplatePayload = sysmsgPayload.payload as SysmsgTemplateMessagePayload;
 
   /**
-   * Process English language
+   * 1. You Invite Other to join the Room
+   * (including other join var qr code you shared)
+   * /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
+   * /^" ?(.+)"通过扫描你分享的二维码加入群聊/,
    */
-  let matchesForBotInviteOtherEn = null as null | string[];
-  let matchesForOtherInviteBotEn = null as null | string[];
-  let matchesForOtherInviteOtherEn = null as null | string[];
-  let matchesForOtherInviteOtherQrcodeEn = null as null | string[];
-
-  ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_EN.some((regex) => !!(matchesForBotInviteOtherEn = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_BOT_REGEX_LIST_EN.some((regex) => !!(matchesForOtherInviteBotEn = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_OTHER_REGEX_LIST_EN.some((regex) => !!(matchesForOtherInviteOtherEn = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_OTHER_QRCODE_REGEX_LIST_EN.some(
-    (regex) => !!(matchesForOtherInviteOtherQrcodeEn = content.match(regex)),
-  );
-
-  /**
-   * Process Chinese language
-   */
-  let matchesForBotInviteOtherZh = null as null | string[];
-  let matchesForOtherInviteBotZh = null as null | string[];
-  let matchesForOtherInviteOtherZh = null as null | string[];
-  let matchesForOtherInviteOtherQrcodeZh = null as null | string[];
-
-  ROOM_JOIN_BOT_INVITE_OTHER_REGEX_LIST_ZH.some((regex) => !!(matchesForBotInviteOtherZh = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_BOT_REGEX_LIST_ZH.some((regex) => !!(matchesForOtherInviteBotZh = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_OTHER_REGEX_LIST_ZH.some((regex) => !!(matchesForOtherInviteOtherZh = content.match(regex)));
-  ROOM_JOIN_OTHER_INVITE_OTHER_QRCODE_REGEX_LIST_ZH.some(
-    (regex) => !!(matchesForOtherInviteOtherQrcodeZh = content.match(regex)),
-  );
-
-  const matchesForBotInviteOther = matchesForBotInviteOtherEn || matchesForBotInviteOtherZh;
-  const matchesForOtherInviteBot = matchesForOtherInviteBotEn || matchesForOtherInviteBotZh;
-  const matchesForOtherInviteOther = matchesForOtherInviteOtherEn || matchesForOtherInviteOtherZh;
-  const matchesForOtherInviteOtherQrcode = matchesForOtherInviteOtherQrcodeEn || matchesForOtherInviteOtherQrcodeZh;
-
-  const matches
-    = matchesForBotInviteOther
-    || matchesForOtherInviteBot
-    || matchesForOtherInviteOther
-    || matchesForOtherInviteOtherQrcode;
-
-  if (!matches) {
-    return null;
-  }
-
-  const stringToList = (inviteeIdList: string | string[]) => {
-    return typeof inviteeIdList !== "string" ? inviteeIdList : [inviteeIdList];
+  const youInviteOther = async() => {
+    return processTemplateIfMatch(
+      sysmsgTemplatePayload,
+      [...YOU_INVITE_OTHER_REGEX_LIST, ...OTHER_JOIN_VIA_YOUR_QRCODE_REGEX_LIST],
+      async(templateLinkList) => {
+        // the first item MUST be others profile link
+        const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+        // filter other empty userName, in case the user is not your friend
+        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
+        return {
+          inviteeIdList,
+          inviterId: puppet.currentUserId,
+          roomId,
+          timestamp,
+        };
+      });
   };
 
-  let ret: PUPPET.payloads.EventRoomJoin | null = null;
+  /**
+   * 2. Other Invite you to join the Room
+   * /^"([^"]+?)"邀请你加入了群聊/,
+   */
+  const otherInviteYou = async() => {
+    return processTemplateIfMatch(
+      sysmsgTemplatePayload,
+      OTHER_INVITE_YOU_REGEX_LIST,
+      async(templateLinkList) => {
+        // the first must invitor
+        const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+
+        return {
+          inviteeIdList: [puppet.currentUserId],
+          inviterId: inviter[0]!.userName,
+          roomId,
+          timestamp,
+        };
+      });
+  };
 
   /**
-   * Parse all Names From the Event Text
+   * 3. Other invite you and others to join the room
+   * /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
+   * /^"(.+)"邀请"(.+)"加入了群聊/,
    */
-  if (matchesForBotInviteOther) {
-    /**
-     * 1. Bot Invite Other to join the Room
-     *  (include invite via QrCode)
-     */
-    const other = matches[1]!;
-    const inviteeIdList = getUserName(linkList, other);
+  const otherInviteOther = async() => {
+    return processTemplateIfMatch(
+      sysmsgTemplatePayload,
+      [...OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST, ...OTHER_INVITE_OTHER_REGEX_LIST],
+      async(templateLinkList, matchedRegexIndex) => {
+        // the first item is invitor
+        const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
 
-    ret = {
-      inviteeIdList: stringToList(inviteeIdList),
-      inviterId: (await puppet.roomMemberSearch(roomId, PUPPET.types.YOU))[0],
-      roomId,
-      timestamp,
-    } as PUPPET.payloads.EventRoomJoin;
-  } else if (matchesForOtherInviteBot) {
-    /**
-     * 2. Other Invite Bot to join the Room
-     */
-    // /^"([^"]+?)"邀请你加入了群聊/,
-    // /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
-    const _inviterName = matches[1]!;
-    const inviterId = getUserName(linkList, _inviterName);
+        // the second item is others
+        const inviteeList = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
+        // filter other empty userName, in case the user is not your friend
+        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
 
-    ret = {
-      inviteeIdList: await puppet.roomMemberSearch(roomId, PUPPET.types.YOU),
-      inviterId,
-      roomId,
-      timestamp,
-    } as PUPPET.payloads.EventRoomJoin;
-  } else if (matchesForOtherInviteOther) {
-    /**
-     * 3. Other Invite Other to a Room
-     *  (NOT include invite via Qrcode)
-     */
-    // /^"([^"]+?)"邀请"([^"]+)"加入了群聊$/,
-    // /^([^"]+?) invited ([^"]+?) to (the|a) group chat/,
-    const _inviterName = matches[1]!;
-    const inviterId = getUserName(linkList, _inviterName);
+        const includingYou = matchedRegexIndex < OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST.length;
+        if (includingYou) {
+          inviteeIdList.unshift(puppet.currentUserId);
+        }
 
-    const _others = matches[2]!;
-    const inviteeIdList = getUserName(linkList, _others);
+        return {
+          inviteeIdList,
+          inviterId: inviter[0]!.userName,
+          roomId,
+          timestamp,
+        };
+      });
+  };
 
-    ret = {
-      inviteeIdList: stringToList(inviteeIdList),
-      inviterId,
-      roomId,
-      timestamp,
-    } as PUPPET.payloads.EventRoomJoin;
-  } else if (matchesForOtherInviteOtherQrcode) {
-    /**
-     * 4. Other Invite Other via Qrcode to join a Room
-     *   /^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/,
-     */
-    const _inviterName = matches[2]!;
-    const inviterId = getUserName(linkList, _inviterName);
+  /**
+   * 4. Other Invite Other via Qrcode to join a Room
+   * /^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/,
+   */
+  const otherJoinViaQrCode = async() => {
+    return processTemplateIfMatch(
+      sysmsgTemplatePayload,
+      OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST,
+      async(templateLinkList) => {
+        // the first item is invitee
+        const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+        // filter other empty userName, in case the user is not your friend
+        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
 
-    const other = matches[1]!;
-    const inviteeIdList = getUserName(linkList, other);
+        // the second item is inviter
+        const inviter = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
 
-    ret = {
-      inviteeIdList: stringToList(inviteeIdList),
-      inviterId,
-      roomId,
-      timestamp,
-    } as PUPPET.payloads.EventRoomJoin;
+        return {
+          inviteeIdList,
+          inviterId: inviter[0]!.userName,
+          roomId,
+          timestamp,
+        };
+      });
+  };
+
+  for (const handler of [youInviteOther, otherInviteYou, otherInviteOther, otherJoinViaQrCode]) {
+    const ret: PUPPET.payloads.EventRoomJoin | undefined = await handler();
+    if (ret) {
+      ret.inviteeIdList.forEach((inviteeId) => {
+        removeRoomLeaveDebounce(ret!.roomId, inviteeId);
+      });
+
+      return ret;
+    }
   }
 
-  if (ret) {
-    ret.inviteeIdList.forEach((inviteeId) => {
-      removeRoomLeaveDebounce(ret!.roomId, inviteeId);
-    });
-  }
-
-  return ret;
+  return null;
 };

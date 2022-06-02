@@ -159,6 +159,26 @@ bot
     await getMessagePayload(message);
   })
 
+  .on("room-invite", (roomInvitation) => {
+    log.info("TestBot", `on room-invite: ${JSON.stringify(roomInvitation)}`);
+  })
+
+  .on("room-join", (roomJoin) => {
+    log.info("TestBot", `on room-join: ${JSON.stringify(roomJoin)}`);
+  })
+
+  .on("room-leave", (roomLeave) => {
+    log.info("TestBot", `on room-leave: ${JSON.stringify(roomLeave)}`);
+  })
+
+  .on("room-topic", (roomTopic) => {
+    log.info("TestBot", `on room-topic: ${JSON.stringify(roomTopic)}`);
+  })
+
+  .on("friendship", (friendship) => {
+    log.info("TestBot", `on friendship: ${JSON.stringify(friendship)}`);
+  })
+
   .on("error", (error) => {
     log.info("TestBot", `on error: ${error.toString()}\n${error.stack}`);
   });
