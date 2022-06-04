@@ -159,24 +159,24 @@ bot
     await getMessagePayload(message);
   })
 
-  .on("room-invite", (roomInvitation) => {
-    log.info("TestBot", `on room-invite: ${JSON.stringify(roomInvitation)}`);
+  .on("room-invite", async(roomInvitation) => {
+    log.info("TestBot", `on room-invite: ${roomInvitation}`);
   })
 
-  .on("room-join", (roomJoin) => {
-    log.info("TestBot", `on room-join: ${JSON.stringify(roomJoin)}`);
+  .on("room-join", (room, inviteeList, inviter,  date) => {
+    log.info("TestBot", `on room-join, room:${room}, inviteeList:${inviteeList}, inviter:${inviter}, date:${date}`);
   })
 
-  .on("room-leave", (roomLeave) => {
-    log.info("TestBot", `on room-leave: ${JSON.stringify(roomLeave)}`);
+  .on("room-leave", (room, leaverList, remover, date) => {
+    log.info("TestBot", `on room-leave, room:${room}, leaverList:${leaverList}, remover:${remover}, date:${date}`);
   })
 
-  .on("room-topic", (roomTopic) => {
-    log.info("TestBot", `on room-topic: ${JSON.stringify(roomTopic)}`);
+  .on("room-topic", (room, newTopic, oldTopic, changer, date) => {
+    log.info("TestBot", `on room-topic, room:${room}, newTopic:${newTopic}, oldTopic:${oldTopic}, changer:${changer}, date:${date}`);
   })
 
   .on("friendship", (friendship) => {
-    log.info("TestBot", `on friendship: ${JSON.stringify(friendship)}`);
+    log.info("TestBot", `on friendship: ${friendship}`);
   })
 
   .on("error", (error) => {
