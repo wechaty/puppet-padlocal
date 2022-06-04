@@ -1,8 +1,6 @@
-import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
-import { isContactOfficialId, isIMRoomId, isRoomId } from "../utils/is-type.js";
-import { convertMessageType } from "../message-parser/helpers/message.js";
 import {
   appMessageParser,
   AppMessagePayload,
@@ -10,6 +8,8 @@ import {
   ReferMsgPayload,
 } from "../message-parser/helpers/message-appmsg.js";
 import { WechatMessageType } from "../message-parser/WechatMessageType.js";
+import { convertMessageType } from "../message-parser/helpers/message.js";
+import { isIMRoomId, isRoomId } from "../utils/is-type.js";
 import {
   fixPayloadForRoomMessageSentByOthers,
   parseContactFromRoomMessageContent,
@@ -109,44 +109,6 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
   return message;
 }
 
-export function padLocalContactToWechaty(contact: PadLocal.Contact.AsObject): PUPPET.payloads.Contact {
-  return {
-    alias: contact.remark,
-    avatar: contact.avatar,
-    city: contact.city,
-    friend: !contact.stranger,
-    gender: contact.gender,
-    id: contact.username,
-    name: contact.nickname,
-    phone: contact.phoneList,
-    province: contact.province,
-    signature: contact.signature,
-    type: isContactOfficialId(contact.username) ? PUPPET.types.Contact.Official : PUPPET.types.Contact.Individual,
-    weixin: contact.alias,
-  };
-}
-
-export function padLocalRoomToWechaty(contact: PadLocal.Contact.AsObject): PUPPET.payloads.Room {
-  return {
-    adminIdList: [],
-    avatar: contact.avatar,
-    id: contact.username,
-    memberIdList: contact.chatroommemberList.map((member) => member.username),
-    ownerId: contact.chatroomownerusername,
-    topic: contact.nickname,
-  };
-}
-
-export function padLocalRoomMemberToWechaty(chatRoomMember: PadLocal.ChatRoomMember.AsObject): PUPPET.payloads.RoomMember {
-  return {
-    avatar: chatRoomMember.avatar,
-    id: chatRoomMember.username,
-    inviterId: chatRoomMember.inviterusername,
-    name: chatRoomMember.nickname,
-    roomAlias: chatRoomMember.displayname,
-  };
-}
-
 async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPPET.payloads.Message) {
   let referMessageContent: string;
 
@@ -242,12 +204,4 @@ async function _adjustMessageByAppMsg(message: PadLocal.Message.AsObject, payloa
   } catch (e) {
     log.warn(PRE, `Error occurred while parse message attachment: ${JSON.stringify(message)} , ${(e as Error).stack}`);
   }
-}
-
-export function chatRoomMemberToContact(chatRoomMember: PadLocal.ChatRoomMember): PadLocal.Contact {
-  return new PadLocal.Contact()
-    .setUsername(chatRoomMember.getUsername())
-    .setNickname(chatRoomMember.getNickname())
-    .setAvatar(chatRoomMember.getAvatar())
-    .setStranger(true);
 }

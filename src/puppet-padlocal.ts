@@ -6,13 +6,6 @@ import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
 import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
-import {
-  chatRoomMemberToContact,
-  padLocalContactToWechaty,
-  padLocalMessageToWechaty,
-  padLocalRoomMemberToWechaty,
-  padLocalRoomToWechaty,
-} from "./padlocal/schema-mapper/index.js";
 import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg.js";
 import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram.js";
 import { parseMessage } from "./padlocal/message-parser/index.js";
@@ -32,6 +25,13 @@ import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
 import { packageJson } from "./package-json.js";
+import { padLocalMessageToWechaty } from "./padlocal/schema-mapper/message.js";
+import { padLocalContactToWechaty } from "./padlocal/schema-mapper/contact.js";
+import {
+  chatRoomMemberToContact,
+  padLocalRoomMemberToWechaty,
+  padLocalRoomToWechaty,
+} from "./padlocal/schema-mapper/room.js";
 
 const VERSION = packageJson.version || "0.0.0";
 
