@@ -3,11 +3,11 @@ import type * as PUPPET from "wechaty-puppet";
 import { isRoomId } from "../../utils/is-type.js";
 import type { MessageCategoryParserRet } from "./message-category.js";
 import { removeRoomLeaveDebounce } from "./message-category-room-leave.js";
-import { parseSysmsgSysmsgTemplateMessagePayload } from "../helpers/message-sysmsg.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "../payload/message-sysmsg.js";
 import {
   createSysmsgTemplateRunner,
   SysmsgTemplateLinkProfile,
-} from "../helpers/sysmsg/message-sysmsgtemplate.js";
+} from "../payload/sysmsg/message-sysmsgtemplate.js";
 import { executeRunners } from "../../utils/runner.js";
 
 const YOU_INVITE_OTHER_REGEX_LIST = [

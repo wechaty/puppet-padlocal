@@ -2,11 +2,11 @@ import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import type * as PUPPET from "wechaty-puppet";
 import { isRoomId } from "../../utils/is-type.js";
 import type { MessageCategoryParserRet } from "./message-category.js";
-import { parseSysmsgSysmsgTemplateMessagePayload } from "../helpers/message-sysmsg.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "../payload/message-sysmsg.js";
 import {
   parseSysmsgTemplate, SysmsgTemplateLinkProfile,
-} from "../helpers/sysmsg/message-sysmsgtemplate.js";
-import { WechatMessageType } from "../WechatMessageType.js";
+} from "../payload/sysmsg/message-sysmsgtemplate.js";
+import { WechatMessageType } from "../type.js";
 import { executeRunners } from "../../utils/runner.js";
 
 const YOU_REMOVE_OTHER_REGEX_LIST = [

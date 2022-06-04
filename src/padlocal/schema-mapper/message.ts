@@ -2,24 +2,23 @@ import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
 import { log } from "wechaty-puppet";
 import {
-  appMessageParser,
+  parseAppmsgMessagePayload,
   AppMessagePayload,
   AppMessageType,
   ReferMsgPayload,
-} from "../message-parser/helpers/message-appmsg.js";
-import { WechatMessageType } from "../message-parser/WechatMessageType.js";
-import { convertMessageType } from "../message-parser/helpers/message.js";
+} from "../message-parser/payload/message-appmsg.js";
+import { convertWechatMessageTypeToPuppet, WechatMessageType } from "../message-parser/type.js";
 import { isIMRoomId, isRoomId } from "../utils/is-type.js";
 import {
   fixPayloadForRoomMessageSentByOthers,
   parseContactFromRoomMessageContent,
-} from "../message-parser/helpers/message-room.js";
+} from "../message-parser/payload/message-room.js";
 
 const PRE = "[SchemaMapper]";
 
 export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: PadLocal.Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = padLocalMessage.type as WechatMessageType;
-  const type = convertMessageType(wechatMessageType);
+  const type = convertWechatMessageTypeToPuppet(wechatMessageType);
 
   /**
    * single chat message: talkerId + listenerId
@@ -135,7 +134,7 @@ async function _processReferMessage(appPayload: AppMessagePayload, payload: PUPP
       break;
 
     case WechatMessageType.App: {
-      const referMessageAppPayload = await appMessageParser(referMessagePayload.content);
+      const referMessageAppPayload = await parseAppmsgMessagePayload(referMessagePayload.content);
       referMessageContent = referMessageAppPayload.title;
       break;
     }
@@ -155,7 +154,7 @@ async function _adjustMessageByAppMsg(message: PadLocal.Message.AsObject, payloa
   }
 
   try {
-    const appPayload = await appMessageParser(message.content);
+    const appPayload = await parseAppmsgMessagePayload(message.content);
     switch (appPayload.type) {
       case AppMessageType.Text:
         payload.type = PUPPET.types.Message.Text;

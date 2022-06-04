@@ -1,4 +1,4 @@
-import { appMessageParser, AppMessagePayload, AppMessageType } from "../helpers/message-appmsg.js";
+import { parseAppmsgMessagePayload, AppMessagePayload, AppMessageType } from "../payload/message-appmsg.js";
 import type * as PUPPET from "wechaty-puppet";
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import type { MessageCategoryParserRet } from "./message-category.js";
@@ -11,7 +11,7 @@ const ROOM_OTHER_INVITE_LIST_EN = [/"(.+)" invited you to join the group chat "(
 export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
   let appMsgPayload: AppMessagePayload;
   try {
-    appMsgPayload = await appMessageParser(message.content);
+    appMsgPayload = await parseAppmsgMessagePayload(message.content);
   } catch (e) {
     return null;
   }

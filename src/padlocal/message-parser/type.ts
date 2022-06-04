@@ -1,8 +1,42 @@
+import type { EmojiMessagePayload } from "./payload/message-emotion.js";
 import * as PUPPET from "wechaty-puppet";
-import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { WechatMessageType } from "../WechatMessageType.js";
 
-export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET.types.Message {
+export enum WechatMessageType {
+  Text = 1,
+  Image = 3,
+  Voice = 34,
+  VerifyMsg = 37,
+  PossibleFriendMsg = 40,
+  ShareCard = 42,
+  Video = 43,
+  Emoticon = 47,
+  Location = 48,
+  App = 49,
+  VoipMsg = 50,
+  StatusNotify = 51,
+  VoipNotify = 52,
+  VoipInvite = 53,
+  MicroVideo = 62,
+  VerifyMsgEnterprise = 65,
+  Transfer = 2000, // 转账
+  RedEnvelope = 2001, // 红包
+  MiniProgram = 2002, // 小程序
+  GroupInvite = 2003, // 群邀请
+  File = 2004, // 文件消息
+  SysNotice = 9999,
+  Sys = 10000,
+  SysTemplate = 10002, // NOTIFY 服务通知
+}
+
+export type FileBoxMetadataMessageType = "unknown" | "emoticon";
+export type FileBoxMetadataMessagePayload = EmojiMessagePayload;
+
+export interface FileBoxMetadataMessage {
+  type: FileBoxMetadataMessageType,
+  payload: FileBoxMetadataMessagePayload
+}
+
+export function convertWechatMessageTypeToPuppet(wechatMessageType: WechatMessageType): PUPPET.types.Message {
   let type: PUPPET.types.Message;
 
   switch (wechatMessageType) {
@@ -58,18 +92,4 @@ export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET
   }
 
   return type;
-}
-
-export function getMessageFileName(message: PadLocal.Message.AsObject, messageType: PUPPET.types.Message): string {
-  const msgId = message.id;
-
-  if (messageType === PUPPET.types.Message.Audio) {
-    return msgId + ".slk";
-  } else if (messageType === PUPPET.types.Message.Image) {
-    return msgId + ".jpg";
-  } else if (messageType === PUPPET.types.Message.Video) {
-    return msgId + ".mp4";
-  }
-
-  return messageType + "-to-be-implement.txt";
 }

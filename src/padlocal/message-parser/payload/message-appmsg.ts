@@ -97,7 +97,7 @@ export interface AppMessagePayload {
   refermsg?: ReferMsgPayload;
 }
 
-export async function appMessageParser(messageContent: string): Promise<AppMessagePayload> {
+export async function parseAppmsgMessagePayload(messageContent: string): Promise<AppMessagePayload> {
   const appMsgXml: AppMsgXmlSchema = await xmlToJson(messageContent);
   const { title, des, url, thumburl, type, md5, recorditem } = appMsgXml.msg.appmsg;
 

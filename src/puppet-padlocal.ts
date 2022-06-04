@@ -6,20 +6,20 @@ import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
 import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
-import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg.js";
-import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram.js";
+import { parseAppmsgMessagePayload } from "./padlocal/message-parser/payload/message-appmsg.js";
+import { parseMiniProgramMessagePayload } from "./padlocal/message-parser/payload/message-miniprogram.js";
 import { parseMessageCategory } from "./padlocal/message-parser/category/index.js";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
-  emotionPayloadGenerator,
-  emotionPayloadParser,
-} from "./padlocal/message-parser/helpers/message-emotion.js";
+  generateEmotionPayload,
+  parseEmotionMessagePayload,
+} from "./padlocal/message-parser/payload/message-emotion.js";
 import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
 import { isRoomLeaveDebouncing } from "./padlocal/message-parser/category/message-category-room-leave.js";
-import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
+import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/message-parser/type.js";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
@@ -653,14 +653,14 @@ class PuppetPadlocal extends PUPPET.Puppet {
         return FileBox.fromBuffer(videoData, `message-${messageId}-video.mp4`);
       }
       case PUPPET.types.Message.Attachment: {
-        const appMsg = await appMessageParser(messagePayload.content);
+        const appMsg = await parseAppmsgMessagePayload(messagePayload.content);
         const fileData = await this._client!.api.getMessageAttach(message.text!, messagePayload.tousername);
         // should set mediaType according to the appMsg.title (the attachment name)
         // https://github.com/jshttp/mime-db/blob/4498a3f104ba4080a703f5435b065f982dc3a1b7/src/apache-types.json
         return FileBox.fromBuffer(fileData, appMsg.title);
       }
       case PUPPET.types.Message.Emoticon: {
-        const emotionPayload = await emotionPayloadParser(messagePayload);
+        const emotionPayload = await parseEmotionMessagePayload(messagePayload);
         const emoticonBox = FileBox.fromUrl(emotionPayload.cdnurl, { name: `message-${messageId}-emoticon.jpg` });
 
         emoticonBox.metadata = {
@@ -678,7 +678,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         return FileBox.fromBuffer(thumbData, `message-${messageId}-miniprogram-thumb.jpg`);
       }
       case PUPPET.types.Message.Url: {
-        const appPayload = await appMessageParser(messagePayload.content);
+        const appPayload = await parseAppmsgMessagePayload(messagePayload.content);
 
         if (appPayload.thumburl) {
           return FileBox.fromUrl(appPayload.thumburl);
@@ -714,7 +714,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       throw new Error("message is not mini program, can not get MiniProgramPayload");
     }
 
-    return miniProgramMessageParser(messagePayload);
+    return parseMiniProgramMessagePayload(messagePayload);
   }
 
   override async messageUrl(messageId: string): Promise<PUPPET.payloads.UrlLink> {
@@ -726,7 +726,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     }
 
     // FIXME: thumb may not in appPayload.thumburl, but in appPayload.appAttachPayload
-    const appPayload = await appMessageParser(rawPayload.content);
+    const appPayload = await parseAppmsgMessagePayload(rawPayload.content);
     return {
       description: appPayload.des,
       thumbnailUrl: appPayload.thumburl,
@@ -797,7 +797,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         ? `${this._client!.selfContact!.getNickname()}: [动画表情]`
         : "[动画表情]";
 
-      const content = emotionPayloadGenerator(emotionPayload);
+      const content = generateEmotionPayload(emotionPayload);
 
       await this._onSendMessage(
         new PadLocal.Message()

@@ -1,5 +1,5 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { WechatMessageType } from "../WechatMessageType.js";
+import { WechatMessageType } from "../type.js";
 import { xmlToJson } from "../../utils/xml-to-json.js";
 import type { PatMessagePayload, PatXmlSchema } from "./sysmsg/message-pat";
 import type { SysmsgTemplateMessagePayload, SysmsgTemplateXmlSchema } from "./sysmsg/message-sysmsgtemplate";

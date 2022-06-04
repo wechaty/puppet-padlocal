@@ -3,7 +3,7 @@ import * as PUPPET from "wechaty-puppet";
 import { isContactId, isIMContactId } from "../../utils/is-type.js";
 import { xmlToJson } from "../../utils/xml-to-json.js";
 import type { MessageCategoryParserRet } from "./message-category.js";
-import { WechatMessageType } from "../WechatMessageType.js";
+import { WechatMessageType } from "../type.js";
 
 const FRIENDSHIP_CONFIRM_REGEX_LIST = [
   /^You have added (.+) as your WeChat contact. Start chatting!$/,

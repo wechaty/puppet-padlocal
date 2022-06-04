@@ -25,7 +25,7 @@ interface MiniProgramXmlSchema {
   };
 }
 
-export async function miniProgramMessageParser(rawPayload: PadLocal.Message.AsObject): Promise<PUPPET.payloads.MiniProgram> {
+export async function parseMiniProgramMessagePayload(rawPayload: PadLocal.Message.AsObject): Promise<PUPPET.payloads.MiniProgram> {
   const miniProgramXml: MiniProgramXmlSchema = await xmlToJson(rawPayload.content);
   const appmsg = miniProgramXml.msg.appmsg;
   const weappinfo = appmsg.weappinfo;
