@@ -24,7 +24,7 @@ export interface SysmsgMessagePayload {
   payload: SysMsgPayload
 }
 
-export async function parseSysmsgMessage(message: PadLocal.Message.AsObject): Promise<SysmsgMessagePayload | null> {
+export async function parseSysmsgMessagePayload(message: PadLocal.Message.AsObject): Promise<SysmsgMessagePayload | null> {
   if (message.type !== WechatMessageType.Recalled) {
     return null;
   }
@@ -55,4 +55,22 @@ export async function parseSysmsgMessage(message: PadLocal.Message.AsObject): Pr
   } else {
     return null;
   }
+}
+
+export async function parseSysmsgPatMessagePayload(message: PadLocal.Message.AsObject) : Promise<PatMessagePayload | null> {
+  const sysmsgPayload = await parseSysmsgMessagePayload(message);
+  if (!sysmsgPayload || sysmsgPayload.type !== "pat") {
+    return null;
+  }
+
+  return sysmsgPayload.payload as PatMessagePayload;
+}
+
+export async function parseSysmsgSysmsgTemplateMessagePayload(message: PadLocal.Message.AsObject) : Promise<SysmsgTemplateMessagePayload | null> {
+  const sysmsgPayload = await parseSysmsgMessagePayload(message);
+  if (!sysmsgPayload || sysmsgPayload.type !== "sysmsgtemplate") {
+    return null;
+  }
+
+  return sysmsgPayload.payload as SysmsgTemplateMessagePayload;
 }

@@ -3,11 +3,10 @@ import type * as PUPPET from "wechaty-puppet";
 import { isRoomId } from "../utils/is-type.js";
 import type { MessageParserRetType } from "./message-parser.js";
 import { removeRoomLeaveDebounce } from "./message-parser-room-leave.js";
-import { parseSysmsgMessage } from "./helpers/message-sysmsg.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "./helpers/message-sysmsg.js";
 import {
-  processTemplateIfMatch,
+  createSysmsgTemplateParser, runSysmsgTemplateParsers,
   SysmsgTemplateLinkProfile,
-  SysmsgTemplateMessagePayload,
 } from "./helpers/sysmsg/message-sysmsgtemplate.js";
 
 const YOU_INVITE_OTHER_REGEX_LIST = [
@@ -43,12 +42,10 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
 
   const timestamp = message.createtime;
 
-  const sysmsgPayload = await parseSysmsgMessage(message);
-  if (!sysmsgPayload || sysmsgPayload.type !== "sysmsgtemplate") {
+  const sysmsgTemplatePayload = await parseSysmsgSysmsgTemplateMessagePayload(message);
+  if (!sysmsgTemplatePayload) {
     return null;
   }
-
-  const sysmsgTemplatePayload = sysmsgPayload.payload as SysmsgTemplateMessagePayload;
 
   /**
    * 1. You Invite Other to join the Room
@@ -56,113 +53,100 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
    * /^" ?(.+)"通过扫描你分享的二维码加入群聊/,
    */
-  const youInviteOther = async() => {
-    return processTemplateIfMatch(
-      sysmsgTemplatePayload,
-      [...YOU_INVITE_OTHER_REGEX_LIST, ...OTHER_JOIN_VIA_YOUR_QRCODE_REGEX_LIST],
-      async(templateLinkList) => {
-        // the first item MUST be others profile link
-        const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
-        // filter other empty userName, in case the user is not your friend
-        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
-        return {
-          inviteeIdList,
-          inviterId: puppet.currentUserId,
-          roomId,
-          timestamp,
-        };
-      });
-  };
+  const youInviteOther = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+    sysmsgTemplatePayload,
+    [...YOU_INVITE_OTHER_REGEX_LIST, ...OTHER_JOIN_VIA_YOUR_QRCODE_REGEX_LIST],
+    async(templateLinkList) => {
+      // the first item MUST be others profile link
+      const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+      // filter other empty userName, in case the user is not your friend
+      const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
+      return {
+        inviteeIdList,
+        inviterId: puppet.currentUserId,
+        roomId,
+        timestamp,
+      } as PUPPET.payloads.EventRoomJoin;
+    });
 
   /**
    * 2. Other Invite you to join the Room
    * /^"([^"]+?)"邀请你加入了群聊/,
    */
-  const otherInviteYou = async() => {
-    return processTemplateIfMatch(
-      sysmsgTemplatePayload,
-      OTHER_INVITE_YOU_REGEX_LIST,
-      async(templateLinkList) => {
-        // the first must invitor
-        const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+  const otherInviteYou = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+    sysmsgTemplatePayload,
+    OTHER_INVITE_YOU_REGEX_LIST,
+    async(templateLinkList) => {
+      // the first must invitor
+      const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
 
-        return {
-          inviteeIdList: [puppet.currentUserId],
-          inviterId: inviter[0]!.userName,
-          roomId,
-          timestamp,
-        };
-      });
-  };
+      return {
+        inviteeIdList: [puppet.currentUserId],
+        inviterId: inviter[0]!.userName,
+        roomId,
+        timestamp,
+      } as PUPPET.payloads.EventRoomJoin;
+    });
 
   /**
    * 3. Other invite you and others to join the room
    * /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
    * /^"(.+)"邀请"(.+)"加入了群聊/,
    */
-  const otherInviteOther = async() => {
-    return processTemplateIfMatch(
-      sysmsgTemplatePayload,
-      [...OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST, ...OTHER_INVITE_OTHER_REGEX_LIST],
-      async(templateLinkList, matchedRegexIndex) => {
-        // the first item is invitor
-        const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+  const otherInviteOther = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+    sysmsgTemplatePayload,
+    [...OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST, ...OTHER_INVITE_OTHER_REGEX_LIST],
+    async(templateLinkList, matchedRegexIndex) => {
+      // the first item is invitor
+      const inviter = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
 
-        // the second item is others
-        const inviteeList = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
-        // filter other empty userName, in case the user is not your friend
-        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
+      // the second item is others
+      const inviteeList = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
+      // filter other empty userName, in case the user is not your friend
+      const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
 
-        const includingYou = matchedRegexIndex < OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST.length;
-        if (includingYou) {
-          inviteeIdList.unshift(puppet.currentUserId);
-        }
+      const includingYou = matchedRegexIndex < OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST.length;
+      if (includingYou) {
+        inviteeIdList.unshift(puppet.currentUserId);
+      }
 
-        return {
-          inviteeIdList,
-          inviterId: inviter[0]!.userName,
-          roomId,
-          timestamp,
-        };
-      });
-  };
+      return {
+        inviteeIdList,
+        inviterId: inviter[0]!.userName,
+        roomId,
+        timestamp,
+      } as PUPPET.payloads.EventRoomJoin;
+    });
 
   /**
    * 4. Other Invite Other via Qrcode to join a Room
    * /^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/,
    */
-  const otherJoinViaQrCode = async() => {
-    return processTemplateIfMatch(
-      sysmsgTemplatePayload,
-      OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST,
-      async(templateLinkList) => {
-        // the first item is invitee
-        const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
-        // filter other empty userName, in case the user is not your friend
-        const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
+  const otherJoinViaQrCode = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+    sysmsgTemplatePayload,
+    OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST,
+    async(templateLinkList) => {
+      // the first item is invitee
+      const inviteeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+      // filter other empty userName, in case the user is not your friend
+      const inviteeIdList = inviteeList.map(m => m.userName).filter(s => !!s);
 
-        // the second item is inviter
-        const inviter = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
+      // the second item is inviter
+      const inviter = templateLinkList[1]!.payload as SysmsgTemplateLinkProfile;
 
-        return {
-          inviteeIdList,
-          inviterId: inviter[0]!.userName,
-          roomId,
-          timestamp,
-        };
-      });
-  };
+      return {
+        inviteeIdList,
+        inviterId: inviter[0]!.userName,
+        roomId,
+        timestamp,
+      } as PUPPET.payloads.EventRoomJoin;
+    });
 
-  for (const handler of [youInviteOther, otherInviteYou, otherInviteOther, otherJoinViaQrCode]) {
-    const ret: PUPPET.payloads.EventRoomJoin | undefined = await handler();
-    if (ret) {
-      ret.inviteeIdList.forEach((inviteeId) => {
-        removeRoomLeaveDebounce(ret!.roomId, inviteeId);
-      });
-
-      return ret;
-    }
+  const ret = await runSysmsgTemplateParsers([youInviteOther, otherInviteYou, otherInviteOther, otherJoinViaQrCode]);
+  if (ret) {
+    ret.inviteeIdList.forEach((inviteeId) => {
+      removeRoomLeaveDebounce(ret!.roomId, inviteeId);
+    });
   }
-
-  return null;
+  return ret;
 };

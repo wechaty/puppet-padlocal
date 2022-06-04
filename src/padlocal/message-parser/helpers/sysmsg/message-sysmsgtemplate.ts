@@ -117,9 +117,9 @@ export async function parseSysmsgTemplateMessagePayload(sysmsgTemplateXml: Sysms
   };
 }
 
-export type SysmsgTemplateHandler = (templateLinkList: SysmsgTemplateLink[], matchedRegexIndex: number) => Promise<any>;
+export type SysmsgTemplateHandler<T> = (templateLinkList: SysmsgTemplateLink[], matchedRegexIndex: number) => Promise<T>;
 
-export async function processTemplateIfMatch(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler) : Promise<any> {
+export async function parseSysmsgTemplate<T>(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler<T>) : Promise<T | null> {
   for (let i = 0; i < regexList.length; ++i) {
     const regex = regexList[i]!;
     const match = sysmsgTemplatePayload.template.match(regex);
@@ -129,4 +129,23 @@ export async function processTemplateIfMatch(sysmsgTemplatePayload: SysmsgTempla
 
     return await handler(sysmsgTemplatePayload.templateLinkList, i);
   }
+
+  return null;
+}
+
+export type SysmsgTemplateParser<T> = () => Promise<T | null>;
+
+export function createSysmsgTemplateParser<T>(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler<T>): SysmsgTemplateParser<T> {
+  return async() => parseSysmsgTemplate<T>(sysmsgTemplatePayload, regexList, handler);
+}
+
+export async function runSysmsgTemplateParsers<T>(parsers: SysmsgTemplateParser<T>[]): Promise<T | null> {
+  for (const parser of parsers) {
+    const ret = await parser();
+    if (ret) {
+      return ret;
+    }
+  }
+
+  return null;
 }

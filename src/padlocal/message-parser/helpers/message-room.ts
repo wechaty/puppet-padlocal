@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { parseSysmsgMessage } from "./message-sysmsg.js";
+import { parseSysmsgMessagePayload } from "./message-sysmsg.js";
 import type { PatMessagePayload } from "./sysmsg/message-pat.js";
 import { isContactId, isIMContactId, isIMRoomId, isRoomId } from "../../utils/is-type.js";
 import { log } from "wechaty";
@@ -54,7 +54,7 @@ export interface RoomMessageContactInfo {
 export async function parseContactFromRoomMessageContent(padLocalMessage: PadLocal.Message.AsObject): Promise<RoomMessageContactInfo | undefined> {
   let ret: RoomMessageContactInfo | undefined;
 
-  const sysmsgPayload = await parseSysmsgMessage(padLocalMessage);
+  const sysmsgPayload = await parseSysmsgMessagePayload(padLocalMessage);
   if (sysmsgPayload) {
     if (sysmsgPayload.type === "pat") {
       const patMessagePayload: PatMessagePayload = sysmsgPayload.payload as PatMessagePayload;

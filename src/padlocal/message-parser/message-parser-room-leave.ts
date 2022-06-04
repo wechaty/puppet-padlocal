@@ -1,14 +1,21 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import * as PUPPET from "wechaty-puppet";
-import type { RoomXmlSchema } from "./helpers/message-room.js";
+import type * as PUPPET from "wechaty-puppet";
 import { isRoomId } from "../utils/is-type.js";
-import { getUserName } from "../utils/get-xml-label.js";
-import { xmlToJson } from "../utils/xml-to-json.js";
 import type { MessageParserRetType } from "./message-parser.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "./helpers/message-sysmsg.js";
+import {
+  parseSysmsgTemplate, SysmsgTemplateLinkProfile,
+} from "./helpers/sysmsg/message-sysmsgtemplate.js";
+import { WechatMessageType } from "./WechatMessageType.js";
 
-const ROOM_LEAVE_OTHER_REGEX_LIST = [/^(You) removed "(.+)" from the group chat/, /^(你)将"(.+)"移出了群聊/];
-const ROOM_LEAVE_BOT_REGEX_LIST = [/^(You) were removed from the group chat by "([^"]+)"/, /^(你)被"([^"]+?)"移出群聊/];
+const YOU_REMOVE_OTHER_REGEX_LIST = [
+  /^(你)将"(.+)"移出了群聊/,
+  /^(You) removed "(.+)" from the group chat/,
+];
+const OTHER_REMOVE_YOU_REGEX_LIST = [
+  /^(你)被"([^"]+?)"移出群聊/,
+  /^(You) were removed from the group chat by "([^"]+)"/,
+];
 
 const roomLeaveDebounceMap: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const DEBOUNCE_TIMEOUT = 3600 * 1000; // 1 hour
@@ -47,51 +54,72 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
     return null;
   }
 
-  let content = message.content;
-  let linkList;
-
-  const needParseXML = content.includes("移出群聊") || content.includes("You were removed from the group chat by");
-  if (!needParseXML) {
-    const roomXml: RoomXmlSchema = await xmlToJson(content);
-    if (!roomXml || !roomXml.sysmsg || !roomXml.sysmsg.sysmsgtemplate) {
+  /**
+   * 1. 我将别人移除
+   * /^(你)将"(.+)"移出了群聊/,
+   *  我移除别人是 10002: https://gist.github.com/padlocal/5676b96ad0ca918fdd53849417eff422
+   */
+  const youRemoveOther = async() => {
+    const sysmsgTemplatePayload = await parseSysmsgSysmsgTemplateMessagePayload(message);
+    if (!sysmsgTemplatePayload) {
       return null;
     }
 
-    content = roomXml.sysmsg.sysmsgtemplate.content_template.template;
-    linkList = roomXml.sysmsg.sysmsgtemplate.content_template.link_list.link;
-  }
+    return await parseSysmsgTemplate<PUPPET.payloads.EventRoomLeave>(
+      sysmsgTemplatePayload,
+      YOU_REMOVE_OTHER_REGEX_LIST,
+      async(templateLinkList) => {
+        // the first item MUST be removed profile link
+        const removeeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
+        // filter other empty userName, in case the user is not your friend
+        const removeeIdList = removeeList.map(m => m.userName).filter(s => !!s);
+        return {
+          removeeIdList,
+          removerId: puppet.currentUserId,
+          roomId,
+          timestamp: message.createtime,
+        } as PUPPET.payloads.EventRoomLeave;
+      });
+  };
 
-  let matchesForOther: null | string[] = [];
-  ROOM_LEAVE_OTHER_REGEX_LIST.some((regex) => !!(matchesForOther = content.match(regex)));
+  /**
+   * 2. 别人移除我
+   * /^(你)被"([^"]+?)"移出群聊/,
+   * // 我被别人移除是 10000：https://gist.github.com/padlocal/60be89334d4d743937f07023da20291e
+   */
+  const otherRemoveYou = async() => {
+    if (message.type !== WechatMessageType.Sys) {
+      return null;
+    }
 
-  let matchesForBot: null | string[] = [];
-  ROOM_LEAVE_BOT_REGEX_LIST.some((re) => !!(matchesForBot = content.match(re)));
+    let matches: null | string[] = null;
+    OTHER_REMOVE_YOU_REGEX_LIST.some((re) => !!(matches = message.content.match(re)));
 
-  const matches = matchesForOther || matchesForBot;
-  if (!matches) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (matches) {
+      const removerName = matches[2]!;
+      const removerId = (await puppet.roomMemberSearch(roomId, removerName))[0]!;
+
+      return {
+        removeeIdList: [puppet.currentUserId],
+        removerId,
+        roomId,
+        timestamp: message.createtime,
+      } as PUPPET.payloads.EventRoomLeave;
+    }
+
     return null;
+  };
+
+  let ret = await youRemoveOther();
+  if (!ret) {
+    ret = await otherRemoveYou();
   }
 
-  let leaverId: string;
-  let removerId: string;
-
-  if (matchesForOther) {
-    removerId = (await puppet.roomMemberSearch(roomId, PUPPET.types.YOU))[0]!;
-    const leaverName = matchesForOther[2]!;
-    leaverId = getUserName([linkList], leaverName);
-  } else if (matchesForBot) {
-    removerId = matchesForBot[2]!;
-    leaverId = (await puppet.roomMemberSearch(roomId, PUPPET.types.YOU))[0]!;
-  } else {
-    throw new Error("for typescript type checking, will never go here");
+  if (ret) {
+    ret.removeeIdList.forEach((leaverId) => {
+      roomLeaveAddDebounce(roomId, leaverId);
+    });
   }
-
-  roomLeaveAddDebounce(roomId, leaverId);
-
-  return {
-    removeeIdList: [leaverId],
-    removerId,
-    roomId,
-    timestamp: message.createtime,
-  } as PUPPET.payloads.EventRoomLeave;
+  return ret;
 };
