@@ -7,6 +7,7 @@ import {
   parseSysmsgTemplate, SysmsgTemplateLinkProfile,
 } from "./helpers/sysmsg/message-sysmsgtemplate.js";
 import { WechatMessageType } from "./WechatMessageType.js";
+import { executeRunners } from "../utils/runner.js";
 
 const YOU_REMOVE_OTHER_REGEX_LIST = [
   /^(你)将"(.+)"移出了群聊/,
@@ -111,11 +112,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
     return null;
   };
 
-  let ret = await youRemoveOther();
-  if (!ret) {
-    ret = await otherRemoveYou();
-  }
-
+  const ret = await executeRunners<PUPPET.payloads.EventRoomLeave>([youRemoveOther, otherRemoveYou]);
   if (ret) {
     ret.removeeIdList.forEach((leaverId) => {
       roomLeaveAddDebounce(roomId, leaverId);

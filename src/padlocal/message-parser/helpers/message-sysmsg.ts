@@ -25,7 +25,7 @@ export interface SysmsgMessagePayload {
 }
 
 export async function parseSysmsgMessagePayload(message: PadLocal.Message.AsObject): Promise<SysmsgMessagePayload | null> {
-  if (message.type !== WechatMessageType.Recalled) {
+  if (message.type !== WechatMessageType.SysTemplate) {
     return null;
   }
 

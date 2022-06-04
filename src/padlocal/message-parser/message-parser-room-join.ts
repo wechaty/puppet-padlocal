@@ -5,9 +5,10 @@ import type { MessageParserRetType } from "./message-parser.js";
 import { removeRoomLeaveDebounce } from "./message-parser-room-leave.js";
 import { parseSysmsgSysmsgTemplateMessagePayload } from "./helpers/message-sysmsg.js";
 import {
-  createSysmsgTemplateParser, runSysmsgTemplateParsers,
+  createSysmsgTemplateRunner,
   SysmsgTemplateLinkProfile,
 } from "./helpers/sysmsg/message-sysmsgtemplate.js";
+import { executeRunners } from "../utils/runner.js";
 
 const YOU_INVITE_OTHER_REGEX_LIST = [
   /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
@@ -53,7 +54,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
    * /^" ?(.+)"通过扫描你分享的二维码加入群聊/,
    */
-  const youInviteOther = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+  const youInviteOther = createSysmsgTemplateRunner<PUPPET.payloads.EventRoomJoin>(
     sysmsgTemplatePayload,
     [...YOU_INVITE_OTHER_REGEX_LIST, ...OTHER_JOIN_VIA_YOUR_QRCODE_REGEX_LIST],
     async(templateLinkList) => {
@@ -73,7 +74,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * 2. Other Invite you to join the Room
    * /^"([^"]+?)"邀请你加入了群聊/,
    */
-  const otherInviteYou = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+  const otherInviteYou = createSysmsgTemplateRunner<PUPPET.payloads.EventRoomJoin>(
     sysmsgTemplatePayload,
     OTHER_INVITE_YOU_REGEX_LIST,
     async(templateLinkList) => {
@@ -93,7 +94,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * /^"([^"]+?)"邀请你和"(.+?)"加入了群聊/,
    * /^"(.+)"邀请"(.+)"加入了群聊/,
    */
-  const otherInviteOther = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+  const otherInviteOther = createSysmsgTemplateRunner<PUPPET.payloads.EventRoomJoin>(
     sysmsgTemplatePayload,
     [...OTHER_INVITE_YOU_AND_OTHER_REGEX_LIST, ...OTHER_INVITE_OTHER_REGEX_LIST],
     async(templateLinkList, matchedRegexIndex) => {
@@ -122,7 +123,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * 4. Other Invite Other via Qrcode to join a Room
    * /^" (.+)"通过扫描"(.+)"分享的二维码加入群聊/,
    */
-  const otherJoinViaQrCode = createSysmsgTemplateParser<PUPPET.payloads.EventRoomJoin>(
+  const otherJoinViaQrCode = createSysmsgTemplateRunner<PUPPET.payloads.EventRoomJoin>(
     sysmsgTemplatePayload,
     OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST,
     async(templateLinkList) => {
@@ -142,7 +143,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
       } as PUPPET.payloads.EventRoomJoin;
     });
 
-  const ret = await runSysmsgTemplateParsers([youInviteOther, otherInviteYou, otherInviteOther, otherJoinViaQrCode]);
+  const ret = await executeRunners([youInviteOther, otherInviteYou, otherInviteOther, otherJoinViaQrCode]);
   if (ret) {
     ret.inviteeIdList.forEach((inviteeId) => {
       removeRoomLeaveDebounce(ret!.roomId, inviteeId);

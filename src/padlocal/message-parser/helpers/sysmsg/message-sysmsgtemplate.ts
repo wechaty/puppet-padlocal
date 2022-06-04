@@ -1,4 +1,7 @@
 /* eslint-disable camelcase */
+import { parseTextWithRegexList } from "../../../utils/regex.js";
+import type { Runner } from "../../../utils/runner.js";
+
 export interface SysmsgTemplateXmlSchema {
   content_template: {
     $: {
@@ -120,32 +123,11 @@ export async function parseSysmsgTemplateMessagePayload(sysmsgTemplateXml: Sysms
 export type SysmsgTemplateHandler<T> = (templateLinkList: SysmsgTemplateLink[], matchedRegexIndex: number) => Promise<T>;
 
 export async function parseSysmsgTemplate<T>(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler<T>) : Promise<T | null> {
-  for (let i = 0; i < regexList.length; ++i) {
-    const regex = regexList[i]!;
-    const match = sysmsgTemplatePayload.template.match(regex);
-    if (!match) {
-      continue;
-    }
-
-    return await handler(sysmsgTemplatePayload.templateLinkList, i);
-  }
-
-  return null;
+  return parseTextWithRegexList(sysmsgTemplatePayload.template, regexList, async(matchedRegexIndex) => {
+    return handler(sysmsgTemplatePayload.templateLinkList, matchedRegexIndex);
+  });
 }
 
-export type SysmsgTemplateParser<T> = () => Promise<T | null>;
-
-export function createSysmsgTemplateParser<T>(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler<T>): SysmsgTemplateParser<T> {
+export function createSysmsgTemplateRunner<T>(sysmsgTemplatePayload: SysmsgTemplateMessagePayload, regexList: RegExp[], handler: SysmsgTemplateHandler<T>): Runner<T> {
   return async() => parseSysmsgTemplate<T>(sysmsgTemplatePayload, regexList, handler);
-}
-
-export async function runSysmsgTemplateParsers<T>(parsers: SysmsgTemplateParser<T>[]): Promise<T | null> {
-  for (const parser of parsers) {
-    const ret = await parser();
-    if (ret) {
-      return ret;
-    }
-  }
-
-  return null;
 }

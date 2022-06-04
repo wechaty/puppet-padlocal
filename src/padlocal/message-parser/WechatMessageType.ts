@@ -24,7 +24,7 @@ export enum WechatMessageType {
   File = 2004, // 文件消息
   SysNotice = 9999,
   Sys = 10000,
-  Recalled = 10002, // NOTIFY 服务通知
+  SysTemplate = 10002, // NOTIFY 服务通知
 }
 
 export type FileBoxMetadataMessageType = "unknown" | "emoticon";

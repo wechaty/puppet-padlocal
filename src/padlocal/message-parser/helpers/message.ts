@@ -44,7 +44,7 @@ export function convertMessageType(wechatMessageType: WechatMessageType): PUPPET
       break;
 
     case WechatMessageType.VoipMsg:
-    case WechatMessageType.Recalled:
+    case WechatMessageType.SysTemplate:
       type = PUPPET.types.Message.Recalled;
       break;
 
