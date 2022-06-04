@@ -8,8 +8,7 @@ import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
 import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
 import { appMessageParser } from "./padlocal/message-parser/helpers/message-appmsg.js";
 import { miniProgramMessageParser } from "./padlocal/message-parser/helpers/message-miniprogram.js";
-import { parseMessage } from "./padlocal/message-parser/index.js";
-import { MessageCategory } from "./padlocal/message-parser/message-parser-type.js";
+import { parseMessageCategory } from "./padlocal/message-parser/category/index.js";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
@@ -19,7 +18,7 @@ import {
 import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
-import { isRoomLeaveDebouncing } from "./padlocal/message-parser/message-parser-room-leave.js";
+import { isRoomLeaveDebouncing } from "./padlocal/message-parser/category/message-category-room-leave.js";
 import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/message-parser/WechatMessageType.js";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
@@ -32,6 +31,7 @@ import {
   padLocalRoomMemberToWechaty,
   padLocalRoomToWechaty,
 } from "./padlocal/schema-mapper/room.js";
+import { MessageCategory } from "./padlocal/message-parser/category/message-category.js";
 
 const VERSION = packageJson.version || "0.0.0";
 
@@ -1449,9 +1449,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
     const messageObj: PadLocal.Message.AsObject = message.toObject();
     await this._cacheMgr!.setMessage(message.getId(), messageObj);
 
-    const parseRet = await parseMessage(this, messageObj);
+    const messageCategory = await parseMessageCategory(this, messageObj);
 
-    switch (parseRet.category) {
+    switch (messageCategory.category) {
       case MessageCategory.NormalMessage:
         this.emit("message", {
           messageId,
@@ -1459,7 +1459,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         break;
 
       case MessageCategory.Friendship: {
-        const friendship: PUPPET.payloads.Friendship = parseRet.payload;
+        const friendship: PUPPET.payloads.Friendship = messageCategory.payload;
         await this._cacheMgr!.setFriendshipRawPayload(messageId, friendship);
         this.emit("friendship", {
           friendshipId: messageId,
@@ -1467,7 +1467,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         break;
       }
       case MessageCategory.RoomInvite: {
-        const roomInvite: PUPPET.payloads.RoomInvitation = parseRet.payload;
+        const roomInvite: PUPPET.payloads.RoomInvitation = messageCategory.payload;
         await this._cacheMgr!.setRoomInvitation(messageId, roomInvite);
 
         this.emit("room-invite", {
@@ -1476,21 +1476,21 @@ class PuppetPadlocal extends PUPPET.Puppet {
         break;
       }
       case MessageCategory.RoomJoin: {
-        const roomJoin: PUPPET.payloads.EventRoomJoin = parseRet.payload;
+        const roomJoin: PUPPET.payloads.EventRoomJoin = messageCategory.payload;
         this.emit("room-join", roomJoin);
 
         await this._updateRoomMember(roomJoin.roomId);
         break;
       }
       case MessageCategory.RoomLeave: {
-        const roomLeave: PUPPET.payloads.EventRoomLeave = parseRet.payload;
+        const roomLeave: PUPPET.payloads.EventRoomLeave = messageCategory.payload;
         this.emit("room-leave", roomLeave);
 
         await this._updateRoomMember(roomLeave.roomId);
         break;
       }
       case MessageCategory.RoomTopic: {
-        const roomTopic: PUPPET.payloads.EventRoomTopic = parseRet.payload;
+        const roomTopic: PUPPET.payloads.EventRoomTopic = messageCategory.payload;
         this.emit("room-topic", roomTopic);
         break;
       }

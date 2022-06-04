@@ -1,9 +1,9 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import * as PUPPET from "wechaty-puppet";
-import { isContactId, isIMContactId } from "../utils/is-type.js";
-import { xmlToJson } from "../utils/xml-to-json.js";
-import type { MessageParserRetType } from "./message-parser.js";
-import { WechatMessageType } from "./WechatMessageType.js";
+import { isContactId, isIMContactId } from "../../utils/is-type.js";
+import { xmlToJson } from "../../utils/xml-to-json.js";
+import type { MessageCategoryParserRet } from "./message-category.js";
+import { WechatMessageType } from "../WechatMessageType.js";
 
 const FRIENDSHIP_CONFIRM_REGEX_LIST = [
   /^You have added (.+) as your WeChat contact. Start chatting!$/,
@@ -67,7 +67,7 @@ const isReceive = async(message: PadLocal.Message.AsObject): Promise<ReceiveXmlS
   return null;
 };
 
-export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
+export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
   if (isConfirm(message)) {
     return {
       contactId: message.fromusername,

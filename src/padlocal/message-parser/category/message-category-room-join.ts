@@ -1,14 +1,14 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import type * as PUPPET from "wechaty-puppet";
-import { isRoomId } from "../utils/is-type.js";
-import type { MessageParserRetType } from "./message-parser.js";
-import { removeRoomLeaveDebounce } from "./message-parser-room-leave.js";
-import { parseSysmsgSysmsgTemplateMessagePayload } from "./helpers/message-sysmsg.js";
+import { isRoomId } from "../../utils/is-type.js";
+import type { MessageCategoryParserRet } from "./message-category.js";
+import { removeRoomLeaveDebounce } from "./message-category-room-leave.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "../helpers/message-sysmsg.js";
 import {
   createSysmsgTemplateRunner,
   SysmsgTemplateLinkProfile,
-} from "./helpers/sysmsg/message-sysmsgtemplate.js";
-import { executeRunners } from "../utils/runner.js";
+} from "../helpers/sysmsg/message-sysmsgtemplate.js";
+import { executeRunners } from "../../utils/runner.js";
 
 const YOU_INVITE_OTHER_REGEX_LIST = [
   /^你邀请"(.+)"加入了群聊 {2}\$revoke\$/,
@@ -35,7 +35,7 @@ const OTHER_JOIN_VIA_OTHER_QRCODE_REGEX_LIST = [
   /^"(.+)" joined the group chat via the QR Code shared by "(.+)"/,
 ];
 
-export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;

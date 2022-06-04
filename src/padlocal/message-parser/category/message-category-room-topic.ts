@@ -1,12 +1,12 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import type * as PUPPET from "wechaty-puppet";
-import { isRoomId } from "../utils/is-type.js";
-import type { MessageParserRetType } from "./message-parser.js";
-import { parseSysmsgSysmsgTemplateMessagePayload } from "./helpers/message-sysmsg.js";
-import { parseSysmsgTemplate, SysmsgTemplateLinkProfile } from "./helpers/sysmsg/message-sysmsgtemplate.js";
-import { parseTextWithRegexList } from "../utils/regex.js";
-import { WechatMessageType } from "./WechatMessageType.js";
-import { executeRunners } from "../utils/runner.js";
+import { isRoomId } from "../../utils/is-type.js";
+import type { MessageCategoryParserRet } from "./message-category.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "../helpers/message-sysmsg.js";
+import { parseSysmsgTemplate, SysmsgTemplateLinkProfile } from "../helpers/sysmsg/message-sysmsgtemplate.js";
+import { parseTextWithRegexList } from "../../utils/regex.js";
+import { WechatMessageType } from "../WechatMessageType.js";
+import { executeRunners } from "../../utils/runner.js";
 
 const OTHER_CHANGE_TOPIC_REGEX_LIST = [
   /^"(.+)"修改群名为“(.+)”$/,
@@ -19,7 +19,7 @@ const YOU_CHANGE_TOPIC_REGEX_LIST = [
 
 type TopicChange = {changerId: string, newTopic: string};
 
-export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageParserRetType> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
