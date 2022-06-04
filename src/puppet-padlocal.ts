@@ -214,7 +214,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
         return null;
       })
-      .catch(async(_) => {
+      .catch(async(error) => {
+        log.error(`start client failed: ${error.stack}`);
         await this._stopClient(true);
       });
   }
@@ -247,8 +248,10 @@ class PuppetPadlocal extends PUPPET.Puppet {
   }
 
   private async _stopClient(restart: boolean): Promise<void> {
-    this._client!.removeAllListeners();
-    await this._client!.shutdown();
+    if (this._client) {
+      this._client!.removeAllListeners();
+      await this._client!.shutdown();
+    }
     this._client = undefined;
 
     this.__currentUserId = undefined;
