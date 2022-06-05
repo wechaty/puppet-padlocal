@@ -2,7 +2,6 @@ import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { parseSysmsgMessagePayload } from "./message-sysmsg.js";
 import type { PatMessagePayload } from "./sysmsg/message-pat.js";
 import { isContactId, isIMContactId, isIMRoomId, isRoomId } from "../../utils/is-type.js";
-import { log } from "wechaty";
 
 export interface RoomMessageContactInfo {
   talkerId?: string,
@@ -79,9 +78,6 @@ export async function fixPayloadForRoomMessageSentByOthers(padLocalMessage: PadL
         text: padLocalMessage.content.slice(separatorIndex + 2),
       };
     }
-  } else {
-    // suppose never happen
-    log.error(`No contact prefix is found for room message sent by others: ${JSON.stringify(padLocalMessage)}`);
   }
 
   return ret;

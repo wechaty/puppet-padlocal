@@ -38,6 +38,17 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
       text = payload.text;
       talkerId = payload.talkerId;
       listenerId = payload.listenerId;
+    } else {
+      /**
+       * Message that can not get talkerId from payload:
+       * 1. Create room with users that have deleted you: https://gist.github.com/padlocal/e95f8e05eb00556317991964eecfd150
+       *
+       * But talkerId is required by Wechaty, or exception will be raised:
+       * https://github.com/wechaty/wechaty/blob/435cefd90baf7f2a0c801010132e74f9e0575fc2/src/user-modules/message.ts#L813
+       * Solution: we set talkerId to fromusername, treating these kinds of messages are sent by self.
+       */
+      talkerId = padLocalMessage.tousername;
+      listenerId = padLocalMessage.tousername;
     }
   } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
     // room message sent by self
@@ -48,6 +59,7 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
     const startIndex = padLocalMessage.content.indexOf(":\n");
     text = padLocalMessage.content.slice(startIndex !== -1 ? startIndex + 2 : 0);
 
+    // try to parse listenerId for messages, e.g. pat message
     const contactInfo = await parseContactFromRoomMessageContent(padLocalMessage);
     listenerId = contactInfo?.listenerId;
   } else {
