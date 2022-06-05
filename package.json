@@ -97,7 +97,7 @@
     "fs-extra": "^10.0.0",
     "lru-cache": "^6.0.0",
     "node-cleanup": "^2.1.2",
-    "padlocal-client-ts": "^0.5.2",
+    "padlocal-client-ts": "^0.5.3",
     "quick-lru": "^6.0.2",
     "state-switch": "^1.6.3",
     "xml2js": "^0.4.23"
