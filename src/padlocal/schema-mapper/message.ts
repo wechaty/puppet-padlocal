@@ -48,7 +48,6 @@ export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMe
        * Solution: we set talkerId to fromusername, treating these kinds of messages are sent by self.
        */
       talkerId = padLocalMessage.tousername;
-      listenerId = padLocalMessage.tousername;
     }
   } else if (isRoomId(padLocalMessage.tousername) || isIMRoomId(padLocalMessage.tousername)) {
     // room message sent by self
