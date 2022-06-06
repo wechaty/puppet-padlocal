@@ -5,6 +5,8 @@ import type { PatMessagePayload, PatXmlSchema } from "./sysmsg/message-pat";
 import type { SysmsgTemplateMessagePayload, SysmsgTemplateXmlSchema } from "./sysmsg/message-sysmsgtemplate";
 import { parsePatMessagePayload } from "./sysmsg/message-pat.js";
 import { parseSysmsgTemplateMessagePayload } from "./sysmsg/message-sysmsgtemplate.js";
+import type { TodoMessagePayload, TodoXmlSchema } from "./sysmsg/message-todo.js";
+import { parseTodoMessagePayload } from "./sysmsg/message-todo.js";
 
 interface SysmsgXmlSchema {
   sysmsg: {
@@ -12,12 +14,13 @@ interface SysmsgXmlSchema {
       type: string;
     },
     pat?: PatXmlSchema,
-    sysmsgtemplate?: SysmsgTemplateXmlSchema
+    sysmsgtemplate?: SysmsgTemplateXmlSchema,
+    todo?: TodoXmlSchema,
   };
 }
 
-type SysMsgType = "pat" | "sysmsgtemplate";
-type SysMsgPayload = PatMessagePayload | SysmsgTemplateMessagePayload;
+type SysMsgType = "pat" | "sysmsgtemplate" | "roomtoolstips";
+type SysMsgPayload = PatMessagePayload | SysmsgTemplateMessagePayload | TodoMessagePayload;
 
 export interface SysmsgMessagePayload {
   type: SysMsgType;
@@ -44,6 +47,9 @@ export async function parseSysmsgMessagePayload(message: PadLocal.Message.AsObje
       break;
     case "sysmsgtemplate":
       payload = await parseSysmsgTemplateMessagePayload(sysmsgXml.sysmsg.sysmsgtemplate!);
+      break;
+    case "roomtoolstips":
+      payload = await parseTodoMessagePayload(sysmsgXml.sysmsg.todo!);
       break;
   }
 
@@ -73,4 +79,13 @@ export async function parseSysmsgSysmsgTemplateMessagePayload(message: PadLocal.
   }
 
   return sysmsgPayload.payload as SysmsgTemplateMessagePayload;
+}
+
+export async function parseSysmsgTodoMessagePayload(message: PadLocal.Message.AsObject) : Promise<TodoMessagePayload | null> {
+  const sysmsgPayload = await parseSysmsgMessagePayload(message);
+  if (!sysmsgPayload || sysmsgPayload.type !== "roomtoolstips") {
+    return null;
+  }
+
+  return sysmsgPayload.payload as TodoMessagePayload;
 }

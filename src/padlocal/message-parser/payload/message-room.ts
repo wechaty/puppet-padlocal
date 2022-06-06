@@ -2,6 +2,7 @@ import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { parseSysmsgMessagePayload } from "./message-sysmsg.js";
 import type { PatMessagePayload } from "./sysmsg/message-pat.js";
 import { isContactId, isIMContactId, isIMRoomId, isRoomId } from "../../utils/is-type.js";
+import type { TodoMessagePayload } from "./sysmsg/message-todo";
 
 export interface RoomMessageContactInfo {
   talkerId?: string,
@@ -19,6 +20,11 @@ export async function parseContactFromRoomMessageContent(padLocalMessage: PadLoc
       ret = {
         listenerId: patMessagePayload.pattedUserName,
         talkerId: patMessagePayload.fromUserName,
+      };
+    } else if (sysmsgPayload.type === "roomtoolstips") {
+      const todoMessagePayload: TodoMessagePayload = sysmsgPayload.payload as TodoMessagePayload;
+      ret = {
+        talkerId: todoMessagePayload.operatorUserName,
       };
     }
   }
