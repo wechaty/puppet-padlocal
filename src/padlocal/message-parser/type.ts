@@ -1,5 +1,7 @@
 import type { EmojiMessagePayload } from "./payload/message-emotion.js";
 import * as PUPPET from "wechaty-puppet";
+import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
+import { log } from "wechaty-puppet";
 
 export enum WechatMessageType {
   Text = 1,
@@ -36,7 +38,7 @@ export interface FileBoxMetadataMessage {
   payload: FileBoxMetadataMessagePayload
 }
 
-export function convertWechatMessageTypeToPuppet(wechatMessageType: WechatMessageType): PUPPET.types.Message {
+export function convertWechatMessageTypeToPuppet(wechatMessageType: WechatMessageType, padLocalMessage: PadLocal.Message.AsObject): PUPPET.types.Message {
   let type: PUPPET.types.Message;
 
   switch (wechatMessageType) {
@@ -88,7 +90,9 @@ export function convertWechatMessageTypeToPuppet(wechatMessageType: WechatMessag
       break;
 
     default:
-      throw new Error(`unsupported type: ${wechatMessageType}`);
+      log.verbose("[PuppetPadlocal]", `unsupported type: ${JSON.stringify(padLocalMessage)}`);
+
+      type = PUPPET.types.Message.Unknown;
   }
 
   return type;

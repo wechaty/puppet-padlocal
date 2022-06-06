@@ -18,7 +18,7 @@ const PRE = "[SchemaMapper]";
 
 export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: PadLocal.Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = padLocalMessage.type as WechatMessageType;
-  const type = convertWechatMessageTypeToPuppet(wechatMessageType);
+  const type = convertWechatMessageTypeToPuppet(wechatMessageType, padLocalMessage);
 
   /**
    * single chat message: talkerId + listenerId
