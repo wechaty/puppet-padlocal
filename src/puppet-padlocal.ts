@@ -1113,7 +1113,12 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
   override async roomAvatar(roomId: string): Promise<FileBoxInterface> {
     const chatroom = await this.roomRawPayload(roomId);
-    return FileBox.fromUrl(chatroom.avatar || "");
+    if (chatroom.avatar) {
+      return FileBox.fromUrl(chatroom.avatar);
+    } else {
+      // return dummy FileBox object
+      return FileBox.fromBuffer(Buffer.from(new ArrayBuffer(0)), `room-${chatroom.username}-avatar.jpg`);
+    }
   }
 
   override async roomCreate(contactIdList: string[], topic?: string): Promise<string> {
