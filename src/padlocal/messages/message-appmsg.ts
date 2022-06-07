@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { xmlToJson } from "../../utils/xml-to-json.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
 
 interface AppMsgXmlSchema {
   msg: {

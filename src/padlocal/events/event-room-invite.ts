@@ -1,14 +1,14 @@
-import { parseAppmsgMessagePayload, AppMessagePayload, AppMessageType } from "../payload/message-appmsg.js";
+import { parseAppmsgMessagePayload, AppMessagePayload, AppMessageType } from "../messages/message-appmsg.js";
 import type * as PUPPET from "wechaty-puppet";
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import type { MessageCategoryParserRet } from "./message-category.js";
+import type { EventPayload } from "./event.js";
 
 const ROOM_OTHER_INVITE_TITLE_ZH = [/邀请你加入群聊/];
 const ROOM_OTHER_INVITE_TITLE_EN = [/Group Chat Invitation/];
 const ROOM_OTHER_INVITE_LIST_ZH = [/^"(.+)"邀请你加入群聊(.*)，进入可查看详情。/];
 const ROOM_OTHER_INVITE_LIST_EN = [/"(.+)" invited you to join the group chat "(.+)"\. Enter to view details\./];
 
-export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
+export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
   let appMsgPayload: AppMessagePayload;
   try {
     appMsgPayload = await parseAppmsgMessagePayload(message.content);

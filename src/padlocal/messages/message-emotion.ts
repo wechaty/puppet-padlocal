@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { xmlToJson } from "../../utils/xml-to-json.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
 
 interface EmotionXmlSchema {
   msg: {

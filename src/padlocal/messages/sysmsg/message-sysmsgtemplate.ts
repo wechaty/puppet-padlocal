@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
-import { parseTextWithRegexList } from "../../../utils/regex.js";
-import type { Runner } from "../../../utils/runner.js";
+import { parseTextWithRegexList } from "../../utils/regex.js";
+import type { Runner } from "../../utils/runner.js";
 
 export interface SysmsgTemplateXmlSchema {
   content_template: {

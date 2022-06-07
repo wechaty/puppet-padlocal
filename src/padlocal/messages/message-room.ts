@@ -1,7 +1,7 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { parseSysmsgMessagePayload } from "./message-sysmsg.js";
 import type { PatMessagePayload } from "./sysmsg/message-pat.js";
-import { isContactId, isIMContactId, isIMRoomId, isRoomId } from "../../utils/is-type.js";
+import { isContactId, isIMContactId, isIMRoomId, isRoomId } from "../utils/is-type.js";
 import type { TodoMessagePayload } from "./sysmsg/message-todo";
 
 export interface RoomMessageContactInfo {

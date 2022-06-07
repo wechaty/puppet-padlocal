@@ -6,15 +6,75 @@ import {
   AppMessagePayload,
   AppMessageType,
   ReferMsgPayload,
-} from "../message-parser/payload/message-appmsg.js";
-import { convertWechatMessageTypeToPuppet, WechatMessageType } from "../message-parser/type.js";
+} from "../messages/message-appmsg.js";
 import { isIMRoomId, isRoomId } from "../utils/is-type.js";
 import {
   fixPayloadForRoomMessageSentByOthers,
   parseContactFromRoomMessageContent,
-} from "../message-parser/payload/message-room.js";
+} from "../messages/message-room.js";
+import { WechatMessageType } from "../types.js";
 
 const PRE = "[SchemaMapper]";
+
+function convertWechatMessageTypeToPuppet(wechatMessageType: WechatMessageType, padLocalMessage: PadLocal.Message.AsObject): PUPPET.types.Message {
+  let type: PUPPET.types.Message;
+
+  switch (wechatMessageType) {
+    case WechatMessageType.Text:
+      type = PUPPET.types.Message.Text;
+      break;
+
+    case WechatMessageType.Image:
+      type = PUPPET.types.Message.Image;
+      break;
+
+    case WechatMessageType.Voice:
+      type = PUPPET.types.Message.Audio;
+      break;
+
+    case WechatMessageType.Emoticon:
+      type = PUPPET.types.Message.Emoticon;
+      break;
+
+    case WechatMessageType.App:
+    case WechatMessageType.File:
+      type = PUPPET.types.Message.Attachment;
+      break;
+
+    case WechatMessageType.Location:
+      type = PUPPET.types.Message.Location;
+      break;
+
+    case WechatMessageType.Video:
+      type = PUPPET.types.Message.Video;
+      break;
+
+    case WechatMessageType.Sys:
+      type = PUPPET.types.Message.Unknown;
+      break;
+
+    case WechatMessageType.ShareCard:
+      type = PUPPET.types.Message.Contact;
+      break;
+
+    case WechatMessageType.VoipMsg:
+    case WechatMessageType.SysTemplate:
+      type = PUPPET.types.Message.Recalled;
+      break;
+
+    case WechatMessageType.StatusNotify:
+    case WechatMessageType.SysNotice:
+      type = PUPPET.types.Message.Unknown;
+      break;
+
+    default:
+      log.verbose("[PuppetPadlocal]", `unsupported type: ${JSON.stringify(padLocalMessage)}`);
+
+      type = PUPPET.types.Message.Unknown;
+  }
+
+  return type;
+}
 
 export async function padLocalMessageToWechaty(puppet: PUPPET.Puppet, padLocalMessage: PadLocal.Message.AsObject): Promise<PUPPET.payloads.Message> {
   const wechatMessageType = padLocalMessage.type as WechatMessageType;

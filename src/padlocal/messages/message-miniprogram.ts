@@ -1,6 +1,6 @@
 import type * as PUPPET from "wechaty-puppet";
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
-import { xmlToJson } from "../../utils/xml-to-json.js";
+import { xmlToJson } from "../utils/xml-to-json.js";
 
 interface MiniProgramXmlSchema {
   msg: {

@@ -6,20 +6,20 @@ import PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { genIdempotentId } from "padlocal-client-ts/dist/utils/Utils.js";
 import { CacheManager, RoomMemberMap } from "./padlocal/cache-manager.js";
 import { isIMContactId, isRoomId } from "./padlocal/utils/is-type.js";
-import { parseAppmsgMessagePayload } from "./padlocal/message-parser/payload/message-appmsg.js";
-import { parseMiniProgramMessagePayload } from "./padlocal/message-parser/payload/message-miniprogram.js";
-import { parseMessageCategory } from "./padlocal/message-parser/category/index.js";
+import { parseAppmsgMessagePayload } from "./padlocal/messages/message-appmsg.js";
+import { parseMiniProgramMessagePayload } from "./padlocal/messages/message-miniprogram.js";
+import { parseEvent, EventType } from "./padlocal/events/mod.js";
 import * as XMLParser from "fast-xml-parser";
 import {
   EmojiMessagePayload,
   generateEmotionPayload,
   parseEmotionMessagePayload,
-} from "./padlocal/message-parser/payload/message-emotion.js";
+} from "./padlocal/messages/message-emotion.js";
 import { Bytes, hexStringToBytes } from "padlocal-client-ts/dist/utils/ByteUtils.js";
 import { CachedPromiseFunc } from "./padlocal/utils/cached-promise.js";
 import { SerialExecutor } from "padlocal-client-ts/dist/utils/SerialExecutor.js";
-import { isRoomLeaveDebouncing } from "./padlocal/message-parser/category/message-category-room-leave.js";
-import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/message-parser/type.js";
+import { isRoomLeaveDebouncing } from "./padlocal/events/event-room-leave.js";
+import { FileBoxMetadataMessage, WechatMessageType } from "./padlocal/types.js";
 import { RetryStrategy, RetryStrategyRule } from "padlocal-client-ts/dist/utils/RetryStrategy.js";
 import nodeUrl from "url";
 import { addRunningPuppet, removeRunningPuppet } from "./cleanup.js";
@@ -31,7 +31,6 @@ import {
   padLocalRoomMemberToWechaty,
   padLocalRoomToWechaty,
 } from "./padlocal/schema-mapper/room.js";
-import { MessageCategory } from "./padlocal/message-parser/category/message-category.js";
 
 const VERSION = packageJson.version || "0.0.0";
 
@@ -1454,25 +1453,25 @@ class PuppetPadlocal extends PUPPET.Puppet {
     const messageObj: PadLocal.Message.AsObject = message.toObject();
     await this._cacheMgr!.setMessage(message.getId(), messageObj);
 
-    const messageCategory = await parseMessageCategory(this, messageObj);
+    const event = await parseEvent(this, messageObj);
 
-    switch (messageCategory.category) {
-      case MessageCategory.NormalMessage:
+    switch (event.type) {
+      case EventType.Message:
         this.emit("message", {
           messageId,
         });
         break;
 
-      case MessageCategory.Friendship: {
-        const friendship: PUPPET.payloads.Friendship = messageCategory.payload;
+      case EventType.Friendship: {
+        const friendship: PUPPET.payloads.Friendship = event.payload;
         await this._cacheMgr!.setFriendshipRawPayload(messageId, friendship);
         this.emit("friendship", {
           friendshipId: messageId,
         });
         break;
       }
-      case MessageCategory.RoomInvite: {
-        const roomInvite: PUPPET.payloads.RoomInvitation = messageCategory.payload;
+      case EventType.RoomInvite: {
+        const roomInvite: PUPPET.payloads.RoomInvitation = event.payload;
         await this._cacheMgr!.setRoomInvitation(messageId, roomInvite);
 
         this.emit("room-invite", {
@@ -1480,22 +1479,22 @@ class PuppetPadlocal extends PUPPET.Puppet {
         });
         break;
       }
-      case MessageCategory.RoomJoin: {
-        const roomJoin: PUPPET.payloads.EventRoomJoin = messageCategory.payload;
+      case EventType.RoomJoin: {
+        const roomJoin: PUPPET.payloads.EventRoomJoin = event.payload;
         this.emit("room-join", roomJoin);
 
         await this._updateRoomMember(roomJoin.roomId);
         break;
       }
-      case MessageCategory.RoomLeave: {
-        const roomLeave: PUPPET.payloads.EventRoomLeave = messageCategory.payload;
+      case EventType.RoomLeave: {
+        const roomLeave: PUPPET.payloads.EventRoomLeave = event.payload;
         this.emit("room-leave", roomLeave);
 
         await this._updateRoomMember(roomLeave.roomId);
         break;
       }
-      case MessageCategory.RoomTopic: {
-        const roomTopic: PUPPET.payloads.EventRoomTopic = messageCategory.payload;
+      case EventType.RoomTopic: {
+        const roomTopic: PUPPET.payloads.EventRoomTopic = event.payload;
         this.emit("room-topic", roomTopic);
         break;
       }

@@ -1,13 +1,13 @@
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import type * as PUPPET from "wechaty-puppet";
-import { isRoomId } from "../../utils/is-type.js";
-import type { MessageCategoryParserRet } from "./message-category.js";
-import { parseSysmsgSysmsgTemplateMessagePayload } from "../payload/message-sysmsg.js";
+import { isRoomId } from "../utils/is-type.js";
+import type { EventPayload } from "./event.js";
+import { parseSysmsgSysmsgTemplateMessagePayload } from "../messages/message-sysmsg.js";
 import {
   parseSysmsgTemplate, SysmsgTemplateLinkProfile,
-} from "../payload/sysmsg/message-sysmsgtemplate.js";
-import { WechatMessageType } from "../type.js";
-import { executeRunners } from "../../utils/runner.js";
+} from "../messages/sysmsg/message-sysmsgtemplate.js";
+import { WechatMessageType } from "../types.js";
+import { executeRunners } from "../utils/runner.js";
 
 const YOU_REMOVE_OTHER_REGEX_LIST = [
   /^(你)将"(.+)"移出了群聊/,
@@ -49,7 +49,7 @@ export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolea
   return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
-export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<MessageCategoryParserRet> => {
+export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
