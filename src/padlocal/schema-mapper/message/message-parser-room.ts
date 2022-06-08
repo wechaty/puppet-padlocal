@@ -1,21 +1,24 @@
 import type * as PUPPET from "wechaty-puppet";
 import type PadLocal from "padlocal-client-ts/dist/proto/padlocal_pb.js";
 import { isIMRoomId, isRoomId } from "../../utils/is-type.js";
-import {
-  fixPayloadForRoomMessageSentByOthers,
-  parseContactFromRoomMessageContent,
-} from "../../messages/message-room.js";
-import type { MessageParser, MessageParserContext } from "./message-parser";
+import type { MessageParser, MessageParserContext } from "./message-parser.js";
 
 async function roomMessageSentByOthers(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message) {
   if (isRoomId(padLocalMessage.fromusername) || isIMRoomId(padLocalMessage.fromusername)) {
     ret.roomId = padLocalMessage.fromusername;
 
-    const payload = await fixPayloadForRoomMessageSentByOthers(padLocalMessage);
-    if (payload) {
-      ret.text = payload.text;
-      ret.talkerId = payload.talkerId;
-      ret.listenerId = payload.listenerId;
+    /**
+     * separator of talkerId and content:
+     *
+     * text:    "wxid_xxxx:\nnihao"
+     * appmsg:  "wxid_xxxx:\n<?xml version="1.0"?><msg><appmsg appid="" sdkver="0">..."
+     * pat:     "19850419xxx@chatroom:\n<sysmsg type="pat"><pat><fromusername>xxx</fromusername><chatusername>19850419xxx@chatroom</chatusername><pattedusername>wxid_xxx</pattedusername>...<template><![CDATA["${vagase}" 拍了拍我]]></template></pat></sysmsg>"
+     */
+    const separatorIndex = padLocalMessage.content.indexOf(":\n");
+    if (separatorIndex !== -1) {
+      const takerIdPrefix = padLocalMessage.content.slice(0, separatorIndex);
+      ret.talkerId = takerIdPrefix;
+      ret.text = padLocalMessage.content.slice(separatorIndex + 2);
     } else {
       /**
        * Message that can not get talkerId from payload:
@@ -41,13 +44,15 @@ async function roomMessageSentBySelf(padLocalMessage: PadLocal.Message.AsObject,
     if (startIndex !== -1) {
       ret.text = padLocalMessage.content.slice(startIndex + 2);
     }
-
-    // try to parse listenerId for messages, e.g. pat message
-    const contactInfo = await parseContactFromRoomMessageContent(padLocalMessage);
-    ret.listenerId = contactInfo?.listenerId;
   }
 }
 
+/**
+ * try to parse talkerId and content for generic room messages
+ * @param padLocalMessage
+ * @param ret
+ * @param context
+ */
 export const roomParser: MessageParser = async(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
   await roomMessageSentByOthers(padLocalMessage, ret);
   await roomMessageSentBySelf(padLocalMessage, ret);
