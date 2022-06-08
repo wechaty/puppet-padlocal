@@ -7,6 +7,8 @@ import { parsePatMessagePayload } from "./sysmsg/message-pat.js";
 import { parseSysmsgTemplateMessagePayload } from "./sysmsg/message-sysmsgtemplate.js";
 import type { TodoMessagePayload, TodoXmlSchema } from "./sysmsg/message-todo.js";
 import { parseTodoMessagePayload } from "./sysmsg/message-todo.js";
+import type { RevokeMsgMessagePayload, RevokeMsgXmlSchema } from "./sysmsg/message-revokemsg";
+import { parseRevokeMsgMessagePayload } from "./sysmsg/message-revokemsg.js";
 
 interface SysmsgXmlSchema {
   sysmsg: {
@@ -16,11 +18,12 @@ interface SysmsgXmlSchema {
     pat?: PatXmlSchema,
     sysmsgtemplate?: SysmsgTemplateXmlSchema,
     todo?: TodoXmlSchema,
+    revokemsg?: RevokeMsgXmlSchema,
   };
 }
 
-type SysMsgType = "pat" | "sysmsgtemplate" | "roomtoolstips";
-type SysMsgPayload = PatMessagePayload | SysmsgTemplateMessagePayload | TodoMessagePayload;
+type SysMsgType = "pat" | "sysmsgtemplate" | "roomtoolstips" | "revokemsg";
+type SysMsgPayload = PatMessagePayload | SysmsgTemplateMessagePayload | TodoMessagePayload | RevokeMsgMessagePayload;
 
 export interface SysmsgMessagePayload {
   type: SysMsgType;
@@ -50,6 +53,9 @@ export async function parseSysmsgMessagePayload(message: PadLocal.Message.AsObje
       break;
     case "roomtoolstips":
       payload = await parseTodoMessagePayload(sysmsgXml.sysmsg.todo!);
+      break;
+    case "revokemsg":
+      payload = await parseRevokeMsgMessagePayload(sysmsgXml.sysmsg.revokemsg!);
       break;
   }
 
@@ -88,4 +94,13 @@ export async function parseSysmsgTodoMessagePayload(message: PadLocal.Message.As
   }
 
   return sysmsgPayload.payload as TodoMessagePayload;
+}
+
+export async function parseSysmsgRevokeMsgMessagePayload(message: PadLocal.Message.AsObject) : Promise<RevokeMsgMessagePayload | null> {
+  const sysmsgPayload = await parseSysmsgMessagePayload(message);
+  if (!sysmsgPayload || sysmsgPayload.type !== "revokemsg") {
+    return null;
+  }
+
+  return sysmsgPayload.payload as RevokeMsgMessagePayload;
 }
