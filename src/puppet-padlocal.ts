@@ -205,11 +205,15 @@ class PuppetPadlocal extends PUPPET.Puppet {
       },
     })
       .then(() => {
-        log.silly(PRE, "on ready");
+        this.wrapAsync(
+          this._onPushSerialExecutor.execute(async() => {
+            log.silly(PRE, "on ready");
 
-        this.emit("ready", {
-          data: "ready",
-        });
+            this.emit("ready", {
+              data: "ready",
+            });
+          }),
+        );
 
         return null;
       })
