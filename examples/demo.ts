@@ -10,6 +10,8 @@ import { isContactId } from "../src/padlocal/utils/is-type.js";
 const token: string = config.get("padLocal.token");
 const puppet = new PuppetPadlocal({ token });
 
+const LOGPRE = "[Demo]";
+
 async function getMessagePayload(message: Message) {
   const recallUserId: string = config.get("test.push.recallUserId");
 
@@ -26,7 +28,7 @@ async function getMessagePayload(message: Message) {
 
       const dataBuffer = await attachFile.toBuffer();
 
-      log.info("TestBot", `get message audio or attach: ${dataBuffer.length}`);
+      log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
 
       break;
     }
@@ -36,7 +38,7 @@ async function getMessagePayload(message: Message) {
 
       const videoData = await videoFile.toBuffer();
 
-      log.info("TestBot", `get message video: ${videoData.length}`);
+      log.info(LOGPRE, `get message video: ${videoData.length}`);
 
       break;
     }
@@ -45,11 +47,11 @@ async function getMessagePayload(message: Message) {
       const emotionFile = await message.toFileBox();
 
       const emotionJSON = emotionFile.toJSON();
-      log.info("TestBot", `get message emotion json: ${JSON.stringify(emotionJSON)}`);
+      log.info(LOGPRE, `get message emotion json: ${JSON.stringify(emotionJSON)}`);
 
       const emotionBuffer: Buffer = await emotionFile.toBuffer();
 
-      log.info("TestBot", `get message emotion: ${emotionBuffer.length}`);
+      log.info(LOGPRE, `get message emotion: ${emotionBuffer.length}`);
 
       break;
     }
@@ -60,29 +62,29 @@ async function getMessagePayload(message: Message) {
       const thumbImage = await messageImage.thumbnail();
       const thumbImageData = await thumbImage.toBuffer();
 
-      log.info("TestBot", `get message image, thumb: ${thumbImageData.length}`);
+      log.info(LOGPRE, `get message image, thumb: ${thumbImageData.length}`);
 
       const hdImage = await messageImage.hd();
       const hdImageData = await hdImage.toBuffer();
 
-      log.info("TestBot", `get message image, hd: ${hdImageData.length}`);
+      log.info(LOGPRE, `get message image, hd: ${hdImageData.length}`);
 
       const artworkImage = await messageImage.artwork();
       const artworkImageData = await artworkImage.toBuffer();
 
-      log.info("TestBot", `get message image, artwork: ${artworkImageData.length}`);
+      log.info(LOGPRE, `get message image, artwork: ${artworkImageData.length}`);
 
       break;
     }
 
     case PUPPET.types.Message.Url: {
       const urlLink = await message.toUrlLink();
-      log.info("TestBot", `get message url: ${JSON.stringify(urlLink)}`);
+      log.info(LOGPRE, `get message url: ${JSON.stringify(urlLink)}`);
 
       const urlThumbImage = await message.toFileBox();
       const urlThumbImageData = await urlThumbImage.toBuffer();
 
-      log.info("TestBot", `get message url thumb: ${urlThumbImageData.length}`);
+      log.info(LOGPRE, `get message url thumb: ${urlThumbImageData.length}`);
 
       break;
     }
@@ -98,7 +100,7 @@ async function getMessagePayload(message: Message) {
 }
 
 const bot = WechatyBuilder.build({
-  name: "TestBot",
+  name: "DemoBot",
   puppet,
 });
 
@@ -106,26 +108,30 @@ bot
   .on("scan", (qrcode: string, status: ScanStatus) => {
     if (status === ScanStatus.Waiting && qrcode) {
       log.info(
-        "TestBot",
+        LOGPRE,
         `onScan: ${ScanStatus[status]}(${status})\n\n ▼▼▼ Please scan following qr code to login ▼▼▼\n`,
       );
 
       QRCode.generate(qrcode, { small: true });
     } else {
-      log.info("TestBot", `onScan: ${ScanStatus[status]}(${status})`);
+      log.info(LOGPRE, `onScan: ${ScanStatus[status]}(${status})`);
     }
   })
 
   .on("login", (user: Contact) => {
-    log.info("TestBot", `${user} login`);
+    log.info(LOGPRE, `${user} login`);
   })
 
   .on("logout", (user, reason) => {
-    log.info("TestBot", `${user} logout, reason: ${reason}`);
+    log.info(LOGPRE, `${user} logout, reason: ${reason}`);
+  })
+
+  .on("ready", () => {
+    log.info(LOGPRE, ">>>>>>>> bot is ready <<<<<<<<");
   })
 
   .on("message", async(message: Message) => {
-    log.info("TestBot", `on message: ${message.toString()}`);
+    log.info(LOGPRE, `on message: ${message.toString()}`);
 
     const forwardFrom = config.get("test.push.forwardFrom");
     const forwardTo: string = config.get("test.push.forwardTo");
@@ -152,7 +158,7 @@ bot
         const newMessage = await message.forward(to!);
         await getMessagePayload(newMessage as Message);
       } catch (e) {
-        log.error("TestBot", `Error while forwarding message: ${(e as Error).stack}`);
+        log.error(LOGPRE, `Error while forwarding message: ${(e as Error).stack}`);
       }
     }
 
@@ -160,33 +166,33 @@ bot
   })
 
   .on("room-invite", async(roomInvitation) => {
-    log.info("TestBot", `on room-invite: ${roomInvitation}`);
+    log.info(LOGPRE, `on room-invite: ${roomInvitation}`);
   })
 
   .on("room-join", (room, inviteeList, inviter,  date) => {
-    log.info("TestBot", `on room-join, room:${room}, inviteeList:${inviteeList}, inviter:${inviter}, date:${date}`);
+    log.info(LOGPRE, `on room-join, room:${room}, inviteeList:${inviteeList}, inviter:${inviter}, date:${date}`);
   })
 
   .on("room-leave", (room, leaverList, remover, date) => {
-    log.info("TestBot", `on room-leave, room:${room}, leaverList:${leaverList}, remover:${remover}, date:${date}`);
+    log.info(LOGPRE, `on room-leave, room:${room}, leaverList:${leaverList}, remover:${remover}, date:${date}`);
   })
 
   .on("room-topic", (room, newTopic, oldTopic, changer, date) => {
-    log.info("TestBot", `on room-topic, room:${room}, newTopic:${newTopic}, oldTopic:${oldTopic}, changer:${changer}, date:${date}`);
+    log.info(LOGPRE, `on room-topic, room:${room}, newTopic:${newTopic}, oldTopic:${oldTopic}, changer:${changer}, date:${date}`);
   })
 
   .on("friendship", (friendship) => {
-    log.info("TestBot", `on friendship: ${friendship}`);
+    log.info(LOGPRE, `on friendship: ${friendship}`);
   })
 
   .on("error", (error) => {
-    log.info("TestBot", `on error: ${error.toString()}\n${error.stack}`);
+    log.info(LOGPRE, `on error: ${error.toString()}\n${error.stack}`);
   });
 
 bot
   .start()
   .then(() => {
-    log.info("TestBot", "started.");
+    log.info(LOGPRE, "started.");
     return null;
   })
   .catch(console.error);
