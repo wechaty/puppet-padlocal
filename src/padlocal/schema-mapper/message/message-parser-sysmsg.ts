@@ -12,7 +12,7 @@ import type { RevokeMsgMessagePayload } from "../../messages/sysmsg/message-revo
  * @param ret
  * @param context
  */
-export const sysmsgParser: MessageParser = async(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
+export const sysmsgParser: MessageParser = async (padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
   const sysmsgPayload = await parseSysmsgMessagePayload(padLocalMessage);
   if (!sysmsgPayload) {
     return ret;

@@ -121,7 +121,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       [PUPPET.types.ScanStatus.Timeout]: "Timeout",
     };
 
-    const onQrCodeEvent = async (qrCodeEvent: PadLocal.QRCodeEvent) => {
+    const onQrCodeEvent = (qrCodeEvent: PadLocal.QRCodeEvent) => {
       let scanStatus: PUPPET.types.ScanStatus = PUPPET.types.ScanStatus.Unknown;
       let qrCodeImageURL: string | undefined;
       switch (qrCodeEvent.getStatus()) {
@@ -169,7 +169,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
       },
 
-      onLoginSuccess: async (_) => {
+      onLoginSuccess: (_) => {
         this.wrapAsync(
           this._onPushSerialExecutor.execute(async () => {
             const userName = this._client!.selfContact!.getUsername();
@@ -187,7 +187,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       onQrCodeEvent,
 
       // Will sync message and contact after login success, since last time login.
-      onSync: async (syncEvent: PadLocal.SyncEvent) => {
+      onSync: (syncEvent: PadLocal.SyncEvent) => {
 
         this.wrapAsync(
           this._onPushSerialExecutor.execute(async () => {

@@ -13,7 +13,7 @@ nodeCleanup((exitCode, signal) => {
   const puppets = RunningPuppets.slice();
 
   Promise.all(
-    puppets.map(async(puppet) => {
+    puppets.map(async (puppet) => {
       await puppet.stop();
     }),
   ).finally(() => {

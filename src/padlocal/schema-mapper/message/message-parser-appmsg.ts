@@ -4,7 +4,7 @@ import { log } from "wechaty-puppet";
 import { LOGPRE, MessageParser, MessageParserContext } from "./message-parser.js";
 import { AppMessageType, parseAppmsgMessagePayload } from "../../messages/message-appmsg.js";
 
-export const appMsgParser: MessageParser = async(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
+export const appMsgParser: MessageParser = async (padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
   if (ret.type !== PUPPET.types.Message.Attachment) {
     return ret;
   }

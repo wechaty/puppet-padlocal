@@ -32,8 +32,8 @@ const OTHER_REVOKE_REGEX_LIST = [
 export async function parseRevokeMsgMessagePayload(revokeMsgXmlSchema: RevokeMsgXmlSchema): Promise<RevokeMsgMessagePayload> {
   let nickName: string | undefined;
 
-  const youRevoke = async() => parseTextWithRegexList<RevokeMsgType>(revokeMsgXmlSchema.replacemsg, YOU_REVOKE_REGEX_LIST, async() => "You");
-  const otherRevoke = async() => parseTextWithRegexList<RevokeMsgType>(revokeMsgXmlSchema.replacemsg, OTHER_REVOKE_REGEX_LIST, async(_, match) => {
+  const youRevoke = async () => parseTextWithRegexList<RevokeMsgType>(revokeMsgXmlSchema.replacemsg, YOU_REVOKE_REGEX_LIST, async () => "You");
+  const otherRevoke = async () => parseTextWithRegexList<RevokeMsgType>(revokeMsgXmlSchema.replacemsg, OTHER_REVOKE_REGEX_LIST, async (_, match) => {
     nickName = match[1];
     return "Other";
   });
@@ -49,7 +49,7 @@ export async function parseRevokeMsgMessagePayload(revokeMsgXmlSchema: RevokeMsg
   };
 }
 
-export async function getRevokeOriginalMessage(puppet: PUPPET.Puppet, revokemsgPayload:RevokeMsgMessagePayload): Promise<PUPPET.payloads.Message | null> {
+export async function getRevokeOriginalMessage(puppet: PUPPET.Puppet, revokemsgPayload: RevokeMsgMessagePayload): Promise<PUPPET.payloads.Message | null> {
   const messageIdList = await puppet.messageSearch({ id: revokemsgPayload.originalMessageId });
   if (messageIdList.length) {
     return puppet.messagePayload(messageIdList[0]!);
@@ -58,7 +58,7 @@ export async function getRevokeOriginalMessage(puppet: PUPPET.Puppet, revokemsgP
   return null;
 }
 
-export async function getRevokeOperatorIdForRoomMessage(puppet: PUPPET.Puppet, revokemsgPayload:RevokeMsgMessagePayload) : Promise<string | null> {
+export async function getRevokeOperatorIdForRoomMessage(puppet: PUPPET.Puppet, revokemsgPayload: RevokeMsgMessagePayload): Promise<string | null> {
   if (isRoomId(revokemsgPayload.session) || isIMRoomId(revokemsgPayload.session)) {
     const contactIdList = await puppet.roomMemberSearch(revokemsgPayload.session, revokemsgPayload.operatorNickName!);
     if (contactIdList.length) {

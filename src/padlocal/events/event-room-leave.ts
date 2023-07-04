@@ -49,7 +49,7 @@ export function isRoomLeaveDebouncing(roomId: string, removeeId: string): boolea
   return roomLeaveDebounceMap.get(key) !== undefined;
 }
 
-export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
+export default async (puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
@@ -60,7 +60,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * /^(你)将"(.+)"移出了群聊/,
    *  我移除别人是 10002: https://gist.github.com/padlocal/5676b96ad0ca918fdd53849417eff422
    */
-  const youRemoveOther = async() => {
+  const youRemoveOther = async () => {
     const sysmsgTemplatePayload = await parseSysmsgSysmsgTemplateMessagePayload(message);
     if (!sysmsgTemplatePayload) {
       return null;
@@ -69,7 +69,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
     return await parseSysmsgTemplate<PUPPET.payloads.EventRoomLeave>(
       sysmsgTemplatePayload,
       YOU_REMOVE_OTHER_REGEX_LIST,
-      async(templateLinkList) => {
+      async (templateLinkList) => {
         // the first item MUST be removed profile link
         const removeeList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
         // filter other empty userName, in case the user is not your friend
@@ -88,7 +88,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
    * /^(你)被"([^"]+?)"移出群聊/,
    * // 我被别人移除是 10000：https://gist.github.com/padlocal/60be89334d4d743937f07023da20291e
    */
-  const otherRemoveYou = async() => {
+  const otherRemoveYou = async () => {
     if (message.type !== WechatMessageType.Sys) {
       return null;
     }

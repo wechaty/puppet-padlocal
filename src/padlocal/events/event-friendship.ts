@@ -47,7 +47,7 @@ const isNeedVerify = (message: PadLocal.Message.AsObject): boolean => {
   });
 };
 
-const isReceive = async(message: PadLocal.Message.AsObject): Promise<ReceiveXmlSchema | null> => {
+const isReceive = async (message: PadLocal.Message.AsObject): Promise<ReceiveXmlSchema | null> => {
   if (message.type !== WechatMessageType.VerifyMsg && message.type !== WechatMessageType.VerifyMsgEnterprise) {
     return null;
   }
@@ -67,7 +67,7 @@ const isReceive = async(message: PadLocal.Message.AsObject): Promise<ReceiveXmlS
   return null;
 };
 
-export default async(_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
+export default async (_puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
   if (isConfirm(message)) {
     return {
       contactId: message.fromusername,
