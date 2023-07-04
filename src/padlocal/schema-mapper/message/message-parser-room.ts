@@ -53,7 +53,7 @@ async function roomMessageSentBySelf(padLocalMessage: PadLocal.Message.AsObject,
  * @param ret
  * @param context
  */
-export const roomParser: MessageParser = async(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
+export const roomParser: MessageParser = async (padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
   await roomMessageSentByOthers(padLocalMessage, ret);
   await roomMessageSentBySelf(padLocalMessage, ret);
 

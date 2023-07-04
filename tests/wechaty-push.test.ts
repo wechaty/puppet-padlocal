@@ -8,12 +8,12 @@ const LOGPRE = "TestBot";
 
 test(
   "push",
-  async() => {
+  async () => {
     const forwardFrom = config.get("test.push.forwardFrom");
     const forwardTo: string = config.get("test.push.forwardTo");
     const recallUserId: string = config.get("test.push.recallUserId");
 
-    const getMessagePayload = async(message: Message) => {
+    const getMessagePayload = async (message: Message) => {
       switch (message.type()) {
         case PUPPET.types.Message.Text:
           if (message.talker().id === recallUserId && message.text()!.indexOf("recall") !== -1) {
@@ -126,7 +126,7 @@ test(
       }
     };
 
-    const forwardMessage = async(bot: Wechaty, message: Message): Promise<void> => {
+    const forwardMessage = async (bot: Wechaty, message: Message): Promise<void> => {
       if (message.type() === PUPPET.types.Message.Unknown) {
         return;
       }
@@ -145,8 +145,8 @@ test(
       }
     };
 
-    await prepareSingedOnBot(async(bot) => {
-      bot.on("message", async(message: Message) => {
+    await prepareSingedOnBot(async (bot) => {
+      bot.on("message", async (message: Message) => {
         log.info(LOGPRE, `on message: ${message.toString()}`);
 
         if (message.talker().id === forwardFrom && message.listener()?.id === forwardFrom) {
@@ -156,7 +156,7 @@ test(
         await getMessagePayload(message);
       });
 
-      bot.on("friendship", async(friendship: Friendship) => {
+      bot.on("friendship", async (friendship: Friendship) => {
         log.info(LOGPRE, `on friendship: ${friendship.toJSON()}`);
 
         if (friendship.type() === PUPPET.types.Friendship.Receive) {
@@ -172,36 +172,34 @@ test(
         }
       });
 
-      bot.on("room-invite", async(roomInvite: RoomInvitation) => {
+      bot.on("room-invite", async (roomInvite: RoomInvitation) => {
         log.info(LOGPRE, `on room invite: ${await roomInvite.toJSON()}`);
 
         await roomInvite.accept();
       });
 
-      bot.on("room-join", async(room: Room, inviteeList: Contact[], inviter: Contact, date) => {
+      bot.on("room-join", async (room: Room, inviteeList: Contact[], inviter: Contact, date) => {
         log.info(
           LOGPRE,
-          `on room join: ${room.toString()}, inviteeList: ${inviteeList.map((i) => i.id)}, inviter: ${
-            inviter.id
+          `on room join: ${room.toString()}, inviteeList: ${inviteeList.map((i) => i.id)}, inviter: ${inviter.id
           }, ${date}`,
         );
       });
 
-      bot.on("room-leave", async(room: Room, leaverList: Contact[], remover?: Contact, date?: Date) => {
+      bot.on("room-leave", async (room: Room, leaverList: Contact[], remover?: Contact, date?: Date) => {
         log.info(
           LOGPRE,
-          `on room leave: ${room.toString()}, leaverList: ${leaverList.map((l) => l.id)}, remover: ${
-            remover?.id
+          `on room leave: ${room.toString()}, leaverList: ${leaverList.map((l) => l.id)}, remover: ${remover?.id
           } ${date}`,
         );
       });
 
-      bot.on("room-topic", async(room: Room, newTopic: string, oldTopic: string, changer: Contact, date?: Date) => {
+      bot.on("room-topic", async (room: Room, newTopic: string, oldTopic: string, changer: Contact, date?: Date) => {
         log.info(LOGPRE, `on room topic: ${room.toString()}, ${newTopic}, ${oldTopic}, ${changer.toString()}, ${date}`);
       });
     });
 
-    return new Promise(() => {});
+    return new Promise(() => { });
   },
   Math.pow(2, 30),
 );

@@ -22,7 +22,7 @@ const TypeMappings: { [key: number]: PUPPET.types.Message; } = {
   [WechatMessageType.SysNotice]: PUPPET.types.Message.Unknown,
 };
 
-export const typeParser: MessageParser = async(padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, _context: MessageParserContext) => {
+export const typeParser: MessageParser = async (padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, _context: MessageParserContext) => {
   const wechatMessageType = padLocalMessage.type as WechatMessageType;
   let type: PUPPET.types.Message | undefined = TypeMappings[wechatMessageType];
 

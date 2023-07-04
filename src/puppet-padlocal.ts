@@ -121,7 +121,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
       [PUPPET.types.ScanStatus.Timeout]: "Timeout",
     };
 
-    const onQrCodeEvent = async(qrCodeEvent: PadLocal.QRCodeEvent) => {
+    const onQrCodeEvent = (qrCodeEvent: PadLocal.QRCodeEvent) => {
       let scanStatus: PUPPET.types.ScanStatus = PUPPET.types.ScanStatus.Unknown;
       let qrCodeImageURL: string | undefined;
       switch (qrCodeEvent.getStatus()) {
@@ -169,9 +169,9 @@ class PuppetPadlocal extends PUPPET.Puppet {
         log.info(PRE, `start login with type: ${LoginTypeName[loginType]}`);
       },
 
-      onLoginSuccess: async(_) => {
+      onLoginSuccess: (_) => {
         this.wrapAsync(
-          this._onPushSerialExecutor.execute(async() => {
+          this._onPushSerialExecutor.execute(async () => {
             const userName = this._client!.selfContact!.getUsername();
             log.silly(PRE, `login success: ${userName}`);
 
@@ -187,10 +187,10 @@ class PuppetPadlocal extends PUPPET.Puppet {
       onQrCodeEvent,
 
       // Will sync message and contact after login success, since last time login.
-      onSync: async(syncEvent: PadLocal.SyncEvent) => {
+      onSync: (syncEvent: PadLocal.SyncEvent) => {
 
         this.wrapAsync(
-          this._onPushSerialExecutor.execute(async() => {
+          this._onPushSerialExecutor.execute(async () => {
             log.silly(PRE, `login sync event: ${JSON.stringify(syncEvent.toObject())}`);
 
             for (const contact of syncEvent.getContactList()) {
@@ -206,7 +206,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     })
       .then(() => {
         this.wrapAsync(
-          this._onPushSerialExecutor.execute(async() => {
+          this._onPushSerialExecutor.execute(async () => {
             log.silly(PRE, "on ready");
 
             this.emit("ready", {
@@ -217,7 +217,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
 
         return null;
       })
-      .catch(async(error) => {
+      .catch(async (error) => {
         log.error(`start client failed: ${error.stack}`);
         await this._stopClient(true);
       });
@@ -1062,7 +1062,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }
       case PUPPET.types.Message.Attachment:
       case PUPPET.types.Message.MiniProgram:
-      case PUPPET.types.Message.Url: {
+      case PUPPET.types.Message.Url:
+      case PUPPET.types.Message.ChatHistory: {
         const response: PadLocal.ForwardMessageResponse = await this._client!.api.forwardMessage(
           genIdempotentId(),
           toUserName,
@@ -1196,7 +1197,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     let ret = await this._cacheMgr!.getContact(id);
 
     if (!ret) {
-      ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async() => {
+      ret = await CachedPromiseFunc(`contactRawPayload-${id}`, async () => {
         const contact = await this._refreshContact(id);
         return contact.toObject();
       });
@@ -1288,7 +1289,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     await this.client!.api.syncContact({
       onSync: (contactList: PadLocal.Contact[]) => {
         this.wrapAsync(
-          this._onPushSerialExecutor.execute(async() => {
+          this._onPushSerialExecutor.execute(async () => {
             for (const contact of contactList) {
               await this._onPushContact(contact);
             }
@@ -1525,7 +1526,7 @@ class PuppetPadlocal extends PUPPET.Puppet {
     this._client = await PadLocalClient.create(this.options.token!, true);
 
     this._client.on("kickout", this.wrapAsync(
-      async(_detail: KickOutEvent) => {
+      async (_detail: KickOutEvent) => {
         if (this.currentUserId) {
           this.emit("logout", { contactId: this.currentUserId, data: _detail.errorMessage });
         }
@@ -1534,8 +1535,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
       }),
     );
     this._client.on("message", this.wrapAsync(
-      async(messageList: PadLocal.Message[]) => {
-        await this._onPushSerialExecutor.execute(async() => {
+      async (messageList: PadLocal.Message[]) => {
+        await this._onPushSerialExecutor.execute(async () => {
           for (const message of messageList) {
             // handle message one by one
             await this._onPushMessage(message);
@@ -1545,8 +1546,8 @@ class PuppetPadlocal extends PUPPET.Puppet {
     ));
 
     this._client.on("contact", this.wrapAsync(
-      async(contactList: PadLocal.Contact[]) => {
-        await this._onPushSerialExecutor.execute(async() => {
+      async (contactList: PadLocal.Contact[]) => {
+        await this._onPushSerialExecutor.execute(async () => {
           for (const contact of contactList) {
             await this._onPushContact(contact);
           }

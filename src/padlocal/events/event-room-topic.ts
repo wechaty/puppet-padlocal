@@ -17,9 +17,9 @@ const YOU_CHANGE_TOPIC_REGEX_LIST = [
   /^(You) changed the group name to "(.+)"$/,
 ];
 
-type TopicChange = {changerId: string, newTopic: string};
+type TopicChange = { changerId: string, newTopic: string };
 
-export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
+export default async (puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject): Promise<EventPayload> => {
   const roomId = message.fromusername;
   if (!isRoomId(roomId)) {
     return null;
@@ -28,12 +28,12 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
   /**
    * 1. Message payload "you change the room topic" is plain text with type 10000 : https://gist.github.com/padlocal/0c7bb4f5d51e7e94a0efa108bebb4645
    */
-  const youChangeTopic = async() => {
+  const youChangeTopic = async () => {
     if (message.type !== WechatMessageType.Sys) {
       return null;
     }
 
-    return parseTextWithRegexList(message.content, YOU_CHANGE_TOPIC_REGEX_LIST, async(_, match) => {
+    return parseTextWithRegexList(message.content, YOU_CHANGE_TOPIC_REGEX_LIST, async (_, match) => {
       const newTopic = match[2];
 
       return {
@@ -46,7 +46,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
   /**
    * 2. Message payload "others change room topic" is xml text with type 10002: https://gist.github.com/padlocal/3480ada677839c8c11578d47e820e893
    */
-  const otherChangeTopic = async() => {
+  const otherChangeTopic = async () => {
     const sysmsgTemplatePayload = await parseSysmsgSysmsgTemplateMessagePayload(message);
     if (!sysmsgTemplatePayload) {
       return null;
@@ -55,7 +55,7 @@ export default async(puppet: PUPPET.Puppet, message: PadLocal.Message.AsObject):
     return parseSysmsgTemplate<TopicChange>(
       sysmsgTemplatePayload,
       OTHER_CHANGE_TOPIC_REGEX_LIST,
-      async(templateLinkList) => {
+      async (templateLinkList) => {
         // the first item MUST be changers profile link
         const changerList = templateLinkList[0]!.payload as SysmsgTemplateLinkProfile;
         const changerId = changerList[0]!.userName;

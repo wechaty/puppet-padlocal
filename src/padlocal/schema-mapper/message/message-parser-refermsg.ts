@@ -4,7 +4,7 @@ import { AppMessageType, parseAppmsgMessagePayload, ReferMsgPayload } from "../.
 import { WechatMessageType } from "../../types.js";
 import type { MessageParser, MessageParserContext } from "./message-parser.js";
 
-export const referMsgParser: MessageParser = async(_padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
+export const referMsgParser: MessageParser = async (_padLocalMessage: PadLocal.Message.AsObject, ret: PUPPET.payloads.Message, context: MessageParserContext) => {
   if (!context.appMessagePayload || context.appMessagePayload.type !== AppMessageType.ReferMsg) {
     return ret;
   }
